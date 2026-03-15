@@ -70,6 +70,5 @@ CREATE POLICY "Faculty can update own pending records" ON public.lecture_records
 ## 👨‍💻 Author
 **Yashodhan Rajapkar**
 *Aspiring Cybersecurity Professional & Full Stack Developer*
-
 **Kaivalya Gharat**
 *Unity and C# Specialist & Full Stack Developer*
