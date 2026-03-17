@@ -1,6 +1,67 @@
 import { cls } from '../../utils/helpers'
-import { Loader2, AlertTriangle, CheckCircle, XCircle, Info, X } from 'lucide-react'
-import { useState, useEffect } from 'react'
+import { Loader2, AlertTriangle, CheckCircle, XCircle, Info, X, Moon, Sun } from 'lucide-react'
+import { useState, useEffect, createContext, useContext } from 'react'
+
+// ─── Theme Context ───────────────────────────────────────────────────────────
+const ThemeContext = createContext()
+
+export const ThemeProvider = ({ children }) => {
+  const [isLight, setIsLight] = useState(() => {
+    if (typeof window !== 'undefined') {
+      const saved = localStorage.getItem('theme')
+      return saved === 'light' || (!saved && window.matchMedia('(prefers-color-scheme: light)').matches)
+    }
+    return false
+  })
+
+  useEffect(() => {
+    const root = window.document.documentElement
+    if (isLight) {
+      root.classList.add('light')
+      localStorage.setItem('theme', 'light')
+    } else {
+      root.classList.remove('light')
+      localStorage.setItem('theme', 'dark')
+    }
+  }, [isLight])
+
+  const toggleTheme = () => setIsLight(!isLight)
+
+  return (
+    <ThemeContext.Provider value={{ isLight, toggleTheme }}>
+      {children}
+    </ThemeContext.Provider>
+  )
+}
+
+export const useTheme = () => {
+  const context = useContext(ThemeContext)
+  if (!context) throw new Error('useTheme must be used within a ThemeProvider')
+  return context
+}
+
+// ─── Theme Toggle ─────────────────────────────────────────────────────────────
+export const ThemeToggle = ({ className = '' }) => {
+  const { isLight, toggleTheme } = useTheme()
+  
+  return (
+    <button
+      onClick={toggleTheme}
+      className={cls(
+        'w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300',
+        'bg-white/5 border border-white/10 hover:bg-white/10 active:scale-90',
+        className
+      )}
+      aria-label="Toggle theme"
+    >
+      {isLight ? (
+        <Sun className="w-5 h-5 text-amber-500 animate-in fade-in zoom-in spin-in-90 duration-500" />
+      ) : (
+        <Moon className="w-5 h-5 text-blue-400 animate-in fade-in zoom-in -spin-in-90 duration-500" />
+      )}
+    </button>
+  )
+}
 
 // ─── Spinner ────────────────────────────────────────────────────────────────
 export const Spinner = ({ size = 'md', className = '' }) => {

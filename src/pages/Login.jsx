@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Layers, Eye, EyeOff, ShieldCheck, Zap, FileSpreadsheet, History } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
-import { Spinner, toast, DemoModeBanner } from '../components/ui'
+import { Spinner, toast, DemoModeBanner, ThemeToggle } from '../components/ui'
 
 export default function LoginPage() {
   const { signIn, demoMode } = useAuth()
@@ -39,9 +39,13 @@ export default function LoginPage() {
   }
 
   return (
-    <div className="min-h-screen bg-[#0d1117] flex flex-col relative overflow-hidden">
+    <div className="min-h-screen flex flex-col relative overflow-hidden" style={{ background: 'var(--bg-primary)' }}>
       {demoMode && <DemoModeBanner />}
       
+      <div className="absolute top-6 right-6 z-50">
+        <ThemeToggle />
+      </div>
+
       {/* Background Decor */}
       <div className="absolute inset-0 grid-bg opacity-30" />
       <div className="absolute top-[-10%] right-[-10%] w-[40%] h-[40%] bg-brand-500/10 rounded-full blur-[120px]" />
@@ -54,8 +58,8 @@ export default function LoginPage() {
             <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-brand-500 to-brand-600 rounded-2xl shadow-brand-lg mb-6 rotate-3">
               <Layers className="w-9 h-9 text-white" />
             </div>
-            <h1 className="text-3xl font-bold font-display tracking-tight text-white">VIT DLR Portal</h1>
-            <p className="text-secondary mt-2 font-medium">Academic Audit & Lecture Record System</p>
+            <h1 className="text-3xl font-bold font-display tracking-tight" style={{ color: 'var(--text-primary)' }}>VIT DLR Portal</h1>
+            <p className="mt-2 font-medium" style={{ color: 'var(--text-secondary)' }}>Academic Audit & Lecture Record System</p>
             <p className="text-xs text-brand-500/80 uppercase tracking-widest mt-1 font-bold">Vidyalankar Institute of Technology</p>
           </div>
 
@@ -63,7 +67,7 @@ export default function LoginPage() {
           <div className="glass-card p-8 mb-8 border-white/[0.08]">
             {demoMode && (
               <div className="mb-8">
-                <p className="text-xs font-bold uppercase tracking-widest text-secondary mb-4">Quick Demo Login</p>
+                <p className="text-[10px] font-bold uppercase tracking-widest mb-4 opacity-70" style={{ color: 'var(--text-secondary)' }}>Quick Demo Login</p>
                 <div className="flex gap-3">
                   <button 
                     type="button"
@@ -133,7 +137,7 @@ export default function LoginPage() {
             </form>
           </div>
 
-          <p className="text-center text-secondary text-sm">
+          <p className="text-center text-sm font-medium" style={{ color: 'var(--text-secondary)' }}>
             For account access, contact your department admin.
           </p>
         </div>
@@ -146,7 +150,7 @@ export default function LoginPage() {
             { icon: FileSpreadsheet, label: "PDF & Excel Reports" },
             { icon: History, label: "Digital Audit" },
           ].map((feature, i) => (
-            <div key={i} className="flex items-center gap-2 px-4 py-2 glass-card rounded-full text-[10px] font-bold uppercase tracking-wider">
+            <div key={i} className="flex items-center gap-2 px-4 py-2 glass-card rounded-full text-[10px] font-bold uppercase tracking-wider" style={{ color: 'var(--text-primary)' }}>
               <feature.icon className="w-4 h-4 text-brand-500" />
               {feature.label}
             </div>
