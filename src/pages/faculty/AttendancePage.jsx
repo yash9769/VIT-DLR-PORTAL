@@ -14,14 +14,34 @@ export default function AttendancePage() {
   const [attendance, setAttendance] = useState(initialAttendance || {})
   const [search, setSearch] = useState('')
   const [division, setDivision] = useState(null)
+  const [divisionsList, setDivisionsList] = useState([])
+  const [fetchingDivs, setFetchingDivs] = useState(false)
 
   useEffect(() => {
-    if (!divisionId) {
-      navigate('/faculty')
-      return
+    if (divisionId) {
+      fetchStudents()
+    } else {
+      fetchAllDivisions()
     }
-    fetchStudents()
   }, [divisionId])
+
+  const fetchAllDivisions = async () => {
+    try {
+      setFetchingDivs(true)
+      const { data, error } = await supabase
+        .from('divisions')
+        .select('*')
+        .order('division_name')
+      
+      if (error) throw error
+      setDivisionsList(data || [])
+    } catch (error) {
+      console.error('Error fetching divisions:', error)
+    } finally {
+      setFetchingDivs(false)
+      setLoading(false)
+    }
+  }
 
   const fetchStudents = async () => {
     try {
@@ -31,6 +51,7 @@ export default function AttendancePage() {
         supabase.from('divisions').select('*').eq('id', divisionId).single()
       ])
       
+      if (stdRes.error) throw stdRes.error
       setStudents(stdRes.data || [])
       setDivision(divRes.data)
     } catch (error) {
@@ -41,8 +62,8 @@ export default function AttendancePage() {
   }
 
   const filtered = students.filter(s =>
-    s.full_name.toLowerCase().includes(search.toLowerCase()) ||
-    s.roll_number.toLowerCase().includes(search.toLowerCase())
+    s.full_name?.toLowerCase().includes(search.toLowerCase()) ||
+    s.roll_number?.toLowerCase().includes(search.toLowerCase())
   )
 
   const presentCount = students.filter(s => attendance[s.id] === true).length
@@ -77,11 +98,52 @@ export default function AttendancePage() {
 
   if (loading) return <div className="p-8 text-center text-sm opacity-50">Loading students...</div>
 
+  if (!divisionId) {
+    return (
+      <div className="px-4 pt-5 pb-24 space-y-6 animate-fade-in">
+        <div className="flex items-center gap-3">
+          <div className="w-10 h-10 rounded-xl bg-brand-500/10 flex items-center justify-center">
+            <Users className="w-5 h-5 text-brand-500" />
+          </div>
+          <div>
+            <h1 className="font-display font-bold text-xl" style={{ color: 'var(--text-primary)' }}>Digital Roll Call</h1>
+            <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>Select a division to start attendance</p>
+          </div>
+        </div>
+
+        {fetchingDivs ? (
+          <div className="py-12 text-center opacity-50">Fetching divisions...</div>
+        ) : (
+          <div className="grid grid-cols-1 gap-3">
+            {divisionsList.map(div => (
+              <button
+                key={div.id}
+                onClick={() => navigate('/faculty/attendance', { state: { divisionId: div.id } })}
+                className="glass-card p-5 flex items-center justify-between text-left hover:border-brand-500/30 transition-all"
+              >
+                <div>
+                  <p className="font-display font-bold text-lg" style={{ color: 'var(--text-primary)' }}>{div.division_name}</p>
+                  <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>
+                    Year {div.year} · {div.department} · {div.strength} students
+                  </p>
+                </div>
+                <Users className="w-5 h-5 opacity-20" />
+              </button>
+            ))}
+          </div>
+        )}
+      </div>
+    )
+  }
+
   return (
     <div className="flex flex-col" style={{ minHeight: '100vh', background: 'var(--bg-primary)' }}>
       <div className="px-4 pt-4 pb-3 space-y-3" style={{ borderBottom: '1px solid rgba(255,255,255,0.06)' }}>
         <div className="flex items-center justify-between">
-          <h1 className="font-display font-bold text-xl" style={{ color: 'var(--text-primary)' }}>Roll Call</h1>
+          <div className="flex items-center gap-2">
+            <button onClick={() => navigate('/faculty/attendance', { state: {} })} className="text-xs font-bold" style={{ color: 'var(--brand)' }}>Back</button>
+            <h1 className="font-display font-bold text-xl" style={{ color: 'var(--text-primary)' }}>Roll Call</h1>
+          </div>
           <div className="flex items-center gap-1">
             <span className="font-display font-bold text-lg text-green-400">{presentCount}</span>
             <span className="text-sm" style={{ color: 'var(--text-secondary)' }}>/ {students.length}</span>
@@ -134,7 +196,7 @@ export default function AttendancePage() {
             return (
               <button key={student.id} onClick={() => toggle(student.id)}
                 className={cls('attendance-chip text-left flex flex-col gap-0.5', isPresent ? 'present' : isMarked ? 'absent' : '')}
-                style={!isMarked ? { background: 'rgba(255,255,255,0.04)', borderColor: 'rgba(255,255,255,0.08)', color: 'var(--text-primary)' } : {}}>
+                style={!isMarked ? { background: 'var(--bg-secondary)', borderColor: 'var(--border-glass)', color: 'var(--text-primary)' } : {}}>
                 <span className="text-xs font-mono" style={{ color: isPresent ? '#3fb950' : isMarked ? '#f85149' : 'var(--text-secondary)' }}>
                   {student.roll_number}
                 </span>
@@ -156,10 +218,10 @@ export default function AttendancePage() {
         )}
       </div>
 
-      <div className="fixed bottom-20 left-0 right-0 px-4 py-3" style={{ background: 'rgba(13,17,23,0.97)', backdropFilter: 'blur(16px)', borderTop: '1px solid rgba(255,255,255,0.06)' }}>
+      <div className="fixed bottom-20 left-0 right-0 px-4 py-3" style={{ background: 'var(--bg-secondary)', backdropFilter: 'blur(16px)', borderTop: '1px solid var(--border-glass)', opacity: 0.98 }}>
         <div className="flex justify-between text-sm mb-2">
           <span style={{ color: 'var(--text-secondary)' }}>Marked: <strong>{totalMarked}/{students.length}</strong></span>
-          {totalMarked < students.length && <span className="text-xs text-yellow-400">{students.length - totalMarked} unmarked</span>}
+          {totalMarked < students.length && <span className="text-xs text-yellow-500">{students.length - totalMarked} unmarked</span>}
         </div>
         <button onClick={handleSave} className="btn-success w-full min-h-[52px] flex items-center justify-center gap-2">
           <CheckCircle className="w-5 h-5" />

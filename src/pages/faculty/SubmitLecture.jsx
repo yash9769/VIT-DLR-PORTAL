@@ -108,11 +108,34 @@ export default function SubmitLecture() {
 
   const set = (key, val) => setForm(f => ({ ...f, [key]: val }))
 
-  const canGoNext = () => {
-    if (step === 1) return form.timetable_id || (form.division_id && form.subject_id)
-    if (step === 2) return form.actual_start && form.actual_end && form.topic_covered.length >= 5
-    if (step === 3) return form.present_count !== '' && Number(form.present_count) <= Number(form.total_students)
-    return true
+  const handleNext = () => {
+    if (step === 1) {
+      if (!form.timetable_id && (!form.division_id || !form.subject_id)) {
+        toast.error('Please select a lecture or fill division and subject')
+        return
+      }
+    }
+    if (step === 2) {
+      if (!form.actual_start || !form.actual_end) {
+        toast.error('Please enter start and end times')
+        return
+      }
+      if (form.topic_covered.length < 5) {
+        toast.error('Topic covered must be at least 5 characters')
+        return
+      }
+    }
+    if (step === 3) {
+      if (form.present_count === '') {
+        toast.error('Please enter attendance count')
+        return
+      }
+      if (Number(form.present_count) > Number(form.total_students)) {
+        toast.error('Present count cannot exceed total students')
+        return
+      }
+    }
+    setStep(s => s + 1)
   }
 
   const handleSelectEntry = (entry) => {
@@ -312,9 +335,22 @@ export default function SubmitLecture() {
 
           <div>
             <label className="form-label">Topic Covered <span className="text-red-400">*</span></label>
-            <textarea className="input-field resize-none" rows={3} placeholder="e.g. Introduction to AES Encryption, Key expansion algorithm…"
-              value={form.topic_covered} onChange={e => set('topic_covered', e.target.value)} />
-            <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>{form.topic_covered.length} chars (min 5)</p>
+            <textarea 
+              className={`input-field resize-none ${form.topic_covered.length > 0 && form.topic_covered.length < 5 ? 'border-red-500/50 ring-1 ring-red-500/20' : ''}`} 
+              rows={3} 
+              placeholder="e.g. Introduction to AES Encryption, Key expansion algorithm…"
+              value={form.topic_covered} 
+              onChange={e => set('topic_covered', e.target.value)} 
+            />
+            <div className="flex justify-between items-center mt-1">
+              <p className={`text-xs transition-colors ${form.topic_covered.length > 0 && form.topic_covered.length < 5 ? 'text-red-400 font-semibold' : 'text-gray-500'}`}>
+                {form.topic_covered.length < 5 
+                  ? `Min 5 characters required (${5 - form.topic_covered.length} more)` 
+                  : 'Length requirement met ✓'
+                }
+              </p>
+              <p className="text-xs opacity-50">{form.topic_covered.length} chars</p>
+            </div>
           </div>
 
           <div>
@@ -476,7 +512,7 @@ export default function SubmitLecture() {
           <button onClick={() => setStep(s => s - 1)} className="btn-secondary flex-1 min-h-[52px]">Back</button>
         )}
         {step < 4 ? (
-          <button onClick={() => setStep(s => s + 1)} disabled={!canGoNext()} className="btn-primary flex-1 min-h-[52px] disabled:opacity-40 disabled:cursor-not-allowed">
+          <button onClick={handleNext} className="btn-primary flex-1 min-h-[52px]">
             Continue
           </button>
         ) : (
