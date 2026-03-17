@@ -13,7 +13,7 @@ const NAV_GROUPS = [
   { label: 'Management', items: [{ path: '/admin/faculty', label: 'Faculty', icon: Users }, { path: '/admin/subjects', label: 'Subjects', icon: BookOpen }, { path: '/admin/rooms', label: 'Rooms', icon: Building }] },
   { label: 'Reports', items: [{ path: '/admin/reports', label: 'Reports', icon: Settings }] },
   { label: 'Support', items: [{ path: '/admin/issues', label: 'Support Center', icon: LifeBuoy }] },
-  { label: 'Account', items: [{ path: '/faculty/profile', label: 'My Profile', icon: User }] },
+  { label: 'Account', items: [{ path: '/faculty/profile', label: 'My Profile', icon: Users }] },
 ]
 
 export default function AdminLayout() {
