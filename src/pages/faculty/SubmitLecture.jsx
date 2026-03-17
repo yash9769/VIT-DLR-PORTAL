@@ -168,6 +168,11 @@ export default function SubmitLecture() {
         scheduled_end: form.scheduled_end || null,
         actual_start: form.actual_start || null,
         actual_end: form.actual_end || null,
+        // Convert empty strings to null for UUID columns
+        timetable_id: form.timetable_id || null,
+        room_id: form.room_id || null,
+        original_faculty_id: form.original_faculty_id || null,
+        original_room_id: form.original_room_id || null,
       }
 
       const { data: record, error } = await supabase
