@@ -72,7 +72,8 @@ export default function FacultyDashboard() {
   const [todaySchedule, setTodaySchedule] = useState([])
   const [lectureRecords, setLectureRecords] = useState([])
   const [stats, setStats] = useState({
-    pending: 0,
+    todayPending: 0,
+    awaitingApproval: 0,
     avgAttendance: 0,
     totalRecords: 0
   })
@@ -127,16 +128,16 @@ export default function FacultyDashboard() {
           .map(r => r.timetable_id) || []
       )
       
-      // Total pending = (today's unsubmitted classes) + (all past records waiting for admin approval)
       const todayPending = (timetable || []).filter(t => !todaySubmittedIds.has(t.id)).length
-      const recordsAwaitingApproval = records?.filter(r => r.approval_status === 'pending').length || 0
+      const awaitingApproval = records?.filter(r => r.approval_status === 'pending').length || 0
       
       const avgAtt = records?.length > 0
         ? Math.round(records.reduce((s, r) => s + attendancePercent(r.present_count, r.total_students), 0) / records.length)
         : 0
 
       setStats({
-        pending: todayPending + recordsAwaitingApproval,
+        todayPending,
+        awaitingApproval,
         avgAttendance: avgAtt,
         totalRecords: records?.length || 0
       })
@@ -176,25 +177,43 @@ export default function FacultyDashboard() {
       </div>
 
       {/* Pending alert */}
-      {stats.pending > 0 && (
-        <button onClick={() => navigate('/faculty/submit')} className="w-full flex items-center gap-3 p-4 rounded-2xl transition-all active:scale-98" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--brand)', boxShadow: '0 4px 20px var(--brand-glow)' }}>
-          <AlertCircle className="w-5 h-5 text-brand-400 flex-shrink-0" />
-          <div className="flex-1 text-left">
-            <p className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>
-              {stats.pending} Pending Submission{stats.pending > 1 ? 's' : ''}
-            </p>
-            <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>
-              Tap to submit today's lecture records
-            </p>
-          </div>
-          <ChevronRight className="w-4 h-4" style={{ color: 'var(--text-secondary)' }} />
-        </button>
+      {(stats.todayPending > 0 || stats.awaitingApproval > 0) && (
+        <div className="space-y-2">
+          {stats.todayPending > 0 && (
+            <button onClick={() => navigate('/faculty/submit')} className="w-full flex items-center gap-3 p-4 rounded-2xl transition-all active:scale-98" style={{ background: 'var(--bg-secondary)', border: '1px solid var(--brand)', boxShadow: '0 4px 20px var(--brand-glow)' }}>
+              <AlertCircle className="w-5 h-5 text-brand-400 flex-shrink-0" />
+              <div className="flex-1 text-left">
+                <p className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>
+                  {stats.todayPending} Unsubmitted Lecture{stats.todayPending > 1 ? 's' : ''} Today
+                </p>
+                <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>
+                  Tap to submit today's lecture records
+                </p>
+              </div>
+              <ChevronRight className="w-4 h-4" style={{ color: 'var(--text-secondary)' }} />
+            </button>
+          )}
+          {stats.awaitingApproval > 0 && (
+            <button onClick={() => navigate('/faculty/history')} className="w-full flex items-center gap-3 p-4 rounded-2xl transition-all active:scale-98" style={{ background: 'var(--bg-secondary)', border: '1px solid rgba(210,153,34,0.5)', boxShadow: '0 4px 20px rgba(210,153,34,0.1)' }}>
+              <Clock className="w-5 h-5 text-amber-400 flex-shrink-0" />
+              <div className="flex-1 text-left">
+                <p className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>
+                  {stats.awaitingApproval} Record{stats.awaitingApproval > 1 ? 's' : ''} Awaiting Admin Approval
+                </p>
+                <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>
+                  Tap to view your submission history
+                </p>
+              </div>
+              <ChevronRight className="w-4 h-4" style={{ color: 'var(--text-secondary)' }} />
+            </button>
+          )}
+        </div>
       )}
 
       {/* Stats grid */}
       <div className="grid grid-cols-2 gap-3">
         <StatCard label="Today's Classes" value={todaySchedule.length} icon={BookOpen} color="#4A6CF7" />
-        <StatCard label="Pending DLR" value={stats.pending} icon={Clock} color="#d29922" />
+        <StatCard label="Awaiting Approval" value={stats.awaitingApproval} icon={Clock} color="#d29922" />
         <StatCard label="Avg Attendance" value={`${stats.avgAttendance}%`} icon={TrendingUp} color="#3fb950" />
         <StatCard label="Total Records" value={stats.totalRecords} icon={CheckCircle} color="#8b5cf6" />
       </div>
