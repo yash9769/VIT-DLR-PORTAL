@@ -162,7 +162,12 @@ export default function SubmitLecture() {
         present_count: Number(form.present_count),
         total_students: Number(form.total_students),
         absent_count: Number(form.total_students) - Number(form.present_count),
-        submitted_at: new Date().toISOString()
+        submitted_at: new Date().toISOString(),
+        // Convert empty strings to null for time columns to avoid Postgres type errors
+        scheduled_start: form.scheduled_start || null,
+        scheduled_end: form.scheduled_end || null,
+        actual_start: form.actual_start || null,
+        actual_end: form.actual_end || null,
       }
 
       const { data: record, error } = await supabase
