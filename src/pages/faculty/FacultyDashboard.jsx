@@ -127,14 +127,16 @@ export default function FacultyDashboard() {
           .map(r => r.timetable_id) || []
       )
       
-      const pendingCount = (timetable || []).filter(t => !todaySubmittedIds.has(t.id)).length
+      // Total pending = (today's unsubmitted classes) + (all past records waiting for admin approval)
+      const todayPending = (timetable || []).filter(t => !todaySubmittedIds.has(t.id)).length
+      const recordsAwaitingApproval = records?.filter(r => r.approval_status === 'pending').length || 0
       
       const avgAtt = records?.length > 0
         ? Math.round(records.reduce((s, r) => s + attendancePercent(r.present_count, r.total_students), 0) / records.length)
         : 0
 
       setStats({
-        pending: pendingCount,
+        pending: todayPending + recordsAwaitingApproval,
         avgAttendance: avgAtt,
         totalRecords: records?.length || 0
       })

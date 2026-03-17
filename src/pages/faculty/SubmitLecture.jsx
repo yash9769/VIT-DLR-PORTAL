@@ -409,7 +409,13 @@ export default function SubmitLecture() {
       {/* ── STEP 3: Attendance ───────────────────────────────────────────── */}
       {step === 3 && (
         <div className="space-y-4 animate-slide-up">
-          <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Enter attendance count quickly, or use Roll Call for individual marking.</p>
+          <div className="flex flex-col gap-2">
+            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Enter attendance count quickly, or use Roll Call for individual marking.</p>
+            <div className="flex items-center gap-2 text-[10px] bg-blue-500/10 text-brand-400 px-2 py-1.5 rounded-xl border border-brand-500/20 w-fit">
+              <span className="font-bold uppercase tracking-wider">✨ Tip:</span>
+              <span>Use Digital Roll Call to show student names to the Admin.</span>
+            </div>
+          </div>
 
           <div className="grid grid-cols-2 gap-3">
             <div>

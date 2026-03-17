@@ -314,7 +314,10 @@ export default function ApprovalsPage() {
                {loadingAttendance ? (
                  <p className="text-xs opacity-50 text-center py-4">Fetching attendance list...</p>
                ) : studentAttendance.length === 0 ? (
-                 <p className="text-xs opacity-50 text-center py-4">No individual attendance data available</p>
+                <div className="py-6 text-center">
+                   <p className="text-xs opacity-50 mb-1">No individual attendance data available</p>
+                   <p className="text-[10px] opacity-30 italic px-4 leading-relaxed">Faculty used "Quick Manual Entry".<br/>No student-wise records were generated.</p>
+                 </div>
                ) : (
                  <div className="max-h-[200px] overflow-y-auto pr-2 grid grid-cols-2 sm:grid-cols-3 gap-2">
                    {studentAttendance.map(att => (
