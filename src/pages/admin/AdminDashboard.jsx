@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { format } from 'date-fns'
 import { useNavigate } from 'react-router-dom'
-import { FileText, Clock, CheckCircle, TrendingUp, AlertTriangle, Lock, Download, ChevronRight } from 'lucide-react'
+import { FileText, Clock, CheckCircle, TrendingUp, AlertTriangle, Lock, Download, ChevronRight, LifeBuoy } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { attendancePercent, formatDate, formatTime, today } from '../../utils/helpers'
 import { StatusBadge, toast, Modal } from '../../components/ui'
@@ -12,7 +12,7 @@ import { exportDLRToExcel } from '../../services/excelService'
 const StatCard = ({ label, value, icon: Icon, color, trend, onClick }) => (
   <button onClick={onClick} className="glass-card p-5 text-left w-full hover:scale-[1.01] transition-transform">
     <div className="flex items-start justify-between mb-3">
-      <div className="w-10 h-10 rounded-xl flex items-center justify-center" style={{ background: color + '18' }}>
+      <div className="w-10 h-10 rounded-xl flex items-center justify-center border transition-colors shadow-sm" style={{ background: 'var(--bg-secondary)', borderColor: 'var(--border-glass)' }}>
         <Icon className="w-5 h-5" style={{ color }} />
       </div>
       {trend !== undefined && (
@@ -34,7 +34,8 @@ export default function AdminDashboard() {
     approved: 0,
     totalRecords: 0,
     avgAtt: 0,
-    todaySchedule: 0
+    todaySchedule: 0,
+    openIssues: 0
   })
   const [pendingRecords, setPendingRecords] = useState([])
   const [facultyStatus, setFacultyStatus] = useState([])
@@ -94,6 +95,14 @@ export default function AdminDashboard() {
 
       if (facError) throw facError
 
+      // 4. Fetch System Issues
+      const { count: issueCount, error: issueError } = await supabase
+        .from('system_reports')
+        .select('*', { count: 'exact', head: true })
+        .eq('status', 'open')
+
+      if (issueError) throw issueError
+
       const facStatus = faculty.map(f => ({
         ...f,
         submittedToday: records.some(r => r.faculty_id === f.id && r.lecture_date === todayStr),
@@ -105,7 +114,8 @@ export default function AdminDashboard() {
         approved: approved.length,
         totalRecords: total,
         avgAtt: avg,
-        todaySchedule: ttCount || 0
+        todaySchedule: ttCount || 0,
+        openIssues: issueCount || 0
       })
       setAllRecords(records)
       setPendingRecords(pending.slice(0, 5))
@@ -184,7 +194,7 @@ export default function AdminDashboard() {
     <div className="p-6 space-y-6 animate-fade-in">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
-          <p className="text-xs font-semibold uppercase tracking-widest mb-1" style={{ color: 'rgba(74,108,247,0.8)' }}>{format(new Date(), 'EEEE, dd MMMM yyyy')}</p>
+          <p className="text-[10px] font-bold uppercase tracking-[0.2em] mb-1 opacity-80" style={{ color: 'var(--brand)' }}>{format(new Date(), 'EEEE, dd MMMM yyyy')}</p>
           <h1 className="font-display font-bold text-2xl" style={{ color: 'var(--text-primary)' }}>Academic Dashboard</h1>
         </div>
         <div className="flex gap-2">
@@ -199,8 +209,8 @@ export default function AdminDashboard() {
 
       <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
         <StatCard label="Today's Schedule" value={stats.todaySchedule} icon={FileText} color="#4A6CF7" onClick={() => navigate('/admin/timetable')} />
-        <StatCard label="Pending Review" value={stats.pending} icon={Clock} color="#d29922" trend={-12} onClick={() => navigate('/admin/records')} />
-        <StatCard label="Approved" value={stats.approved} icon={CheckCircle} color="#3fb950" trend={8} onClick={() => navigate('/admin/records')} />
+        <StatCard label="Pending Review" value={stats.pending} icon={Clock} color="#d29922" onClick={() => navigate('/admin/records')} />
+        <StatCard label="Open Issues" value={stats.openIssues} icon={LifeBuoy} color="#f85149" onClick={() => navigate('/admin/issues')} />
         <StatCard label="Avg. Attendance" value={stats.avgAtt + '%'} icon={TrendingUp} color="#8b5cf6" trend={3} />
       </div>
 
@@ -283,9 +293,9 @@ export default function AdminDashboard() {
                  ) : (
                    <div className="max-h-[150px] overflow-y-auto pr-2 grid grid-cols-2 gap-2">
                      {studentAttendance.map(att => (
-                       <div key={att.id} className="flex justify-between p-1.5 rounded-lg text-[11px] border" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
-                         <span className="truncate">{att.students?.full_name}</span>
-                         <span className={att.is_present ? 'text-green-400' : 'text-red-400'}>{att.is_present ? 'P' : 'A'}</span>
+                       <div key={att.id} className="flex justify-between p-1.5 rounded-lg text-[11px] border" style={{ borderColor: 'var(--border-glass)' }}>
+                         <span className="truncate" style={{ color: 'var(--text-primary)' }}>{att.students?.full_name}</span>
+                         <span className={att.is_present ? 'text-green-500' : 'text-red-500'}>{att.is_present ? 'P' : 'A'}</span>
                        </div>
                      ))}
                    </div>
@@ -320,14 +330,14 @@ export default function AdminDashboard() {
             <div className="space-y-3">
               {facultyStatus.map(f => (
                 <div key={f.id} className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold text-white flex-shrink-0" style={{ background: f.submittedToday ? 'rgba(63,185,80,0.3)' : 'rgba(139,148,158,0.2)' }}>
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold text-white flex-shrink-0" style={{ background: f.submittedToday ? 'var(--brand)' : 'var(--text-secondary)', opacity: f.submittedToday ? 1 : 0.4 }}>
                     {f.full_name[0]}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="text-xs font-semibold truncate">{f.full_name}</p>
                     <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>{f.recordCount} records</p>
                   </div>
-                  <div className={`w-2 h-2 rounded-full ${f.submittedToday ? 'bg-green-400' : 'bg-gray-600'}`} />
+                  <div className={`w-2 h-2 rounded-full ${f.submittedToday ? 'bg-green-500' : 'bg-slate-400 opacity-40'}`} />
                 </div>
               ))}
             </div>
@@ -335,8 +345,8 @@ export default function AdminDashboard() {
 
           <div className="glass-card p-5">
             <h2 className="font-display font-semibold text-sm mb-3" style={{ color: 'var(--text-primary)' }}>Day Management</h2>
-            <div className="flex items-center gap-2 p-3 rounded-xl mb-3" style={{ background: 'rgba(255,255,255,0.04)' }}>
-              <AlertTriangle className="w-4 h-4 text-yellow-400" />
+            <div className="flex items-center gap-2 p-3 rounded-xl mb-3" style={{ background: 'var(--border-glass)' }}>
+              <AlertTriangle className="w-4 h-4 text-amber-500" />
               <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>Locking prevents faculty edits.</p>
             </div>
             <button onClick={() => alert('Day locked! (demo)')} className="btn-secondary w-full flex items-center justify-center gap-2 text-sm">
