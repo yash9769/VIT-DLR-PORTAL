@@ -25,7 +25,12 @@ export default function TimetablePage() {
   const [deleteId, setDeleteId] = useState(null)
   const [timetable, setTimetable] = useState([])
   const [conflicts, setConflicts] = useState([])
+  
+  const [useCustomFaculty, setUseCustomFaculty] = useState(false)
+  const [useCustomDivision, setUseCustomDivision] = useState(false)
+  const [useCustomSubject, setUseCustomSubject] = useState(false)
   const [useCustomRoom, setUseCustomRoom] = useState(false)
+  const [useCustomTimeSlot, setUseCustomTimeSlot] = useState(false)
 
   // Master data
   const [faculties, setFaculties] = useState([])
@@ -35,9 +40,12 @@ export default function TimetablePage() {
   const [timeSlots, setTimeSlots] = useState([])
 
   const emptyForm = {
-    faculty_id: '', division_id: '', subject_id: '',
+    faculty_id: '', custom_faculty: '',
+    division_id: '', custom_division: '',
+    subject_id: '', custom_subject: '',
     room_id: '', custom_room: '',
-    time_slot_id: '', day_of_week: 'Monday', batch_number: ''
+    time_slot_id: '', custom_time_slot: '',
+    day_of_week: 'Monday', batch_number: ''
   }
   const [form, setForm] = useState(emptyForm)
 
@@ -86,30 +94,54 @@ export default function TimetablePage() {
     return true
   })
 
-  // Room label helper: show custom_room if set, otherwise rooms table
+  // Label helpers
+  const facultyLabel = (t) => t.custom_faculty || t.faculty?.full_name || '—'
+  const divisionLabel = (t) => t.custom_division || t.divisions?.division_name || '—'
+  const subjectLabel = (t) => t.custom_subject || t.subjects?.subject_name || t.subjects?.short_name || '—'
+  const subjectShortLabel = (t) => t.custom_subject || t.subjects?.short_name || t.subjects?.subject_name || '—'
   const roomLabel = (t) => t.custom_room || t.rooms?.room_number || '—'
+  const timeSlotLabel = (t) => t.custom_time_slot || t.time_slots?.slot_label?.replace('Lab: ', '') || '—'
 
   const openCreate = () => {
     setForm(emptyForm)
+    setUseCustomFaculty(false)
+    setUseCustomDivision(false)
+    setUseCustomSubject(false)
     setUseCustomRoom(false)
+    setUseCustomTimeSlot(false)
     setEditEntry(null)
     setConflicts([])
     setShowModal(true)
   }
 
   const openEdit = (entry) => {
-    const hasCustomRoom = !!entry.custom_room
+    const hasC_Fac = !!entry.custom_faculty
+    const hasC_Div = !!entry.custom_division
+    const hasC_Sub = !!entry.custom_subject
+    const hasC_Rm  = !!entry.custom_room
+    const hasC_TS  = !!entry.custom_time_slot
+    
     setForm({
-      faculty_id: entry.faculty_id,
-      division_id: entry.division_id,
-      subject_id: entry.subject_id,
-      room_id: hasCustomRoom ? '' : (entry.room_id || ''),
+      faculty_id: hasC_Fac ? '' : (entry.faculty_id || ''),
+      custom_faculty: entry.custom_faculty || '',
+      division_id: hasC_Div ? '' : (entry.division_id || ''),
+      custom_division: entry.custom_division || '',
+      subject_id: hasC_Sub ? '' : (entry.subject_id || ''),
+      custom_subject: entry.custom_subject || '',
+      room_id: hasC_Rm ? '' : (entry.room_id || ''),
       custom_room: entry.custom_room || '',
-      time_slot_id: entry.time_slot_id,
+      time_slot_id: hasC_TS ? '' : (entry.time_slot_id || ''),
+      custom_time_slot: entry.custom_time_slot || '',
       day_of_week: entry.day_of_week,
       batch_number: entry.batch_number || ''
     })
-    setUseCustomRoom(hasCustomRoom)
+    
+    setUseCustomFaculty(hasC_Fac)
+    setUseCustomDivision(hasC_Div)
+    setUseCustomSubject(hasC_Sub)
+    setUseCustomRoom(hasC_Rm)
+    setUseCustomTimeSlot(hasC_TS)
+    
     setEditEntry(entry)
     setConflicts([])
     setShowModal(true)
@@ -130,21 +162,35 @@ export default function TimetablePage() {
   }
 
   const handleSave = async () => {
-    if (!form.faculty_id || !form.division_id || !form.subject_id || !form.time_slot_id) {
-      toast.error('Faculty, Division, Subject and Time Slot are required')
-      return
-    }
+    if (!useCustomFaculty && !form.faculty_id) { toast.error('Faculty is required'); return }
+    if (!useCustomDivision && !form.division_id) { toast.error('Division is required'); return }
+    if (!useCustomSubject && !form.subject_id) { toast.error('Subject is required'); return }
+    if (!useCustomTimeSlot && !form.time_slot_id) { toast.error('Time Slot is required'); return }
+    if (useCustomFaculty && !form.custom_faculty.trim()) { toast.error('Custom Faculty name is required'); return }
+    if (useCustomDivision && !form.custom_division.trim()) { toast.error('Custom Division is required'); return }
+    if (useCustomSubject && !form.custom_subject.trim()) { toast.error('Custom Subject is required'); return }
+    if (useCustomTimeSlot && !form.custom_time_slot.trim()) { toast.error('Custom Time Slot is required'); return }
+
     const found = checkConflicts(form)
     if (found.length > 0) return
 
     try {
       const payload = {
-        faculty_id: form.faculty_id,
-        division_id: form.division_id,
-        subject_id: form.subject_id,
+        faculty_id: useCustomFaculty ? null : (form.faculty_id || null),
+        custom_faculty: useCustomFaculty ? (form.custom_faculty || null) : null,
+        
+        division_id: useCustomDivision ? null : (form.division_id || null),
+        custom_division: useCustomDivision ? (form.custom_division || null) : null,
+        
+        subject_id: useCustomSubject ? null : (form.subject_id || null),
+        custom_subject: useCustomSubject ? (form.custom_subject || null) : null,
+        
         room_id: useCustomRoom ? null : (form.room_id || null),
         custom_room: useCustomRoom ? (form.custom_room || null) : null,
-        time_slot_id: form.time_slot_id,
+        
+        time_slot_id: useCustomTimeSlot ? null : (form.time_slot_id || null),
+        custom_time_slot: useCustomTimeSlot ? (form.custom_time_slot || null) : null,
+        
         day_of_week: form.day_of_week,
         batch_number: form.batch_number ? Number(form.batch_number) : null,
       }
@@ -181,7 +227,6 @@ export default function TimetablePage() {
   // Separate regular (1h) and lab (2h) slots
   const regularSlots = timeSlots.filter(s => !s.is_break && !s.slot_label.startsWith('Lab:'))
   const labSlots = timeSlots.filter(s => !s.is_break && s.slot_label.startsWith('Lab:'))
-  const allDisplaySlots = timeSlots.filter(s => !s.is_break)
 
   const GridView = () => {
     const days = filterDay === 'All' ? DAYS : [filterDay]
@@ -217,8 +262,8 @@ export default function TimetablePage() {
                               style={{ background: bc.bg, border: `1px solid ${bc.border}` }}
                               onClick={() => openEdit(e)}>
                               {e.batch_number && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded mb-1 inline-block" style={{ background: bc.bg, color: bc.text, border: `1px solid ${bc.border}` }}>B{e.batch_number}</span>}
-                              <p className="font-semibold truncate" style={{ color: bc.text }}>{e.subjects?.short_name}</p>
-                              <p className="truncate" style={{ color: 'var(--text-secondary)' }}>{e.divisions?.division_name}</p>
+                              <p className="font-semibold truncate" style={{ color: bc.text }}>{subjectShortLabel(e)}</p>
+                              <p className="truncate" style={{ color: 'var(--text-secondary)' }}>{divisionLabel(e)}</p>
                               <p className="truncate" style={{ color: 'var(--text-secondary)' }}>{roomLabel(e)}</p>
                               <div className="absolute top-1 right-1 hidden group-hover:flex gap-1">
                                 <button onClick={ev => { ev.stopPropagation(); openEdit(e) }} className="w-5 h-5 rounded flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.15)' }}><Edit2 className="w-3 h-3" /></button>
@@ -258,8 +303,10 @@ export default function TimetablePage() {
                               style={{ background: bc.bg, border: `1px solid ${bc.border}` }}
                               onClick={() => openEdit(e)}>
                               {e.batch_number && <span className="text-[9px] font-bold" style={{ color: bc.text }}>B{e.batch_number} · </span>}
-                              <span className="font-semibold" style={{ color: bc.text }}>{e.subjects?.short_name}</span>
-                              <p className="truncate mt-0.5" style={{ color: 'var(--text-secondary)', fontSize: '10px' }}>{e.faculty?.full_name?.split(' ').slice(-1)[0]}</p>
+                              <span className="font-semibold" style={{ color: bc.text }}>{subjectShortLabel(e)}</span>
+                              <p className="truncate mt-0.5" style={{ color: 'var(--text-secondary)', fontSize: '10px' }}>
+                                {facultyLabel(e).split(' ').slice(-1)[0]}
+                              </p>
                               <p className="truncate" style={{ color: 'var(--text-secondary)', fontSize: '10px' }}>{roomLabel(e)}</p>
                               <div className="absolute top-1 right-1 hidden group-hover:flex gap-0.5">
                                 <button onClick={ev => { ev.stopPropagation(); openEdit(e) }} className="w-4 h-4 rounded flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.15)' }}><Edit2 className="w-2.5 h-2.5" /></button>
@@ -275,28 +322,55 @@ export default function TimetablePage() {
                 })}
               </tr>
             ))}
+            
+            {/* Custom Time Slots notice */}
+            {filtered.some(t => t.custom_time_slot) && (
+              <tr><td colSpan={days.length + 1} className="px-2 pt-4 pb-2 text-center text-[10px] opacity-50 italic">
+                Entries with Custom Time Slots appear only in List View.
+              </td></tr>
+            )}
           </tbody>
         </table>
       </div>
     )
   }
 
-  // Is the currently selected time slot a lab (2hr) slot?
   const isLabSlot = timeSlots.find(s => s.id === form.time_slot_id)?.slot_label?.startsWith('Lab:')
+
+  // Generic Field component for toggling dropdown vs custom text
+  const FieldToggle = ({ label, useCustom, setUseCustom, dropdownValue, textValue, onChangeDrop, onChangeText, options, dropPlaceholder, textPlaceholder }) => (
+    <div>
+      <div className="flex items-center justify-between mb-1">
+        <label className="form-label mb-0">{label} {(!useCustom && !dropdownValue) && <span className="text-red-400">*</span>}</label>
+        <button type="button" onClick={() => setUseCustom(!useCustom)}
+          className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-lg transition-colors"
+          style={useCustom ? { background: 'rgba(74,108,247,0.15)', color: '#7090ff' } : { background: 'rgba(255,255,255,0.06)', color: 'var(--text-secondary)' }}>
+          {useCustom ? '← Use List' : '+ Custom'}
+        </button>
+      </div>
+      {useCustom ? (
+        <input className="input-field" placeholder={textPlaceholder} value={textValue} onChange={e => onChangeText(e.target.value)} />
+      ) : (
+        <select className="select-field" value={dropdownValue} onChange={e => onChangeDrop(e.target.value)}>
+          <option value="">{dropPlaceholder}</option>
+          {options}
+        </select>
+      )}
+    </div>
+  )
 
   return (
     <div className="p-6 space-y-5 animate-fade-in">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="font-display font-bold text-xl" style={{ color: 'var(--text-primary)' }}>Timetable Management</h1>
-          <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{timetable.length} entries · Conflict detection · Batch lab support</p>
+          <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{timetable.length} entries · Conflict detection · Batch & Custom support</p>
         </div>
         <button onClick={openCreate} className="btn-primary flex items-center gap-2">
           <Plus className="w-4 h-4" /> Add Entry
         </button>
       </div>
 
-      {/* Filters */}
       <div className="flex gap-3 flex-wrap">
         <select className="select-field text-sm flex-1 min-w-[160px] max-w-xs" value={filterDay} onChange={e => setFilterDay(e.target.value)}>
           <option value="All">All Days</option>
@@ -329,14 +403,14 @@ export default function TimetablePage() {
                 <tr><td colSpan={8} className="text-center py-10 opacity-40">No entries found</td></tr>
               ) : filtered.map(t => (
                 <tr key={t.id}>
-                  <td className="text-sm">{t.faculty?.full_name || '—'}</td>
-                  <td><span className="badge badge-pending">{t.divisions?.division_name}</span></td>
+                  <td className="text-sm">{facultyLabel(t)}</td>
+                  <td><span className="badge badge-pending">{divisionLabel(t)}</span></td>
                   <td className="text-sm text-center">
                     {t.batch_number ? (
                       <span className="font-bold text-xs px-2 py-0.5 rounded-lg" style={getBatchColor(t.batch_number)}>B{t.batch_number}</span>
                     ) : '—'}
                   </td>
-                  <td className="text-sm">{t.subjects?.subject_name}</td>
+                  <td className="text-sm">{subjectLabel(t)}</td>
                   <td className="text-sm">
                     {t.custom_room ? (
                       <span className="flex items-center gap-1"><Building2 className="w-3 h-3 opacity-50" />{t.custom_room}</span>
@@ -344,8 +418,12 @@ export default function TimetablePage() {
                   </td>
                   <td className="text-sm">{t.day_of_week}</td>
                   <td className="text-sm font-mono">
-                    {t.time_slots?.slot_label?.startsWith('Lab:') && <FlaskConical className="w-3 h-3 inline mr-1 text-yellow-500" />}
-                    {t.time_slots?.slot_label?.replace('Lab: ', '')}
+                    {t.custom_time_slot ? t.custom_time_slot : (
+                      <>
+                        {t.time_slots?.slot_label?.startsWith('Lab:') && <FlaskConical className="w-3 h-3 inline mr-1 text-yellow-500" />}
+                        {t.time_slots?.slot_label?.replace('Lab: ', '')}
+                      </>
+                    )}
                   </td>
                   <td>
                     <div className="flex gap-2">
@@ -360,50 +438,38 @@ export default function TimetablePage() {
         )}
       </div>
 
-      {/* ── Add / Edit Modal ── */}
       <Modal open={showModal} onClose={() => setShowModal(false)} title={editEntry ? 'Edit Timetable Entry' : 'Add Timetable Entry'} size="md">
-        <div className="space-y-4">
+        <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar">
           <ConflictWarning conflicts={conflicts} />
 
-          {/* Lab batch info banner */}
           {isLabSlot && (
             <div className="flex items-start gap-2 p-3 rounded-xl text-xs" style={{ background: 'rgba(210,153,34,0.1)', border: '1px solid rgba(210,153,34,0.25)' }}>
               <FlaskConical className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" style={{ color: '#d29922' }} />
               <div style={{ color: '#d29922' }}>
                 <p className="font-bold">2-hour Lab / Elective Slot</p>
-                <p className="opacity-80 mt-0.5">You can add up to 4 entries for the same slot with different faculty and batches. Each batch has a different track/elective and no division conflict will be flagged.</p>
+                <p className="opacity-80 mt-0.5">You can add up to 4 entries for the same slot. Using batch numbers bypasses division conflict limits.</p>
               </div>
             </div>
           )}
 
-          {/* Faculty */}
-          <div>
-            <label className="form-label">Faculty <span className="text-red-400">*</span></label>
-            <select className="select-field" value={form.faculty_id}
-              onChange={e => { setForm(f => ({ ...f, faculty_id: e.target.value })); setConflicts([]) }}>
-              <option value="">Select Faculty…</option>
-              {faculties.map(f => <option key={f.id} value={f.id}>{f.full_name}</option>)}
-            </select>
-          </div>
+          <FieldToggle label="Faculty" dropPlaceholder="Select Faculty…" textPlaceholder="e.g. Guest Lecturer, Dr. Smith…"
+            useCustom={useCustomFaculty} setUseCustom={setUseCustomFaculty}
+            dropdownValue={form.faculty_id} onChangeDrop={v => { setForm(f => ({ ...f, faculty_id: v, custom_faculty: '' })); setConflicts([]) }}
+            textValue={form.custom_faculty} onChangeText={v => setForm(f => ({ ...f, custom_faculty: v, faculty_id: '' }))}
+            options={faculties.map(f => <option key={f.id} value={f.id}>{f.full_name}</option>)} />
 
-          {/* Division + Batch */}
           <div className="grid grid-cols-2 gap-4">
+            <FieldToggle label="Division" dropPlaceholder="Select Div…" textPlaceholder="e.g. FY-A, Special Batch…"
+              useCustom={useCustomDivision} setUseCustom={setUseCustomDivision}
+              dropdownValue={form.division_id} onChangeDrop={v => { setForm(f => ({ ...f, division_id: v, custom_division: '' })); setConflicts([]) }}
+              textValue={form.custom_division} onChangeText={v => setForm(f => ({ ...f, custom_division: v, division_id: '' }))}
+              options={divisions.map(d => <option key={d.id} value={d.id}>{d.division_name}</option>)} />
+            
             <div>
-              <label className="form-label">Division <span className="text-red-400">*</span></label>
-              <select className="select-field" value={form.division_id}
-                onChange={e => { setForm(f => ({ ...f, division_id: e.target.value })); setConflicts([]) }}>
-                <option value="">Select Division…</option>
-                {divisions.map(d => <option key={d.id} value={d.id}>{d.division_name}</option>)}
-              </select>
-            </div>
-            <div>
-              <label className="form-label">
-                Batch
-                {isLabSlot && <span className="ml-1 text-[10px] font-bold px-1.5 py-0.5 rounded" style={{ background: 'rgba(210,153,34,0.15)', color: '#d29922' }}>Required for labs</span>}
-              </label>
+              <label className="form-label">Batch <span className="opacity-50 text-xs">(optional)</span></label>
               <select className="select-field" value={form.batch_number}
                 onChange={e => { setForm(f => ({ ...f, batch_number: e.target.value })); setConflicts([]) }}>
-                <option value="">No Batch (Full Division)</option>
+                <option value="">No Batch</option>
                 <option value="1">Batch 1</option>
                 <option value="2">Batch 2</option>
                 <option value="3">Batch 3</option>
@@ -412,62 +478,27 @@ export default function TimetablePage() {
             </div>
           </div>
 
-          {/* Subject */}
-          <div>
-            <label className="form-label">Subject <span className="text-red-400">*</span></label>
-            <select className="select-field" value={form.subject_id}
-              onChange={e => { setForm(f => ({ ...f, subject_id: e.target.value })); setConflicts([]) }}>
-              <option value="">Select Subject…</option>
-              {subjects.map(s => <option key={s.id} value={s.id}>{s.subject_name}</option>)}
-            </select>
-          </div>
+          <FieldToggle label="Subject" dropPlaceholder="Select Subject…" textPlaceholder="e.g. Workshop, Seminar X…"
+            useCustom={useCustomSubject} setUseCustom={setUseCustomSubject}
+            dropdownValue={form.subject_id} onChangeDrop={v => { setForm(f => ({ ...f, subject_id: v, custom_subject: '' })); setConflicts([]) }}
+            textValue={form.custom_subject} onChangeText={v => setForm(f => ({ ...f, custom_subject: v, subject_id: '' }))}
+            options={subjects.map(s => <option key={s.id} value={s.id}>{s.subject_name}</option>)} />
 
-          {/* Room — dropdown OR custom text */}
-          <div>
-            <div className="flex items-center justify-between mb-1">
-              <label className="form-label mb-0">Room</label>
-              <button
-                type="button"
-                onClick={() => { setUseCustomRoom(c => !c); setForm(f => ({ ...f, room_id: '', custom_room: '' })) }}
-                className="text-[10px] font-bold uppercase tracking-wider px-2 py-1 rounded-lg transition-colors"
-                style={useCustomRoom
-                  ? { background: 'rgba(74,108,247,0.15)', color: '#7090ff' }
-                  : { background: 'rgba(255,255,255,0.06)', color: 'var(--text-secondary)' }}>
-                {useCustomRoom ? '← Back to List' : '+ Custom Room'}
-              </button>
-            </div>
-            {useCustomRoom ? (
-              <input
-                className="input-field"
-                placeholder="e.g. Lab 402, Annexe Room 1, Online…"
-                value={form.custom_room}
-                onChange={e => setForm(f => ({ ...f, custom_room: e.target.value }))}
-              />
-            ) : (
-              <select className="select-field" value={form.room_id}
-                onChange={e => { setForm(f => ({ ...f, room_id: e.target.value })); setConflicts([]) }}>
-                <option value="">No Room / TBD</option>
-                {rooms.map(r => <option key={r.id} value={r.id}>{r.room_number}</option>)}
-              </select>
-            )}
-          </div>
+          <FieldToggle label="Room" dropPlaceholder="No Room / TBD" textPlaceholder="e.g. Lab 402, Remote…"
+            useCustom={useCustomRoom} setUseCustom={setUseCustomRoom}
+            dropdownValue={form.room_id} onChangeDrop={v => { setForm(f => ({ ...f, room_id: v, custom_room: '' })); setConflicts([]) }}
+            textValue={form.custom_room} onChangeText={v => setForm(f => ({ ...f, custom_room: v, room_id: '' }))}
+            options={rooms.map(r => <option key={r.id} value={r.id}>{r.room_number}</option>)} />
 
-          {/* Time Slot — grouped */}
-          <div>
-            <label className="form-label">Time Slot <span className="text-red-400">*</span></label>
-            <select className="select-field" value={form.time_slot_id}
-              onChange={e => { setForm(f => ({ ...f, time_slot_id: e.target.value })); setConflicts([]) }}>
-              <option value="">Select Time Slot…</option>
-              <optgroup label="Regular (1 hour)">
-                {regularSlots.map(s => <option key={s.id} value={s.id}>{s.slot_label}</option>)}
-              </optgroup>
-              <optgroup label="🧪 Lab / Elective (2 hours)">
-                {labSlots.map(s => <option key={s.id} value={s.id}>{s.slot_label.replace('Lab: ', '')}</option>)}
-              </optgroup>
-            </select>
-          </div>
+          <FieldToggle label="Time Slot" dropPlaceholder="Select Time Slot…" textPlaceholder="e.g. 17:00 - 18:30"
+            useCustom={useCustomTimeSlot} setUseCustom={setUseCustomTimeSlot}
+            dropdownValue={form.time_slot_id} onChangeDrop={v => { setForm(f => ({ ...f, time_slot_id: v, custom_time_slot: '' })); setConflicts([]) }}
+            textValue={form.custom_time_slot} onChangeText={v => setForm(f => ({ ...f, custom_time_slot: v, time_slot_id: '' }))}
+            options={<>
+              <optgroup label="Regular (1 hour)">{regularSlots.map(s => <option key={s.id} value={s.id}>{s.slot_label}</option>)}</optgroup>
+              <optgroup label="🧪 Lab / Elective (2 hours)">{labSlots.map(s => <option key={s.id} value={s.id}>{s.slot_label.replace('Lab: ', '')}</option>)}</optgroup>
+            </>} />
 
-          {/* Day */}
           <div>
             <label className="form-label">Day of Week</label>
             <select className="select-field" value={form.day_of_week}
@@ -476,29 +507,23 @@ export default function TimetablePage() {
             </select>
           </div>
 
-          <div className="flex justify-between gap-3 pt-2">
-            <button
-              onClick={() => { const c = checkConflicts(form); if (c.length === 0) toast.success('No conflicts found!') }}
-              className="btn-secondary flex items-center gap-2 text-sm">
-              <AlertTriangle className="w-4 h-4" /> Check Conflicts
-            </button>
-            <div className="flex gap-2">
-              <button onClick={() => setShowModal(false)} className="btn-secondary">Cancel</button>
-              <button onClick={handleSave} disabled={conflicts.length > 0} className="btn-primary disabled:opacity-40">Save</button>
-            </div>
+        </div>
+        
+        <div className="flex justify-between gap-3 pt-4 border-t mt-4" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
+          <button
+            onClick={() => { const c = checkConflicts(form); if (c.length === 0) toast.success('No conflicts found!') }}
+            className="btn-secondary flex items-center gap-2 text-sm">
+            <AlertTriangle className="w-4 h-4" /> Check Conflicts
+          </button>
+          <div className="flex gap-2">
+            <button onClick={() => setShowModal(false)} className="btn-secondary">Cancel</button>
+            <button onClick={handleSave} disabled={conflicts.length > 0} className="btn-primary disabled:opacity-40">Save</button>
           </div>
         </div>
       </Modal>
 
-      <ConfirmDialog
-        open={!!deleteId}
-        title="Delete Entry"
-        message="Are you sure you want to delete this timetable entry? This cannot be undone."
-        onConfirm={() => handleDelete(deleteId)}
-        onCancel={() => setDeleteId(null)}
-        confirmLabel="Delete"
-        danger
-      />
+      <ConfirmDialog open={!!deleteId} title="Delete Entry" message="Are you sure you want to delete this timetable entry?"
+        onConfirm={() => handleDelete(deleteId)} onCancel={() => setDeleteId(null)} confirmLabel="Delete" danger />
     </div>
   )
 }

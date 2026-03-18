@@ -166,8 +166,8 @@ export default function HistoryPage() {
         <div className="glass-card p-5 space-y-3">
           <div className="flex items-start justify-between">
             <div>
-              <h2 className="font-display font-bold text-lg">{r.subjects?.subject_name}</h2>
-              <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{r.divisions?.division_name} - {r.rooms?.room_number}</p>
+              <h2 className="font-display font-bold text-lg">{r.custom_subject || r.subjects?.subject_name}</h2>
+              <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{r.custom_division || r.divisions?.division_name} - {r.custom_room || r.rooms?.room_number || '—'}</p>
             </div>
             <StatusBadge status={editing ? 'pending' : r.approval_status} />
           </div>
@@ -300,8 +300,8 @@ export default function HistoryPage() {
             <button key={r.id} onClick={() => handleSelect(r)} className="w-full glass-card p-4 text-left">
               <div className="flex items-start justify-between mb-2">
                 <div>
-                  <p className="font-display font-semibold text-sm">{r.subjects?.subject_name}</p>
-                  <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>{r.divisions?.division_name} - {formatDate(r.lecture_date)}</p>
+                  <p className="font-display font-semibold text-sm">{r.custom_subject || r.subjects?.subject_name}</p>
+                  <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>{r.custom_division || r.divisions?.division_name} - {formatDate(r.lecture_date)}</p>
                 </div>
                 <div className="flex flex-col items-end gap-1">
                   <StatusBadge status={r.approval_status} />

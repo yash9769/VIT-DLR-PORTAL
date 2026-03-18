@@ -48,7 +48,9 @@ export default function RecordsPage() {
     const q = search.toLowerCase()
     const matchSearch = !q || 
       r.subjects?.subject_name?.toLowerCase().includes(q) || 
+      r.custom_subject?.toLowerCase().includes(q) ||
       r.divisions?.division_name?.toLowerCase().includes(q) || 
+      r.custom_division?.toLowerCase().includes(q) ||
       r.topic_covered?.toLowerCase().includes(q) ||
       r.faculty?.full_name?.toLowerCase().includes(q)
     return matchStatus && matchSearch
@@ -163,8 +165,8 @@ export default function RecordsPage() {
               ) : filtered.map(r => (
                 <tr key={r.id}>
                   <td className="text-sm font-medium">{r.faculty?.full_name?.split(' ').slice(-1)[0] || '—'}</td>
-                  <td><span className="badge badge-pending text-xs">{r.divisions?.division_name}</span></td>
-                  <td className="text-sm">{r.subjects?.short_name}</td>
+                  <td><span className="badge badge-pending text-xs">{r.custom_division || r.divisions?.division_name}</span></td>
+                  <td className="text-sm">{r.custom_subject || r.subjects?.short_name || r.subjects?.subject_name}</td>
                   <td className="text-sm">{formatDate(r.lecture_date)}</td>
                   <td className="text-xs font-mono">{formatTime(r.actual_start)}–{formatTime(r.actual_end)}</td>
                   <td className="text-xs max-w-[160px]"><span className="line-clamp-2">{r.topic_covered}</span></td>
@@ -201,9 +203,9 @@ export default function RecordsPage() {
           <div className="space-y-3">
             <div className="grid grid-cols-2 gap-x-6 gap-y-2">
               {[
-                ['Subject', selected.subjects?.subject_name],
-                ['Division', selected.divisions?.division_name],
-                ['Room', selected.rooms?.room_number],
+                ['Subject', selected.custom_subject || selected.subjects?.subject_name],
+                ['Division', selected.custom_division || selected.divisions?.division_name],
+                ['Room', selected.custom_room || selected.rooms?.room_number],
                 ['Date', formatDate(selected.lecture_date)],
                 ['Scheduled', formatTime(selected.scheduled_start) + ' to ' + formatTime(selected.scheduled_end)],
                 ['Actual', formatTime(selected.actual_start) + ' to ' + formatTime(selected.actual_end)],

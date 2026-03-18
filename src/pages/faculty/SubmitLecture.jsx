@@ -52,8 +52,12 @@ export default function SubmitLecture() {
     timetable_id: prefill?.id || '',
     faculty_id: profile?.id || '',
     division_id: prefill?.division_id || '',
+    custom_division: prefill?.custom_division || '',
     subject_id: prefill?.subject_id || '',
+    custom_subject: prefill?.custom_subject || '',
     room_id: prefill?.room_id || '',
+    custom_room: prefill?.custom_room || '',
+    custom_time_slot: prefill?.custom_time_slot || '',
     scheduled_start: prefill?.time_slots?.start_time || '',
     scheduled_end: prefill?.time_slots?.end_time || '',
     actual_start: prefill?.time_slots?.start_time || currentTime,
@@ -83,7 +87,7 @@ export default function SubmitLecture() {
       const t = today()
 
       const [ttRes, divRes, subRes, rmRes, lrRes] = await Promise.all([
-        supabase.from('timetable').select('*, subjects(*), divisions(*), rooms(*), time_slots(*), custom_room').eq('faculty_id', profile.id).eq('day_of_week', dayName).eq('is_active', true),
+        supabase.from('timetable').select('*, subjects(*), divisions(*), rooms(*), time_slots(*), custom_room, custom_subject, custom_division, custom_time_slot').eq('faculty_id', profile.id).eq('day_of_week', dayName).eq('is_active', true),
         supabase.from('divisions').select('*').order('division_name'),
         supabase.from('subjects').select('*').order('subject_name'),
         supabase.from('rooms').select('*').order('room_number'),
@@ -140,9 +144,13 @@ export default function SubmitLecture() {
 
   const handleSelectEntry = (entry) => {
     set('timetable_id', entry.id)
-    set('division_id', entry.division_id)
-    set('subject_id', entry.subject_id)
+    set('division_id', entry.division_id || '')
+    set('custom_division', entry.custom_division || '')
+    set('subject_id', entry.subject_id || '')
+    set('custom_subject', entry.custom_subject || '')
     set('room_id', entry.room_id || '')
+    set('custom_room', entry.custom_room || '')
+    set('custom_time_slot', entry.custom_time_slot || '')
     set('scheduled_start', entry.time_slots?.start_time || '')
     set('scheduled_end', entry.time_slots?.end_time || '')
     set('actual_start', entry.time_slots?.start_time || currentTime)
@@ -170,9 +178,15 @@ export default function SubmitLecture() {
         actual_end: form.actual_end || null,
         // Convert empty strings to null for UUID columns
         timetable_id: form.timetable_id || null,
+        division_id: form.division_id || null,
+        subject_id: form.subject_id || null,
         room_id: form.room_id || null,
         original_faculty_id: form.original_faculty_id || null,
         original_room_id: form.original_room_id || null,
+        custom_division: form.custom_division || null,
+        custom_subject: form.custom_subject || null,
+        custom_room: form.custom_room || null,
+        custom_time_slot: form.custom_time_slot || null,
       }
 
       const { data: record, error } = await supabase
@@ -275,11 +289,11 @@ export default function SubmitLecture() {
                     <BookOpen className="w-5 h-5" style={{ color: form.timetable_id === entry.id ? '#4A6CF7' : 'var(--text-secondary)' }} />
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-display font-semibold text-sm truncate">{entry.subjects?.subject_name}</p>
+                    <p className="font-display font-semibold text-sm truncate">{entry.custom_subject || entry.subjects?.subject_name}</p>
                     <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>
-                      {entry.divisions?.division_name}
+                      {entry.custom_division || entry.divisions?.division_name}
                       {entry.batch_number ? ` · Batch ${entry.batch_number}` : ''}
-                      {' · '}{entry.time_slots?.slot_label}
+                      {' · '}{entry.custom_time_slot || entry.time_slots?.slot_label}
                       {' · '}{entry.custom_room || entry.rooms?.room_number || '—'}
                     </p>
                   </div>
