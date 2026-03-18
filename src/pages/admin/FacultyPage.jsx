@@ -17,7 +17,7 @@ export default function FacultyPage() {
   const [search, setSearch] = useState('')
   const [showModal, setShowModal] = useState(false)
   const [editing, setEditing] = useState(null)
-  const [form, setForm] = useState({ full_name: '', employee_id: '', initials: '', department: 'IT', email: '', role: 'faculty' })
+  const [form, setForm] = useState({ full_name: '', initials: '', department: 'IT', email: '', role: 'faculty' })
   const fileInputRef = useRef(null)
 
   useEffect(() => {
@@ -29,7 +29,7 @@ export default function FacultyPage() {
       setLoading(true)
       const { data, error } = await supabase
         .from('users')
-        .select('id, full_name, employee_id, email, department, role, initials, is_active')
+        .select('id, full_name, email, department, role, initials, is_active')
         .eq('role', 'faculty')
         .order('full_name')
       if (error) throw error
@@ -47,7 +47,7 @@ export default function FacultyPage() {
       if (editing) {
         const { error } = await supabase
           .from('users')
-          .update({ full_name: form.full_name, employee_id: form.employee_id, email: form.email, department: form.department, initials: form.initials })
+          .update({ full_name: form.full_name, email: form.email, department: form.department, initials: form.initials })
           .eq('id', editing.id)
         if (error) throw error
         toast.success('Faculty updated')
@@ -55,7 +55,7 @@ export default function FacultyPage() {
         // Note: Adding via users table directly (requires admin privileges)
         const { error } = await supabase
           .from('users')
-          .insert([{ ...form }])
+          .insert([{ full_name: form.full_name, email: form.email, department: form.department, initials: form.initials, role: form.role }])
         if (error) throw error
         toast.success('Faculty added')
       }
@@ -131,7 +131,6 @@ export default function FacultyPage() {
           email: getValue(r, ['Email', 'E-mail', 'Email Address', 'EmailID', 'Email Id']).trim(),
           initials: getValue(r, ['Initials', 'Initial', 'Initials.']).trim().toUpperCase(),
           department: getValue(r, ['Department', 'Dept']).trim() || 'IT',
-          employee_id: getValue(r, ['Employee ID', 'Emp ID', 'EmpID', 'EmployeeID']).trim(),
           role: getValue(r, ['Role']).trim() || 'faculty',
         }))
         .filter(r => r.email && r.full_name)
@@ -171,11 +170,10 @@ export default function FacultyPage() {
     }
   }
 
-  const resetForm = () => setForm({ full_name: '', employee_id: '', initials: '', department: 'IT', email: '', role: 'faculty' })
+  const resetForm = () => setForm({ full_name: '', initials: '', department: 'IT', email: '', role: 'faculty' })
 
   const filtered = faculty.filter(f =>
     f.full_name?.toLowerCase().includes(search.toLowerCase()) ||
-    f.employee_id?.toLowerCase().includes(search.toLowerCase()) ||
     f.email?.toLowerCase().includes(search.toLowerCase())
   )
 
@@ -222,7 +220,6 @@ export default function FacultyPage() {
               <tr>
                 <th>Faculty</th>
                 <th>Initials</th>
-                <th>Employee ID</th>
                 <th>Email</th>
                 <th>Department</th>
                 <th>Status</th>
@@ -250,7 +247,6 @@ export default function FacultyPage() {
                       {f.initials || getInitials(f.full_name)}
                     </span>
                   </td>
-                  <td className="font-mono text-xs" style={{ color: 'var(--text-secondary)' }}>{f.employee_id || '—'}</td>
                   <td className="text-xs" style={{ color: 'var(--text-secondary)' }}>
                     <div className="flex items-center gap-1">
                       <Mail className="w-3 h-3 flex-shrink-0" />
@@ -266,7 +262,7 @@ export default function FacultyPage() {
                   <td>
                     <div className="flex gap-1">
                       <button
-                        onClick={() => { setEditing(f); setForm({ full_name: f.full_name, employee_id: f.employee_id || '', initials: f.initials || '', department: f.department || 'IT', email: f.email || '', role: f.role }); setShowModal(true) }}
+                        onClick={() => { setEditing(f); setForm({ full_name: f.full_name, initials: f.initials || '', department: f.department || 'IT', email: f.email || '', role: f.role }); setShowModal(true) }}
                         className="w-7 h-7 rounded-lg flex items-center justify-center"
                         style={{ background: 'rgba(74,108,247,0.15)' }}>
                         <Edit2 className="w-3.5 h-3.5 text-brand-400" />
@@ -302,10 +298,6 @@ export default function FacultyPage() {
             </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
-            <div>
-              <label className="form-label">Employee ID</label>
-              <input className="input-field" placeholder="VIT0001" value={form.employee_id} onChange={e => setForm(f => ({ ...f, employee_id: e.target.value }))} />
-            </div>
             <div>
               <label className="form-label">Department</label>
               <select className="select-field" value={form.department} onChange={e => setForm(f => ({ ...f, department: e.target.value }))}>

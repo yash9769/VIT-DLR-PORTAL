@@ -163,7 +163,7 @@ export default function ReportsPage() {
                 return (
                   <tr key={f.id}>
                     <td className="font-medium text-sm">{f.full_name}</td>
-                    <td className="text-xs font-mono" style={{ color: 'var(--text-secondary)' }}>{f.employee_id}</td>
+
                     <td className="text-sm">{recs.length}</td>
                     <td className="text-sm text-green-400">{recs.filter(r=>r.approval_status==='approved').length}</td>
                     <td className="text-sm text-yellow-400">{recs.filter(r=>r.approval_status==='pending').length}</td>

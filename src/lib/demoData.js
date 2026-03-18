@@ -5,7 +5,6 @@ export const DEMO_USER_FACULTY = {
   full_name: 'Dr. Priya Sharma',
   role: 'faculty',
   department: 'Information Technology',
-  employee_id: 'IT-F-2019-042',
 }
 
 export const DEMO_USER_ADMIN = {
@@ -14,7 +13,6 @@ export const DEMO_USER_ADMIN = {
   full_name: 'Prof. Rajesh Patil',
   role: 'admin',
   department: 'Information Technology',
-  employee_id: 'IT-A-2015-001',
 }
 
 export const DEMO_TIME_SLOTS = [
@@ -48,10 +46,10 @@ export const DEMO_ROOMS = [
 ]
 
 export const DEMO_FACULTY_LIST = [
-  { id: 'demo-faculty-001', full_name: 'Dr. Priya Sharma',    employee_id: 'IT-F-042', department: 'IT', role: 'faculty' },
-  { id: 'demo-faculty-002', full_name: 'Prof. Anand Kulkarni', employee_id: 'IT-F-028', department: 'IT', role: 'faculty' },
-  { id: 'demo-faculty-003', full_name: 'Dr. Meera Joshi',      employee_id: 'IT-F-015', department: 'IT', role: 'faculty' },
-  { id: 'demo-faculty-004', full_name: 'Prof. Vikram Desai',   employee_id: 'IT-F-033', department: 'IT', role: 'faculty' },
+  { id: 'demo-faculty-001', full_name: 'Dr. Priya Sharma',    department: 'IT', role: 'faculty' },
+  { id: 'demo-faculty-002', full_name: 'Prof. Anand Kulkarni', department: 'IT', role: 'faculty' },
+  { id: 'demo-faculty-003', full_name: 'Dr. Meera Joshi',      department: 'IT', role: 'faculty' },
+  { id: 'demo-faculty-004', full_name: 'Prof. Vikram Desai',   department: 'IT', role: 'faculty' },
 ]
 
 const today = new Date().toISOString().split('T')[0]

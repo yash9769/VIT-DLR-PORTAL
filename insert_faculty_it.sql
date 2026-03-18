@@ -25,7 +25,30 @@ INSERT INTO public.users (id, email, full_name, role, department, phone) VALUES
   (gen_random_uuid(), 'vinita.bhandiwad@vit.edu.in', 'Prof. Vinita Bhandiwad', 'faculty', 'IT', '9004875054'),
   (gen_random_uuid(), 'shruti.agarwal@vit.edu.in', 'Prof. Shruti Agarwal', 'faculty', 'IT', '7709987672'),
   (gen_random_uuid(), 'pallavi.kharat@vit.edu.in', 'Prof. Pallavi Kharat', 'faculty', 'IT', '9930007608'),
-  (gen_random_uuid(), 'dhanashree1.tamhane@vit.edu.in', 'Prof. Dhanashree Tamhane', 'faculty', 'IT', '9892619068');
+  (gen_random_uuid(), 'dhanashree1.tamhane@vit.edu.in', 'Prof. Dhanashree Tamhane', 'faculty', 'IT', '9892619068')
+ON CONFLICT (email) DO NOTHING;
+
+-- Update initials and phone from Excel data
+UPDATE public.users SET initials = 'VDC', phone = '9702476405' WHERE email = 'vidya.chitre@vit.edu.in';
+UPDATE public.users SET initials = 'VB', phone = '9820580658' WHERE email = 'varsha.bhasale@vit.edu.in';
+UPDATE public.users SET initials = 'DM', phone = '9820804727' WHERE email = 'dilip.motwani@vit.edu.in';
+UPDATE public.users SET initials = 'SDG', phone = '8369323410' WHERE email = 'sushopti.gawade@vit.edu.in';
+UPDATE public.users SET initials = 'ST', phone = '9867211982' WHERE email = 'santosh.tamboli@vit.edu.in';
+UPDATE public.users SET initials = 'RVD', phone = '9833116223' WHERE email = 'rugved.deolekar@vit.edu.in';
+UPDATE public.users SET initials = 'ST', phone = '8097615087' WHERE email = 'shashikant.mahajan@vit.edu.in';
+UPDATE public.users SET initials = 'ARK', phone = '9820452235' WHERE email = 'ajitkumar.khachane@vit.edu.in';
+UPDATE public.users SET initials = 'DVP', phone = '7400292397' WHERE email = 'digambar.puri@vit.edu.in';
+UPDATE public.users SET initials = 'RSR', phone = '9619026235' WHERE email = 'rasika.ransing@vit.edu.in';
+UPDATE public.users SET initials = 'AVL', phone = '9869386342' WHERE email = 'akshay.loke@vit.edu.in';
+UPDATE public.users SET initials = 'DG', phone = '9930172242' WHERE email = 'debarati.ghosal@vit.edu.in';
+UPDATE public.users SET initials = 'DSJ', phone = '7021980818' WHERE email = 'deepali.shrikhande@vit.edu.in';
+UPDATE public.users SET initials = 'BGT', phone = '9665518788' WHERE email = 'bhanu.tekwani@vit.edu.in';
+UPDATE public.users SET initials = 'KGD', phone = '9082872632' WHERE email = 'kanchan.dhuri@vit.edu.in';
+UPDATE public.users SET initials = 'NKR', phone = '8082103988' WHERE email = 'neha.kudu@vit.edu.in';
+UPDATE public.users SET initials = 'VVB', phone = '9004875054' WHERE email = 'vinita.bhandiwad@vit.edu.in';
+UPDATE public.users SET initials = 'SHA', phone = '7709987672' WHERE email = 'shruti.agarwal@vit.edu.in';
+UPDATE public.users SET initials = 'PCK', phone = '9930007608' WHERE email = 'pallavi.kharat@vit.edu.in';
+UPDATE public.users SET initials = 'DST', phone = '9892619068' WHERE email = 'dhanashree1.tamhane@vit.edu.in';
 
 
 

@@ -23,7 +23,6 @@ export const exportDLRToExcel = (records, dateStr, department = 'Information Tec
   const dataRows = records.map((r, i) => [
     i + 1,
     r.faculty_name || r.users?.full_name || '—',
-    r.users?.employee_id || '—',
     r.divisions?.division_name || '—',
     r.subjects?.subject_code || '—',
     r.subjects?.subject_name || '—',

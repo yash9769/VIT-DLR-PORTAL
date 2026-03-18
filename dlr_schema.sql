@@ -39,7 +39,6 @@ CREATE TABLE IF NOT EXISTS public.users (
   full_name TEXT NOT NULL,
   role user_role NOT NULL DEFAULT 'faculty',
   department TEXT,
-  employee_id TEXT UNIQUE,
   initials TEXT,
   phone TEXT,
   is_active BOOLEAN DEFAULT TRUE,
@@ -47,7 +46,8 @@ CREATE TABLE IF NOT EXISTS public.users (
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
 
--- Ensure the column exists when re-running schema against an existing database
+-- Ensure the columns exist when re-running schema against an existing database
+ALTER TABLE public.users DROP COLUMN IF EXISTS employee_id;
 ALTER TABLE public.users ADD COLUMN IF NOT EXISTS initials TEXT;
 
 -- Backfill initials for existing users (if they were missing)

@@ -125,14 +125,6 @@ export default function ProfilePage() {
           </div>
 
           <div className="space-y-1">
-            <p className="text-[10px] font-bold uppercase tracking-widest opacity-50">Employee ID</p>
-            <div className="flex items-center gap-2 font-semibold">
-              <Contact className="w-4 h-4 text-brand-500" />
-              <span>{profile?.employee_id || 'Not Assigned'}</span>
-            </div>
-          </div>
-
-          <div className="space-y-1">
             <p className="text-[10px] font-bold uppercase tracking-widest opacity-50">Department</p>
             <div className="flex items-center gap-2 font-semibold">
               <Building className="w-4 h-4 text-brand-500" />
