@@ -75,7 +75,27 @@ export default function FacultyPage() {
       const data = await file.arrayBuffer()
       const workbook = XLSX.read(data, { type: 'array' })
       const sheet = workbook.Sheets[workbook.SheetNames[0]]
-      const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' })
+      let rows = XLSX.utils.sheet_to_json(sheet, { defval: '' })
+
+      // Handle files with empty header row (xlsx uses __EMPTY, __EMPTY_1, etc.)
+      const hasEmptyHeaders = rows.length > 0 && Object.keys(rows[0]).some(k => k?.startsWith('__EMPTY'))
+      if (hasEmptyHeaders) {
+        const raw = XLSX.utils.sheet_to_json(sheet, { header: 1, defval: '' })
+        const firstNonEmptyRow = raw.findIndex(r => Array.isArray(r) && r.some(cell => `${cell}`.trim() !== ''))
+        if (firstNonEmptyRow !== -1) {
+          const headerRow = raw[firstNonEmptyRow].map(h => `${h}`.trim())
+          const dataRows = raw.slice(firstNonEmptyRow + 1)
+          rows = dataRows
+            .filter(r => Array.isArray(r) && r.some(cell => `${cell}`.trim() !== ''))
+            .map(r => {
+              const obj = {}
+              headerRow.forEach((key, idx) => {
+                if (key) obj[key] = r[idx]
+              })
+              return obj
+            })
+        }
+      }
 
       if (!rows.length) {
         toast.error('Excel file is empty')
