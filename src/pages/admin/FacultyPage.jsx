@@ -119,7 +119,11 @@ export default function FacultyPage() {
       if (!normalized.length) {
         const headerKeys = Object.keys(rows[0] || {})
         console.warn('Excel import - detected columns:', headerKeys)
-        toast.error('No valid faculty rows found in the Excel file (check column names)')
+        toast.error(
+          `No valid faculty rows found in the Excel file. Detected columns: ${headerKeys
+            .slice(0, 10)
+            .join(', ')}${headerKeys.length > 10 ? ', ...' : ''}`
+        )
         return
       }
 
