@@ -82,19 +82,44 @@ export default function FacultyPage() {
         return
       }
 
+      const normalizeKey = (key) =>
+        key?.toString().toLowerCase().replace(/[^a-z0-9]/g, '') || ''
+
+      const getValue = (row, candidates) => {
+        const normalizedRow = Object.keys(row || {}).reduce((acc, key) => {
+          acc[normalizeKey(key)] = row[key]
+          return acc
+        }, {})
+
+        for (const candidate of candidates) {
+          const val = normalizedRow[normalizeKey(candidate)]
+          if (val !== undefined && val !== null && `${val}`.trim() !== '') return `${val}`
+        }
+
+        // Fallback: find any field that contains the candidate substring
+        for (const [k, v] of Object.entries(normalizedRow)) {
+          if (!v) continue
+          if (candidates.some(c => k.includes(normalizeKey(c)))) return `${v}`
+        }
+
+        return ''
+      }
+
       const normalized = rows
         .map(r => ({
-          full_name: (r.FullName || r['Full Name'] || r.name || r.Name || r['Faculty Name'] || '').toString().trim(),
-          email: (r.Email || r.email || r['E-mail'] || '').toString().trim(),
-          initials: (r.Initials || r.initials || r['Initials'] || '').toString().trim().toUpperCase(),
-          department: (r.Department || r.department || 'IT').toString().trim() || 'IT',
-          employee_id: (r['Employee ID'] || r.employee_id || r.emp_id || '').toString().trim(),
-          role: (r.Role || r.role || 'faculty').toString().trim() || 'faculty',
+          full_name: getValue(r, ['Full Name', 'Name', 'Faculty Name', 'Faculty', 'Teacher', 'Instructor']).trim(),
+          email: getValue(r, ['Email', 'E-mail', 'Email Address', 'EmailID', 'Email Id']).trim(),
+          initials: getValue(r, ['Initials', 'Initial', 'Initials.']).trim().toUpperCase(),
+          department: getValue(r, ['Department', 'Dept']).trim() || 'IT',
+          employee_id: getValue(r, ['Employee ID', 'Emp ID', 'EmpID', 'EmployeeID']).trim(),
+          role: getValue(r, ['Role']).trim() || 'faculty',
         }))
         .filter(r => r.email && r.full_name)
 
       if (!normalized.length) {
-        toast.error('No valid faculty rows found in the Excel file')
+        const headerKeys = Object.keys(rows[0] || {})
+        console.warn('Excel import - detected columns:', headerKeys)
+        toast.error('No valid faculty rows found in the Excel file (check column names)')
         return
       }
 
