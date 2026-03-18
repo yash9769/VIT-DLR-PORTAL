@@ -34,17 +34,37 @@ END $$;
 
 -- Users (extends Supabase auth.users)
 CREATE TABLE IF NOT EXISTS public.users (
-  id UUID PRIMARY KEY REFERENCES auth.users(id) ON DELETE CASCADE,
+  id UUID PRIMARY KEY DEFAULT uuid_generate_v4(),
   email TEXT NOT NULL UNIQUE,
   full_name TEXT NOT NULL,
   role user_role NOT NULL DEFAULT 'faculty',
   department TEXT,
   employee_id TEXT UNIQUE,
+  initials TEXT,
   phone TEXT,
   is_active BOOLEAN DEFAULT TRUE,
   created_at TIMESTAMPTZ DEFAULT NOW(),
   updated_at TIMESTAMPTZ DEFAULT NOW()
 );
+
+-- Ensure the column exists when re-running schema against an existing database
+ALTER TABLE public.users ADD COLUMN IF NOT EXISTS initials TEXT;
+
+-- Backfill initials for existing users (if they were missing)
+UPDATE public.users u
+SET initials = sub.initials
+FROM (
+  SELECT id,
+    string_agg(upper(substring(word,1,1)), '' ORDER BY ord) AS initials
+  FROM (
+    SELECT id, regexp_split_to_table(full_name, '\\s+') AS word,
+      row_number() OVER (PARTITION BY id ORDER BY 1) AS ord
+    FROM public.users
+  ) t
+  GROUP BY id
+) sub
+WHERE u.id = sub.id
+  AND (u.initials IS NULL OR u.initials = '');
 
 -- Faculty profiles (extended info for faculty role)
 CREATE TABLE IF NOT EXISTS public.faculty_profiles (
@@ -248,19 +268,19 @@ CREATE TABLE IF NOT EXISTS public.notifications (
 -- INDEXES
 -- ============================================================
 
-CREATE INDEX idx_timetable_faculty ON public.timetable(faculty_id);
-CREATE INDEX idx_timetable_division ON public.timetable(division_id);
-CREATE INDEX idx_timetable_room ON public.timetable(room_id);
-CREATE INDEX idx_timetable_day ON public.timetable(day_of_week);
-CREATE INDEX idx_lecture_records_faculty ON public.lecture_records(faculty_id);
-CREATE INDEX idx_lecture_records_date ON public.lecture_records(lecture_date);
-CREATE INDEX idx_lecture_records_division ON public.lecture_records(division_id);
-CREATE INDEX idx_lecture_records_status ON public.lecture_records(approval_status);
-CREATE INDEX idx_attendance_record ON public.attendance(lecture_record_id);
-CREATE INDEX idx_students_division ON public.students(division_id);
-CREATE INDEX idx_notifications_user ON public.notifications(user_id, is_read);
+CREATE INDEX IF NOT EXISTS idx_timetable_faculty ON public.timetable(faculty_id);
+CREATE INDEX IF NOT EXISTS idx_timetable_division ON public.timetable(division_id);
+CREATE INDEX IF NOT EXISTS idx_timetable_room ON public.timetable(room_id);
+CREATE INDEX IF NOT EXISTS idx_timetable_day ON public.timetable(day_of_week);
+CREATE INDEX IF NOT EXISTS idx_lecture_records_faculty ON public.lecture_records(faculty_id);
+CREATE INDEX IF NOT EXISTS idx_lecture_records_date ON public.lecture_records(lecture_date);
+CREATE INDEX IF NOT EXISTS idx_lecture_records_division ON public.lecture_records(division_id);
+CREATE INDEX IF NOT EXISTS idx_lecture_records_status ON public.lecture_records(approval_status);
+CREATE INDEX IF NOT EXISTS idx_attendance_record ON public.attendance(lecture_record_id);
+CREATE INDEX IF NOT EXISTS idx_students_division ON public.students(division_id);
+CREATE INDEX IF NOT EXISTS idx_notifications_user ON public.notifications(user_id, is_read);
 
--- ============================================================
+-- ==================================a==========================
 -- ROW LEVEL SECURITY (RLS)
 -- ============================================================
 
@@ -284,48 +304,58 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Users RLS
+DROP POLICY IF EXISTS "Users can view own profile" ON public.users;
 CREATE POLICY "Users can view own profile" ON public.users
   FOR SELECT USING (auth.uid() = id);
 
+DROP POLICY IF EXISTS "Admins can view all users" ON public.users;
 CREATE POLICY "Admins can view all users" ON public.users
   FOR SELECT USING (public.check_is_admin());
 
+DROP POLICY IF EXISTS "Admins can manage users" ON public.users;
 CREATE POLICY "Admins can manage users" ON public.users
   FOR ALL USING (public.check_is_admin());
 
 -- Timetable RLS
+DROP POLICY IF EXISTS "Faculty can view own timetable" ON public.timetable;
 CREATE POLICY "Faculty can view own timetable" ON public.timetable
   FOR SELECT USING (
     faculty_id = auth.uid() OR
     EXISTS (SELECT 1 FROM public.users u WHERE u.id = auth.uid() AND u.role IN ('admin','hod'))
   );
 
+DROP POLICY IF EXISTS "Admins can manage timetable" ON public.timetable;
 CREATE POLICY "Admins can manage timetable" ON public.timetable
   FOR ALL USING (
     EXISTS (SELECT 1 FROM public.users u WHERE u.id = auth.uid() AND u.role IN ('admin','hod'))
   );
 
 -- Lecture Records RLS
+DROP POLICY IF EXISTS "Faculty can view own records" ON public.lecture_records;
 CREATE POLICY "Faculty can view own records" ON public.lecture_records
   FOR SELECT USING (
     faculty_id = auth.uid() OR
     EXISTS (SELECT 1 FROM public.users u WHERE u.id = auth.uid() AND u.role IN ('admin','hod'))
   );
 
+DROP POLICY IF EXISTS "Faculty can insert own records" ON public.lecture_records;
 CREATE POLICY "Faculty can insert own records" ON public.lecture_records
   FOR INSERT WITH CHECK (faculty_id = auth.uid() AND is_locked = FALSE);
 
+DROP POLICY IF EXISTS "Faculty can update own pending records" ON public.lecture_records;
 CREATE POLICY "Faculty can update own pending records" ON public.lecture_records
   FOR UPDATE USING (
     faculty_id = auth.uid() AND approval_status = 'pending' AND is_locked = FALSE
   );
 
+DROP POLICY IF EXISTS "Admins can manage all records" ON public.lecture_records;
 CREATE POLICY "Admins can manage all records" ON public.lecture_records
   FOR ALL USING (
     EXISTS (SELECT 1 FROM public.users u WHERE u.id = auth.uid() AND u.role IN ('admin','hod'))
   );
 
 -- Notifications RLS
+DROP POLICY IF EXISTS "Users see own notifications" ON public.notifications;
 CREATE POLICY "Users see own notifications" ON public.notifications
   FOR ALL USING (user_id = auth.uid());
 
@@ -343,7 +373,8 @@ INSERT INTO public.time_slots (slot_label, start_time, end_time, slot_order) VAL
 ('13:00 - 14:00', '13:00', '14:00', 7),
 ('14:00 - 15:00', '14:00', '15:00', 8),
 ('15:00 - 16:00', '15:00', '16:00', 9),
-('16:00 - 17:00', '16:00', '17:00', 10);
+('16:00 - 17:00', '16:00', '17:00', 10)
+ON CONFLICT (start_time, end_time) DO NOTHING;
 
 UPDATE public.time_slots SET is_break = TRUE WHERE slot_label IN ('10:00 - 10:15', '12:15 - 13:00');
 
@@ -360,12 +391,15 @@ BEGIN
 END;
 $$ LANGUAGE plpgsql;
 
+DROP TRIGGER IF EXISTS update_users_updated_at ON public.users;
 CREATE TRIGGER update_users_updated_at BEFORE UPDATE ON public.users
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_timetable_updated_at ON public.timetable;
 CREATE TRIGGER update_timetable_updated_at BEFORE UPDATE ON public.timetable
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
+DROP TRIGGER IF EXISTS update_lecture_records_updated_at ON public.lecture_records;
 CREATE TRIGGER update_lecture_records_updated_at BEFORE UPDATE ON public.lecture_records
   FOR EACH ROW EXECUTE FUNCTION update_updated_at_column();
 
@@ -432,6 +466,7 @@ END;
 $$ LANGUAGE plpgsql SECURITY DEFINER;
 
 -- Trigger to create profile on signup
+DROP TRIGGER IF EXISTS on_auth_user_created ON auth.users;
 CREATE TRIGGER on_auth_user_created
   AFTER INSERT ON auth.users
   FOR EACH ROW EXECUTE FUNCTION public.handle_new_user();

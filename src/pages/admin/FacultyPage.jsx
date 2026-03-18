@@ -1,10 +1,15 @@
-import { useState, useEffect } from 'react'
-import { Plus, Edit2, Trash2, Search, Mail, Hash, User } from 'lucide-react'
+import { useState, useEffect, useRef } from 'react'
+import { Plus, Edit2, Trash2, Search, Mail, Hash, User, FileSpreadsheet } from 'lucide-react'
+import * as XLSX from 'xlsx'
 import { supabase } from '../../lib/supabase'
 import { Modal, toast } from '../../components/ui'
 
 const getInitials = (name = '') =>
-  name.split(' ').map(w => w[0]?.toUpperCase()).filter(Boolean).join('').slice(0, 2)
+  name
+    .split(/\s+/)
+    .map(w => w[0]?.toUpperCase())
+    .filter(Boolean)
+    .join('')
 
 export default function FacultyPage() {
   const [faculty, setFaculty] = useState([])
@@ -13,6 +18,7 @@ export default function FacultyPage() {
   const [showModal, setShowModal] = useState(false)
   const [editing, setEditing] = useState(null)
   const [form, setForm] = useState({ full_name: '', employee_id: '', initials: '', department: 'IT', email: '', role: 'faculty' })
+  const fileInputRef = useRef(null)
 
   useEffect(() => {
     fetchFaculty()
@@ -63,6 +69,48 @@ export default function FacultyPage() {
     }
   }
 
+  const handleImportExcel = async (file) => {
+    if (!file) return
+    try {
+      const data = await file.arrayBuffer()
+      const workbook = XLSX.read(data, { type: 'array' })
+      const sheet = workbook.Sheets[workbook.SheetNames[0]]
+      const rows = XLSX.utils.sheet_to_json(sheet, { defval: '' })
+
+      if (!rows.length) {
+        toast.error('Excel file is empty')
+        return
+      }
+
+      const normalized = rows
+        .map(r => ({
+          full_name: (r.FullName || r['Full Name'] || r.name || r.Name || r['Faculty Name'] || '').toString().trim(),
+          email: (r.Email || r.email || r['E-mail'] || '').toString().trim(),
+          initials: (r.Initials || r.initials || r['Initials'] || '').toString().trim().toUpperCase(),
+          department: (r.Department || r.department || 'IT').toString().trim() || 'IT',
+          employee_id: (r['Employee ID'] || r.employee_id || r.emp_id || '').toString().trim(),
+          role: (r.Role || r.role || 'faculty').toString().trim() || 'faculty',
+        }))
+        .filter(r => r.email && r.full_name)
+
+      if (!normalized.length) {
+        toast.error('No valid faculty rows found in the Excel file')
+        return
+      }
+
+      const { error } = await supabase
+        .from('users')
+        .upsert(normalized, { onConflict: 'email' })
+
+      if (error) throw error
+      toast.success(`Imported ${normalized.length} faculty from Excel`)
+      fetchFaculty()
+    } catch (err) {
+      console.error(err)
+      toast.error('Failed to import from Excel')
+    }
+  }
+
   const handleToggleActive = async (f) => {
     try {
       const { error } = await supabase.from('users').update({ is_active: !f.is_active }).eq('id', f.id)
@@ -89,10 +137,29 @@ export default function FacultyPage() {
           <h1 className="font-display font-bold text-xl" style={{ color: 'var(--text-primary)' }}>Faculty Management</h1>
           <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{faculty.length} faculty members</p>
         </div>
-        <button onClick={() => { resetForm(); setEditing(null); setShowModal(true) }} className="btn-primary flex items-center gap-2">
-          <Plus className="w-4 h-4" /> Add Faculty
-        </button>
+        <div className="flex gap-2">
+          <button
+            onClick={() => fileInputRef.current?.click()}
+            className="btn-secondary flex items-center gap-2"
+          >
+            <FileSpreadsheet className="w-4 h-4" /> Import Excel
+          </button>
+          <button onClick={() => { resetForm(); setEditing(null); setShowModal(true) }} className="btn-primary flex items-center gap-2">
+            <Plus className="w-4 h-4" /> Add Faculty
+          </button>
+        </div>
       </div>
+      <input
+        ref={fileInputRef}
+        type="file"
+        accept=".xlsx,.xls"
+        className="hidden"
+        onChange={e => {
+          const file = e.target.files?.[0]
+          handleImportExcel(file)
+          e.target.value = ''
+        }}
+      />
 
       <div className="relative max-w-sm">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--text-secondary)' }} />
