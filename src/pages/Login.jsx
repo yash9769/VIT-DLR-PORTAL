@@ -1,7 +1,8 @@
 import { useState } from 'react'
-import { Layers, Eye, EyeOff, ShieldCheck, Zap, FileSpreadsheet, History } from 'lucide-react'
+import { Eye, EyeOff, ShieldCheck, Zap, FileSpreadsheet, History } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { Spinner, toast, DemoModeBanner, ThemeToggle } from '../components/ui'
+import vitLogo from '../assets/vit-logo.png'
 
 export default function LoginPage() {
   const { signIn, demoMode } = useAuth()
@@ -55,9 +56,7 @@ export default function LoginPage() {
         <div className="w-full max-w-md animate-slide-up">
           {/* Logo Section */}
           <div className="text-center mb-10">
-            <div className="inline-flex items-center justify-center w-16 h-16 bg-gradient-to-br from-brand-500 to-brand-600 rounded-2xl shadow-brand-lg mb-6 rotate-3">
-              <Layers className="w-9 h-9 text-white" />
-            </div>
+            <img src={vitLogo} alt="VIT Logo" className="h-20 w-auto mx-auto mb-6" />
             <h1 className="text-3xl font-bold font-display tracking-tight" style={{ color: 'var(--text-primary)' }}>VIT DLR Portal</h1>
             <p className="mt-2 font-medium" style={{ color: 'var(--text-secondary)' }}>Academic Audit & Lecture Record System</p>
             <p className="text-xs text-brand-500/80 uppercase tracking-widest mt-1 font-bold">Vidyalankar Institute of Technology</p>

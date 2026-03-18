@@ -1,11 +1,12 @@
 import { useState } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
-import { LayoutDashboard, Calendar, FileText, Settings, ChevronLeft, ChevronRight, LogOut, Bell, Shield, Menu, Users, LifeBuoy, GraduationCap } from 'lucide-react'
+import { LayoutDashboard, Calendar, FileText, Settings, ChevronLeft, ChevronRight, LogOut, Bell, Menu, Users, LifeBuoy, GraduationCap } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { cls } from '../../utils/helpers'
 import { DemoModeBanner, ThemeToggle } from '../../components/ui'
 import { useNotifications } from '../../hooks/useNotifications'
 import { formatDistanceToNow } from 'date-fns'
+import vitLogo from '../../assets/vit-logo.png'
 
 const NAV_GROUPS = [
   { label: 'Overview', items: [{ path: '/admin', label: 'Dashboard', icon: LayoutDashboard, exact: true }] },
@@ -31,9 +32,7 @@ export default function AdminLayout() {
     <aside className={cls('flex flex-col h-full transition-all duration-300', mobile ? 'w-64' : collapsed ? 'w-16' : 'w-60')}
       style={{ background: 'var(--bg-secondary)', borderRight: '1px solid var(--border-glass)' }}>
       <div className={cls('flex items-center gap-3 p-4 border-b', collapsed && !mobile ? 'justify-center' : '')} style={{ borderColor: 'var(--border-glass)' }}>
-        <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0" style={{ background: 'linear-gradient(135deg,#4A6CF7,#3355e8)' }}>
-          <Shield className="w-4 h-4 text-white" />
-        </div>
+        <img src={vitLogo} alt="VIT Logo" className={cls('flex-shrink-0', collapsed && !mobile ? 'h-8 w-8' : 'h-10 w-10')} />
         {(!collapsed || mobile) && (
           <div className="min-w-0 flex-1">
             <p className="font-display font-bold text-sm" style={{ color: 'var(--text-primary)' }}>VIT DLR</p>
