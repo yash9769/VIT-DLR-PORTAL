@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
-import { LayoutDashboard, Calendar, FileText, Settings, ChevronLeft, ChevronRight, LogOut, Bell, Shield, Menu, Users, BookOpen, Building, LifeBuoy } from 'lucide-react'
+import { LayoutDashboard, Calendar, FileText, Settings, ChevronLeft, ChevronRight, LogOut, Bell, Shield, Menu, Users, LifeBuoy, GraduationCap } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { cls } from '../../utils/helpers'
 import { DemoModeBanner, ThemeToggle } from '../../components/ui'
@@ -10,10 +10,10 @@ import { formatDistanceToNow } from 'date-fns'
 const NAV_GROUPS = [
   { label: 'Overview', items: [{ path: '/admin', label: 'Dashboard', icon: LayoutDashboard, exact: true }] },
   { label: 'Academic', items: [{ path: '/admin/timetable', label: 'Timetable', icon: Calendar }, { path: '/admin/records', label: 'Lecture Records', icon: FileText }] },
-  { label: 'Management', items: [{ path: '/admin/faculty', label: 'Faculty', icon: Users }, { path: '/admin/subjects', label: 'Subjects', icon: BookOpen }, { path: '/admin/rooms', label: 'Rooms', icon: Building }] },
+  { label: 'Management', items: [{ path: '/admin/faculty', label: 'Faculty', icon: Users }, { path: '/admin/students', label: 'Students', icon: GraduationCap }] },
   { label: 'Reports', items: [{ path: '/admin/reports', label: 'Reports', icon: Settings }] },
   { label: 'Support', items: [{ path: '/admin/issues', label: 'Support Center', icon: LifeBuoy }] },
-  { label: 'Account', items: [{ path: '/faculty/profile', label: 'My Profile', icon: Users }] },
+  { label: 'Account', items: [{ path: '/admin/profile', label: 'My Profile', icon: Users }] },
 ]
 
 export default function AdminLayout() {

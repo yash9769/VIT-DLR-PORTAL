@@ -49,7 +49,7 @@ export const generateId = () => Math.random().toString(36).substring(2, 9)
 // Conflict detection (client-side)
 export const detectConflicts = (newEntry, existingEntries, excludeId = null) => {
   const conflicts = []
-  const candidates = existingEntries.filter(e => 
+  const candidates = existingEntries.filter(e =>
     e.is_active !== false && e.id !== excludeId && e.day_of_week === newEntry.day_of_week
   )
 
@@ -59,13 +59,21 @@ export const detectConflicts = (newEntry, existingEntries, excludeId = null) => 
     if (e.faculty_id === newEntry.faculty_id) {
       conflicts.push({ type: 'faculty', message: `Faculty already has a class at this time (${e.divisions?.division_name} - ${e.subjects?.short_name})` })
     }
-    if (e.room_id && e.room_id === newEntry.room_id) {
+    if (e.room_id && e.room_id === newEntry.room_id && newEntry.room_id) {
       conflicts.push({ type: 'room', message: `Room ${e.rooms?.room_number} is already booked at this time` })
     }
+    // Division conflict: skip if BOTH entries have a valid batch_number (batch lab mode)
+    const newBatch = newEntry.batch_number ? Number(newEntry.batch_number) : null
+    const eBatch = e.batch_number ? Number(e.batch_number) : null
     if (e.division_id === newEntry.division_id) {
-      conflicts.push({ type: 'division', message: `${e.divisions?.division_name} already has a class at this time (${e.subjects?.short_name})` })
+      if (newBatch && eBatch && newBatch !== eBatch) {
+        // Same division, different batches → allowed for labs, no conflict
+      } else {
+        conflicts.push({ type: 'division', message: `${e.divisions?.division_name} already has a class at this time (${e.subjects?.short_name})${eBatch ? ` – Batch ${eBatch}` : ''}` })
+      }
     }
   }
 
   return conflicts
 }
+

@@ -18,10 +18,9 @@ const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'))
 const TimetablePage = lazy(() => import('./pages/admin/TimetablePage'))
 const ApprovalsPage = lazy(() => import('./pages/admin/ApprovalsPage'))
 const FacultyPage = lazy(() => import('./pages/admin/FacultyPage'))
-const SubjectsPage = lazy(() => import('./pages/admin/SubjectsPage'))
-const RoomsPage = lazy(() => import('./pages/admin/RoomsPage'))
 const ReportsPage = lazy(() => import('./pages/admin/ReportsPage'))
 const SystemIssuesPage = lazy(() => import('./pages/admin/SystemIssues'))
+const StudentsPage = lazy(() => import('./pages/admin/StudentsPage'))
 
 export default function App() {
   return (
@@ -45,10 +44,10 @@ export default function App() {
                 <Route path="timetable" element={<TimetablePage />} />
                 <Route path="records" element={<ApprovalsPage />} />
                 <Route path="faculty" element={<FacultyPage />} />
-                <Route path="subjects" element={<SubjectsPage />} />
-                <Route path="rooms" element={<RoomsPage />} />
                 <Route path="reports" element={<ReportsPage />} />
                 <Route path="issues" element={<SystemIssuesPage />} />
+                <Route path="students" element={<StudentsPage />} />
+                <Route path="profile" element={<ProfilePage />} />
               </Route>
               <Route path="/" element={<Navigate to="/login" replace />} />
               <Route path="*" element={<Navigate to="/login" replace />} />

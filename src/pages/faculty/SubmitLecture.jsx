@@ -83,7 +83,7 @@ export default function SubmitLecture() {
       const t = today()
 
       const [ttRes, divRes, subRes, rmRes, lrRes] = await Promise.all([
-        supabase.from('timetable').select('*, subjects(*), divisions(*), rooms(*), time_slots(*)').eq('faculty_id', profile.id).eq('day_of_week', dayName).eq('is_active', true),
+        supabase.from('timetable').select('*, subjects(*), divisions(*), rooms(*), time_slots(*), custom_room').eq('faculty_id', profile.id).eq('day_of_week', dayName).eq('is_active', true),
         supabase.from('divisions').select('*').order('division_name'),
         supabase.from('subjects').select('*').order('subject_name'),
         supabase.from('rooms').select('*').order('room_number'),
@@ -177,7 +177,7 @@ export default function SubmitLecture() {
 
       const { data: record, error } = await supabase
         .from('lecture_records')
-        .upsert([submissionData], { onConflict: 'faculty_id, lecture_date, scheduled_start, division_id' })
+        .insert([submissionData])
         .select()
         .single()
 
@@ -277,7 +277,10 @@ export default function SubmitLecture() {
                   <div className="flex-1 min-w-0">
                     <p className="font-display font-semibold text-sm truncate">{entry.subjects?.subject_name}</p>
                     <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>
-                      {entry.divisions?.division_name} · {entry.time_slots?.slot_label} · {entry.rooms?.room_number}
+                      {entry.divisions?.division_name}
+                      {entry.batch_number ? ` · Batch ${entry.batch_number}` : ''}
+                      {' · '}{entry.time_slots?.slot_label}
+                      {' · '}{entry.custom_room || entry.rooms?.room_number || '—'}
                     </p>
                   </div>
                   {form.timetable_id === entry.id && <Check className="w-5 h-5 text-brand-400 flex-shrink-0" />}

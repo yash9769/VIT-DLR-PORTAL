@@ -1,7 +1,10 @@
 import { useState, useEffect } from 'react'
-import { Plus, Edit2, Trash2, Search } from 'lucide-react'
+import { Plus, Edit2, Trash2, Search, Mail, Hash, User } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { Modal, toast } from '../../components/ui'
+
+const getInitials = (name = '') =>
+  name.split(' ').map(w => w[0]?.toUpperCase()).filter(Boolean).join('').slice(0, 2)
 
 export default function FacultyPage() {
   const [faculty, setFaculty] = useState([])
@@ -9,7 +12,7 @@ export default function FacultyPage() {
   const [search, setSearch] = useState('')
   const [showModal, setShowModal] = useState(false)
   const [editing, setEditing] = useState(null)
-  const [form, setForm] = useState({ full_name: '', employee_id: '', department: 'IT', email: '', role: 'faculty' })
+  const [form, setForm] = useState({ full_name: '', employee_id: '', initials: '', department: 'IT', email: '', role: 'faculty' })
 
   useEffect(() => {
     fetchFaculty()
@@ -20,7 +23,7 @@ export default function FacultyPage() {
       setLoading(true)
       const { data, error } = await supabase
         .from('users')
-        .select('*')
+        .select('id, full_name, employee_id, email, department, role, initials, is_active')
         .eq('role', 'faculty')
         .order('full_name')
       if (error) throw error
@@ -33,48 +36,50 @@ export default function FacultyPage() {
   }
 
   const handleSave = async () => {
+    if (!form.full_name.trim()) { toast.error('Full name is required'); return }
     try {
       if (editing) {
         const { error } = await supabase
           .from('users')
-          .update(form)
+          .update({ full_name: form.full_name, employee_id: form.employee_id, email: form.email, department: form.department, initials: form.initials })
           .eq('id', editing.id)
         if (error) throw error
         toast.success('Faculty updated')
       } else {
+        // Note: Adding via users table directly (requires admin privileges)
         const { error } = await supabase
           .from('users')
-          .insert([form])
+          .insert([{ ...form }])
         if (error) throw error
         toast.success('Faculty added')
       }
       setShowModal(false)
       setEditing(null)
-      setForm({ full_name: '', employee_id: '', department: 'IT', email: '', role: 'faculty' })
+      resetForm()
       fetchFaculty()
     } catch (error) {
-      toast.error(editing ? 'Failed to update' : 'Failed to add')
+      console.error(error)
+      toast.error(editing ? 'Failed to update faculty' : 'Failed to add faculty. Use Supabase auth to create accounts.')
     }
   }
 
-  const handleDelete = async (id) => {
-    if (!confirm('Are you sure you want to delete this faculty member?')) return
+  const handleToggleActive = async (f) => {
     try {
-      const { error } = await supabase
-        .from('users')
-        .delete()
-        .eq('id', id)
+      const { error } = await supabase.from('users').update({ is_active: !f.is_active }).eq('id', f.id)
       if (error) throw error
-      toast.success('Faculty deleted')
+      toast.success(f.is_active ? 'Faculty deactivated' : 'Faculty activated')
       fetchFaculty()
     } catch (error) {
-      toast.error('Failed to delete')
+      toast.error('Failed to update status')
     }
   }
 
-  const filtered = faculty.filter(f => 
-    f.full_name.toLowerCase().includes(search.toLowerCase()) || 
-    f.employee_id?.toLowerCase().includes(search.toLowerCase())
+  const resetForm = () => setForm({ full_name: '', employee_id: '', initials: '', department: 'IT', email: '', role: 'faculty' })
+
+  const filtered = faculty.filter(f =>
+    f.full_name?.toLowerCase().includes(search.toLowerCase()) ||
+    f.employee_id?.toLowerCase().includes(search.toLowerCase()) ||
+    f.email?.toLowerCase().includes(search.toLowerCase())
   )
 
   return (
@@ -84,50 +89,123 @@ export default function FacultyPage() {
           <h1 className="font-display font-bold text-xl" style={{ color: 'var(--text-primary)' }}>Faculty Management</h1>
           <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{faculty.length} faculty members</p>
         </div>
-        <button onClick={() => setShowModal(true)} className="btn-primary flex items-center gap-2"><Plus className="w-4 h-4" /> Add Faculty</button>
+        <button onClick={() => { resetForm(); setEditing(null); setShowModal(true) }} className="btn-primary flex items-center gap-2">
+          <Plus className="w-4 h-4" /> Add Faculty
+        </button>
       </div>
+
       <div className="relative max-w-sm">
         <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--text-secondary)' }} />
-        <input className="input-field pl-10 text-sm" placeholder="Search faculty…" value={search} onChange={e => setSearch(e.target.value)} />
+        <input className="input-field pl-10 text-sm" placeholder="Search by name, ID, email…" value={search} onChange={e => setSearch(e.target.value)} />
       </div>
+
       <div className="glass-card overflow-hidden">
-        <table className="data-table w-full">
-          <thead><tr><th>Name</th><th>Employee ID</th><th>Department</th><th>Role</th><th>Actions</th></tr></thead>
-          <tbody>
-            {loading ? (
-              <tr><td colSpan={5} className="text-center py-10 opacity-50">Loading faculty...</td></tr>
-            ) : filtered.length === 0 ? (
-              <tr><td colSpan={5} className="text-center py-10 opacity-50">No faculty found</td></tr>
-            ) : filtered.map(f => (
-              <tr key={f.id}>
-                <td>
-                  <div className="flex items-center gap-3">
-                    <div className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold text-white flex-shrink-0" style={{ background: 'linear-gradient(135deg,#4A6CF7,#3355e8)' }}>{f.full_name[0]}</div>
-                    <span className="font-medium text-sm">{f.full_name}</span>
-                  </div>
-                </td>
-                <td className="font-mono text-xs" style={{ color: 'var(--text-secondary)' }}>{f.employee_id}</td>
-                <td className="text-sm">{f.department}</td>
-                <td><span className="badge badge-approved capitalize">{f.role}</span></td>
-                <td>
-                  <div className="flex gap-1">
-                    <button onClick={() => { setEditing(f); setForm(f); setShowModal(true) }} className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: 'rgba(74,108,247,0.15)' }}><Edit2 className="w-3.5 h-3.5 text-brand-400" /></button>
-                    <button onClick={() => handleDelete(f.id)} className="w-7 h-7 rounded-lg flex items-center justify-center" style={{ background: 'rgba(248,81,73,0.1)' }}><Trash2 className="w-3.5 h-3.5 text-red-400" /></button>
-                  </div>
-                </td>
+        <div className="overflow-x-auto">
+          <table className="data-table w-full" style={{ minWidth: '700px' }}>
+            <thead>
+              <tr>
+                <th>Faculty</th>
+                <th>Initials</th>
+                <th>Employee ID</th>
+                <th>Email</th>
+                <th>Department</th>
+                <th>Status</th>
+                <th>Actions</th>
               </tr>
-            ))}
-          </tbody>
-        </table>
+            </thead>
+            <tbody>
+              {loading ? (
+                <tr><td colSpan={7} className="text-center py-10 opacity-50">Loading faculty...</td></tr>
+              ) : filtered.length === 0 ? (
+                <tr><td colSpan={7} className="text-center py-10 opacity-50">No faculty found</td></tr>
+              ) : filtered.map(f => (
+                <tr key={f.id} style={{ opacity: f.is_active === false ? 0.5 : 1 }}>
+                  <td>
+                    <div className="flex items-center gap-3">
+                      <div className="w-8 h-8 rounded-lg flex items-center justify-center text-sm font-bold text-white flex-shrink-0"
+                        style={{ background: 'linear-gradient(135deg,#4A6CF7,#3355e8)' }}>
+                        {f.initials || getInitials(f.full_name)}
+                      </div>
+                      <span className="font-medium text-sm">{f.full_name}</span>
+                    </div>
+                  </td>
+                  <td>
+                    <span className="font-mono text-xs px-2 py-1 rounded-lg font-bold" style={{ background: 'rgba(74,108,247,0.12)', color: '#7090ff' }}>
+                      {f.initials || getInitials(f.full_name)}
+                    </span>
+                  </td>
+                  <td className="font-mono text-xs" style={{ color: 'var(--text-secondary)' }}>{f.employee_id || '—'}</td>
+                  <td className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                    <div className="flex items-center gap-1">
+                      <Mail className="w-3 h-3 flex-shrink-0" />
+                      <span className="truncate max-w-[180px]">{f.email || '—'}</span>
+                    </div>
+                  </td>
+                  <td className="text-sm">{f.department}</td>
+                  <td>
+                    <span className={`badge ${f.is_active !== false ? 'badge-approved' : 'badge-rejected'}`}>
+                      {f.is_active !== false ? 'Active' : 'Inactive'}
+                    </span>
+                  </td>
+                  <td>
+                    <div className="flex gap-1">
+                      <button
+                        onClick={() => { setEditing(f); setForm({ full_name: f.full_name, employee_id: f.employee_id || '', initials: f.initials || '', department: f.department || 'IT', email: f.email || '', role: f.role }); setShowModal(true) }}
+                        className="w-7 h-7 rounded-lg flex items-center justify-center"
+                        style={{ background: 'rgba(74,108,247,0.15)' }}>
+                        <Edit2 className="w-3.5 h-3.5 text-brand-400" />
+                      </button>
+                      <button
+                        onClick={() => handleToggleActive(f)}
+                        className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold"
+                        title={f.is_active !== false ? 'Deactivate' : 'Activate'}
+                        style={{ background: f.is_active !== false ? 'rgba(248,81,73,0.1)' : 'rgba(63,185,80,0.1)' }}>
+                        <span style={{ color: f.is_active !== false ? '#f85149' : '#3fb950', fontSize: '10px' }}>
+                          {f.is_active !== false ? '✕' : '✓'}
+                        </span>
+                      </button>
+                    </div>
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
       </div>
-      <Modal open={showModal} onClose={() => setShowModal(false)} title="Add Faculty" size="sm">
+
+      <Modal open={showModal} onClose={() => { setShowModal(false); setEditing(null) }} title={editing ? 'Edit Faculty' : 'Add Faculty'} size="md">
         <div className="space-y-4">
-          {[['Full Name','full_name','text'],['Employee ID','employee_id','text'],['Email','email','email']].map(([label,key,type]) => (
-            <div key={key}>
-              <label className="form-label">{label}</label>
-              <input type={type} className="input-field" value={form[key]} onChange={e => setForm(f=>({...f,[key]:e.target.value}))} />
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="form-label">Full Name <span className="text-red-400">*</span></label>
+              <input className="input-field" placeholder="Dr. Priya Sharma" value={form.full_name} onChange={e => setForm(f => ({ ...f, full_name: e.target.value }))} />
             </div>
-          ))}
+            <div>
+              <label className="form-label">Initials</label>
+              <input className="input-field" placeholder="PS" maxLength={4} value={form.initials} onChange={e => setForm(f => ({ ...f, initials: e.target.value.toUpperCase() }))} />
+            </div>
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div>
+              <label className="form-label">Employee ID</label>
+              <input className="input-field" placeholder="VIT0001" value={form.employee_id} onChange={e => setForm(f => ({ ...f, employee_id: e.target.value }))} />
+            </div>
+            <div>
+              <label className="form-label">Department</label>
+              <select className="select-field" value={form.department} onChange={e => setForm(f => ({ ...f, department: e.target.value }))}>
+                {['IT', 'CS', 'EXTC', 'MECH', 'CIVIL', 'MBA'].map(d => <option key={d} value={d}>{d}</option>)}
+              </select>
+            </div>
+          </div>
+          <div>
+            <label className="form-label">Email</label>
+            <input type="email" className="input-field" placeholder="faculty@vit.edu" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} />
+          </div>
+          {!editing && (
+            <div className="p-3 rounded-xl text-xs" style={{ background: 'rgba(210,153,34,0.1)', border: '1px solid rgba(210,153,34,0.3)', color: '#d29922' }}>
+              ⚠️ To create login credentials, use Supabase Auth. This form only edits profile data.
+            </div>
+          )}
           <div className="flex gap-2 pt-2">
             <button onClick={() => { setShowModal(false); setEditing(null) }} className="btn-secondary flex-1">Cancel</button>
             <button onClick={handleSave} className="btn-primary flex-1">{editing ? 'Update' : 'Add'}</button>
