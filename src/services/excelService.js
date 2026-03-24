@@ -115,6 +115,67 @@ export const exportDLRToExcel = (records, dateStr, department = 'Information Tec
   ws3['!cols'] = [{ wch: 25 }, { wch: 28 }, { wch: 10 }, { wch: 40 }, { wch: 18 }, { wch: 14 }]
   XLSX.utils.book_append_sheet(wb, ws3, 'LCS Status')
 
+  // ── Sheet 4: Substitutions ────────────────────────────────────────────────
+  // Accept optional substitutions array passed alongside records
+  const substitutions = records._substitutions || []
+  const subRows = [
+    ['Substitutions Report', '', '', '', '', '', '', '', ''],
+    [`Date: ${dateStr}`, '', '', '', '', '', '', '', ''],
+    [],
+    ['Date', 'Absent Faculty', 'Proxy Faculty', 'Subject', 'Division', 'Room', 'Time', 'Reason', 'DLR Submitted'],
+  ]
+
+  if (substitutions.length > 0) {
+    substitutions.forEach(s => {
+      const tt = s.timetable || {}
+      const dlrSubmitted = records.some(
+        r => r.is_substitution && r.timetable_id === s.timetable_id && r.lecture_date === s.substitution_date
+      )
+      subRows.push([
+        s.substitution_date || dateStr,
+        s.absent_faculty?.full_name || '—',
+        s.proxy_faculty?.full_name || '—',
+        tt.subjects?.subject_name || '—',
+        tt.divisions?.division_name || '—',
+        tt.rooms?.room_number || '—',
+        `${tt.time_slots?.start_time?.substring(0,5) || '—'} – ${tt.time_slots?.end_time?.substring(0,5) || '—'}`,
+        s.reason || 'Faculty Absent',
+        dlrSubmitted ? 'Yes' : 'No',
+      ])
+    })
+  } else {
+    // Derive from lecture_records that have is_substitution = true
+    const subRecords = records.filter(r => r.is_substitution)
+    if (subRecords.length > 0) {
+      subRecords.forEach(r => {
+        subRows.push([
+          r.lecture_date || dateStr,
+          r.original_faculty?.full_name || r.original_faculty_name || '—',
+          r.faculty?.full_name || r.faculty_name || '—',
+          r.subjects?.subject_name || '—',
+          r.divisions?.division_name || '—',
+          r.rooms?.room_number || '—',
+          `${formatTime(r.scheduled_start)} – ${formatTime(r.scheduled_end)}`,
+          'Faculty Absent',
+          'Yes',
+        ])
+      })
+    } else {
+      subRows.push(['No substitutions found for this date', '', '', '', '', '', '', '', ''])
+    }
+  }
+
+  const ws4 = XLSX.utils.aoa_to_sheet(subRows)
+  ws4['!cols'] = [
+    { wch: 12 }, { wch: 25 }, { wch: 25 }, { wch: 28 }, { wch: 12 },
+    { wch: 12 }, { wch: 18 }, { wch: 20 }, { wch: 14 },
+  ]
+  ws4['!merges'] = [
+    { s: { r: 0, c: 0 }, e: { r: 0, c: 8 } },
+    { s: { r: 1, c: 0 }, e: { r: 1, c: 8 } },
+  ]
+  XLSX.utils.book_append_sheet(wb, ws4, 'Substitutions')
+
   XLSX.writeFile(wb, `DLR_${department.replace(/ /g,'_')}_${dateStr}.xlsx`)
 }
 

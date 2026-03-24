@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { CheckCircle, XCircle, Lock, Eye, Search, Filter, ChevronDown, Download } from 'lucide-react'
+import { CheckCircle, XCircle, Lock, Eye, Search, Filter, ChevronDown, Download, AlertTriangle } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { formatDate, formatTime, attendancePercent } from '../../utils/helpers'
 import { SectionHeader, StatusBadge, Modal, toast, EmptyState } from '../../components/ui'
@@ -34,7 +34,8 @@ export default function ApprovalsPage() {
           subjects (*),
           divisions (*),
           rooms:room_id (*),
-          faculty:faculty_id (full_name)
+          faculty:faculty_id (full_name),
+          original_faculty:original_faculty_id (full_name)
         `)
         .order('lecture_date', { ascending: false })
       
@@ -108,7 +109,10 @@ export default function ApprovalsPage() {
   }
 
   const filtered = records.filter(r => {
-    const matchFilter = filter === 'all' || r.approval_status === filter
+    const matchFilter =
+      filter === 'all' ? true :
+      filter === 'substitutions' ? r.is_substitution === true :
+      r.approval_status === filter
     const q = search.toLowerCase()
     const matchSearch = !q || 
       r.subjects?.subject_name?.toLowerCase().includes(q) || 
@@ -123,6 +127,15 @@ export default function ApprovalsPage() {
     pending: records.filter(r => r.approval_status === 'pending').length,
     approved: records.filter(r => r.approval_status === 'approved').length,
     rejected: records.filter(r => r.approval_status === 'rejected').length,
+    substitutions: records.filter(r => r.is_substitution === true).length,
+  }
+
+  const filterLabels = {
+    all: 'All',
+    pending: 'Pending',
+    approved: 'Approved',
+    rejected: 'Rejected',
+    substitutions: 'Substitutions',
   }
 
   return (
@@ -153,9 +166,21 @@ export default function ApprovalsPage() {
       {/* Filter tabs */}
       <div className="flex gap-2 flex-wrap">
         {Object.entries(statusCounts).map(([key, count]) => (
-          <button key={key} onClick={() => setFilter(key)} className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${filter === key ? 'bg-brand-500 text-white shadow-brand' : ''}`} style={filter !== key ? { background: 'rgba(255,255,255,0.06)', color: 'var(--text-secondary)' } : {}}>
-            <span className="capitalize">{key}</span>
-            <span className={`text-xs px-1.5 py-0.5 rounded-full font-bold ${filter === key ? 'bg-white/20' : ''}`} style={filter !== key ? { background: 'rgba(255,255,255,0.1)' } : {}}>{count}</span>
+          <button
+            key={key}
+            onClick={() => setFilter(key)}
+            className={`flex items-center gap-2 px-4 py-2 rounded-xl text-sm font-semibold transition-all ${
+              filter === key ? (key === 'substitutions' ? 'bg-amber-500 text-white shadow-lg' : 'bg-brand-500 text-white shadow-brand') : ''
+            }`}
+            style={filter !== key ? { background: 'rgba(255,255,255,0.06)', color: 'var(--text-secondary)' } : {}}
+          >
+            <span className="capitalize">{filterLabels[key]}</span>
+            <span
+              className={`text-xs px-1.5 py-0.5 rounded-full font-bold ${filter === key ? 'bg-white/20' : ''}`}
+              style={filter !== key ? { background: 'rgba(255,255,255,0.1)' } : {}}
+            >
+              {count}
+            </span>
           </button>
         ))}
       </div>
@@ -184,7 +209,7 @@ export default function ApprovalsPage() {
                 </th>
                 <th>Faculty / Subject</th>
                 <th>Division</th>
-                <th>Date & Time</th>
+                <th>Date &amp; Time</th>
                 <th>Topic</th>
                 <th>Attendance</th>
                 <th>LCS / SB</th>
@@ -201,14 +226,37 @@ export default function ApprovalsPage() {
                 </td></tr>
               ) : (
                 filtered.map(r => (
-                  <tr key={r.id} className={cls('cursor-pointer hover:bg-white/5 transition-colors', selected.has(r.id) ? 'bg-brand-500/5' : '')} onClick={() => handleOpenDetail(r)}>
+                  <tr
+                    key={r.id}
+                    className={cls(
+                      'cursor-pointer hover:bg-white/5 transition-colors',
+                      selected.has(r.id) ? 'bg-brand-500/5' : ''
+                    )}
+                    style={r.is_substitution ? { borderLeft: '4px solid rgba(245,158,11,0.7)' } : {}}
+                    onClick={() => handleOpenDetail(r)}
+                  >
                     <td onClick={(e) => e.stopPropagation()}>
                       <input type="checkbox" checked={selected.has(r.id)} onChange={() => toggleSelect(r.id)} className="rounded" />
                     </td>
                     <td>
                       <div className="flex items-center gap-2">
                         <div className="flex-1">
-                          <p className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>{r.faculty?.full_name}</p>
+                          <div className="flex items-center gap-1.5 flex-wrap">
+                            <p className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>{r.faculty?.full_name}</p>
+                            {r.is_substitution && (
+                              <span
+                                className="text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider"
+                                style={{ background: 'rgba(245,158,11,0.2)', color: '#d97706', border: '1px solid rgba(245,158,11,0.3)' }}
+                              >
+                                SUB
+                              </span>
+                            )}
+                          </div>
+                          {r.is_substitution && r.original_faculty?.full_name && (
+                            <p className="text-[11px] mt-0.5" style={{ color: 'var(--text-secondary)' }}>
+                              ↳ sub. for {r.original_faculty.full_name}
+                            </p>
+                          )}
                           <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>{r.subjects?.subject_code} — {r.subjects?.short_name}</p>
                         </div>
                         {r.admin_comment && (
@@ -305,6 +353,37 @@ export default function ApprovalsPage() {
                 </div>
               ))}
             </div>
+
+            {/* Substitution Details Box */}
+            {viewing.is_substitution && (
+              <div
+                className="p-4 rounded-2xl border space-y-3"
+                style={{ background: 'rgba(245,158,11,0.08)', borderColor: 'rgba(245,158,11,0.35)' }}
+              >
+                <div className="flex items-center gap-2 mb-1">
+                  <AlertTriangle className="w-4 h-4" style={{ color: '#d97706' }} />
+                  <p className="font-display font-bold text-sm" style={{ color: '#d97706' }}>Substitution Details</p>
+                </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <p className="form-label text-[10px]">Absent Faculty</p>
+                    <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+                      {viewing.original_faculty?.full_name || '—'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="form-label text-[10px]">Proxy Faculty</p>
+                    <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>
+                      {viewing.faculty?.full_name || '—'}
+                    </p>
+                  </div>
+                  <div>
+                    <p className="form-label text-[10px]">Date</p>
+                    <p className="text-sm" style={{ color: 'var(--text-primary)' }}>{formatDate(viewing.lecture_date)}</p>
+                  </div>
+                </div>
+              </div>
+            )}
             
             <div className="glass-card p-4 overflow-hidden">
                <p className="form-label mb-2 flex items-center justify-between">
@@ -364,7 +443,7 @@ export default function ApprovalsPage() {
                 className="btn-primary w-full py-2.5"
                 disabled={!adminComment}
               >
-                Update Feedback & Close
+                Update Feedback &amp; Close
               </button>
             )}
           </div>

@@ -43,6 +43,9 @@ export default function SubmitLecture() {
   const [divisions, setDivisions] = useState([])
   const [subjects, setSubjects] = useState([])
   const [rooms, setRooms] = useState([])
+  const [students, setStudents] = useState([])        // for roll call
+  const [attendance, setAttendance] = useState({})   // { [student_id]: true|false }
+  const [studentsLoading, setStudentsLoading] = useState(false)
 
   const now = new Date()
   const currentTime = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`
@@ -74,10 +77,57 @@ export default function SubmitLecture() {
     attendanceDetails: savedState?.attendanceDetails || location.state?.attendanceDetails || {},
   })
 
+  // Fetch students for roll call whenever division or timetable entry batch changes
   useEffect(() => {
-    if (profile?.id) {
-      fetchFormData()
+    if (!form.division_id) return
+    const fetchStudents = async () => {
+      setStudentsLoading(true)
+      try {
+        // Find the batch for this timetable entry
+        const entry = todaySchedule.find(e => e.id === form.timetable_id)
+        const batchNum = entry?.batch_number ?? null
+        let q = supabase
+          .from('students')
+          .select('id, roll_number, full_name, batch_number')
+          .eq('division_id', form.division_id)
+          .order('roll_number')
+        if (batchNum) q = q.eq('batch_number', batchNum)
+        const { data } = await q
+        const list = data || []
+        setStudents(list)
+        // Default everyone to present
+        const init = {}
+        list.forEach(s => { init[s.id] = true })
+        setAttendance(init)
+        set('total_students', list.length || form.total_students)
+        set('present_count', list.length || form.present_count)
+      } finally {
+        setStudentsLoading(false)
+      }
     }
+    fetchStudents()
+  }, [form.division_id, form.timetable_id])
+
+  // Keep present_count in sync with attendance toggles
+  useEffect(() => {
+    if (students.length === 0) return
+    const presentCount = Object.values(attendance).filter(Boolean).length
+    set('present_count', presentCount)
+    set('total_students', students.length)
+  }, [attendance])
+
+  const toggleStudent = (id) => {
+    setAttendance(prev => ({ ...prev, [id]: !prev[id] }))
+  }
+
+  const markAll = (present) => {
+    const next = {}
+    students.forEach(s => { next[s.id] = present })
+    setAttendance(next)
+  }
+
+  useEffect(() => {
+    if (profile?.id) fetchFormData()
   }, [profile?.id])
 
   const fetchFormData = async () => {
@@ -433,32 +483,10 @@ export default function SubmitLecture() {
         </div>
       )}
 
-      {/* ── STEP 3: Attendance ───────────────────────────────────────────── */}
+      {/* STEP 3: Roll Call */}
       {step === 3 && (
         <div className="space-y-4 animate-slide-up">
-          <div className="flex flex-col gap-2">
-            <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Enter attendance count quickly, or use Roll Call for individual marking.</p>
-            <div className="flex items-center gap-2 text-[10px] bg-blue-500/10 text-brand-400 px-2 py-1.5 rounded-xl border border-brand-500/20 w-fit">
-              <span className="font-bold uppercase tracking-wider">✨ Tip:</span>
-              <span>Use Digital Roll Call to show student names to the Admin.</span>
-            </div>
-          </div>
-
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="form-label">Total Students</label>
-              <input type="number" className="input-field text-center text-xl font-bold" min="1" max="120"
-                value={form.total_students} onChange={e => set('total_students', e.target.value)} />
-            </div>
-            <div>
-              <label className="form-label">Present</label>
-              <input type="number" className="input-field text-center text-xl font-bold" min="0" max={form.total_students}
-                value={form.present_count} onChange={e => set('present_count', e.target.value)} style={{ borderColor: form.present_count !== '' ? 'rgba(74,108,247,0.5)' : '' }} />
-            </div>
-          </div>
-
-          {/* Visual indicator */}
-          {form.present_count !== '' && (
+          {Number(form.total_students) > 0 && (
             <div className="glass-card p-4">
               <div className="flex justify-between text-sm mb-2">
                 <span style={{ color: 'var(--text-secondary)' }}>Attendance</span>
@@ -468,32 +496,67 @@ export default function SubmitLecture() {
               </div>
               <div className="h-3 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.08)' }}>
                 <div className="h-full rounded-full transition-all duration-500" style={{
-                  width: `${Math.min(100, Math.round(Number(form.present_count)/Number(form.total_students)*100))}%`,
-                  background: Number(form.present_count)/Number(form.total_students) >= 0.75 ? 'linear-gradient(90deg,#3fb950,#2da040)' : 'linear-gradient(90deg,#f85149,#d73a3a)'
+                  width: `${Math.min(100,Math.round(Number(form.present_count)/Number(form.total_students)*100))}%`,
+                  background: Number(form.present_count)/Number(form.total_students) >= 0.75 ? 'linear-gradient(90deg,#3fb950,#2da040)':'linear-gradient(90deg,#f85149,#d73a3a)'
                 }} />
               </div>
               <div className="flex justify-between text-xs mt-2">
-                <span className="text-green-400">Present: {form.present_count}</span>
-                <span className="text-red-400">Absent: {Number(form.total_students) - Number(form.present_count)}</span>
+                <span className="text-green-400 font-semibold">Present: {form.present_count}</span>
+                <span className="text-red-400 font-semibold">Absent: {Number(form.total_students)-Number(form.present_count)}</span>
               </div>
             </div>
           )}
-
-          <button onClick={() => navigate('/faculty/attendance', { 
-            state: { 
-              divisionId: form.division_id, 
-              lectureId: null,
-              returnTo: '/faculty/submit',
-              restoredForm: form,
-              restoredStep: step,
-              initialAttendance: form.attendanceDetails
-            } 
-          })}
-            className="w-full touch-btn btn-secondary justify-center gap-2">
-            <Users className="w-5 h-5" />
-            Open Digital Roll Call
-          </button>
-
+          {studentsLoading ? (
+            <div className="text-center py-8 glass-card">
+              <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Loading students…</p>
+            </div>
+          ) : students.length > 0 ? (
+            <div className="space-y-3">
+              <div className="flex gap-2">
+                <button onClick={() => markAll(true)} className="flex-1 py-2.5 rounded-xl text-xs font-bold"
+                  style={{ background:'rgba(63,185,80,0.15)',color:'#3fb950',border:'1px solid rgba(63,185,80,0.3)' }}>✓ All Present</button>
+                <button onClick={() => markAll(false)} className="flex-1 py-2.5 rounded-xl text-xs font-bold"
+                  style={{ background:'rgba(248,81,73,0.1)',color:'#f85149',border:'1px solid rgba(248,81,73,0.25)' }}>✗ All Absent</button>
+              </div>
+              <div className="grid grid-cols-2 gap-2">
+                {students.map(s => {
+                  const present = attendance[s.id] !== false
+                  return (
+                    <button key={s.id} onClick={() => toggleStudent(s.id)}
+                      className="p-3 rounded-xl text-left transition-all active:scale-95"
+                      style={{ background:present?'rgba(63,185,80,0.12)':'rgba(248,81,73,0.08)', border:`1.5px solid ${present?'rgba(63,185,80,0.4)':'rgba(248,81,73,0.3)'}` }}>
+                      <div className="flex items-center gap-2">
+                        <div className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0"
+                          style={{ background:present?'rgba(63,185,80,0.25)':'rgba(248,81,73,0.2)',color:present?'#3fb950':'#f85149' }}>
+                          {present?'✓':'✗'}
+                        </div>
+                        <div className="min-w-0">
+                          <p className="text-[10px] font-bold truncate" style={{ color:present?'#3fb950':'#f85149' }}>{s.roll_number}</p>
+                          <p className="text-[11px] font-semibold truncate leading-tight mt-0.5" style={{ color:'var(--text-primary)' }}>{s.full_name}</p>
+                        </div>
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              <p className="text-xs" style={{ color:'var(--text-secondary)' }}>No student list — enter count manually.</p>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="form-label">Total Students</label>
+                  <input type="number" className="input-field text-center text-xl font-bold" min="1" max="120"
+                    value={form.total_students} onChange={e => set('total_students', e.target.value)} />
+                </div>
+                <div>
+                  <label className="form-label">Present</label>
+                  <input type="number" className="input-field text-center text-xl font-bold" min="0"
+                    value={form.present_count} onChange={e => set('present_count', e.target.value)} />
+                </div>
+              </div>
+            </div>
+          )}
           <div>
             <label className="form-label">Remarks (Optional)</label>
             <textarea className="input-field resize-none" rows={2} placeholder="Any notes, guest lectures, etc."

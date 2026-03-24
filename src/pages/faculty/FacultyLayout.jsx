@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
-import { LayoutDashboard, FileText, Users, History, Bell, LogOut, ChevronRight, LifeBuoy, User } from 'lucide-react'
+import { LayoutDashboard, FileText, Users, History, Bell, LogOut, ChevronRight, LifeBuoy, User, Calendar } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { cls } from '../../utils/helpers'
 import { DemoModeBanner, ThemeToggle } from '../../components/ui'
@@ -10,7 +10,7 @@ import { formatDistanceToNow } from 'date-fns'
 const NAV_ITEMS = [
   { path: '/faculty', label: 'Home', icon: LayoutDashboard, exact: true },
   { path: '/faculty/submit', label: 'Submit', icon: FileText },
-  { path: '/faculty/attendance', label: 'Roll Call', icon: Users },
+  { path: '/faculty/timetable', label: 'Timetable', icon: Calendar },
   { path: '/faculty/history', label: 'History', icon: History },
   { path: '/faculty/support', label: 'Support', icon: LifeBuoy },
   { path: '/faculty/profile', label: 'Profile', icon: User },

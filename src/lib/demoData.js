@@ -112,3 +112,48 @@ export const DEMO_NOTIFICATIONS = [
   { id: 'n1', title: 'DLR Pending', message: 'You have 1 pending DLR submission for yesterday.', type: 'warning', is_read: false, created_at: new Date().toISOString() },
   { id: 'n2', title: 'Record Approved', message: 'Your lecture record for IS (IT-A) has been approved by HOD.', type: 'success', is_read: false, created_at: new Date(Date.now() - 3600000).toISOString() },
 ]
+
+export const DEMO_SUBSTITUTIONS = [
+  {
+    id: 'sub1',
+    substitution_date: today,
+    absent_faculty_id: 'demo-faculty-002',
+    proxy_faculty_id: 'demo-faculty-001', // DEMO_USER_FACULTY is the proxy
+    timetable_id: 'tt3',
+    reason: 'Faculty Absent',
+    status: 'active',
+    created_by: 'demo-faculty-002',
+    created_at: new Date().toISOString(),
+    absent_faculty: { id: 'demo-faculty-002', full_name: 'Prof. Anand Kulkarni' },
+    proxy_faculty: { id: 'demo-faculty-001', full_name: 'Dr. Priya Sharma' },
+    timetable: {
+      id: 'tt3',
+      faculty_id: 'demo-faculty-002',
+      subjects: DEMO_SUBJECTS[2],   // Machine Learning
+      divisions: DEMO_DIVISIONS[0], // IT-A
+      rooms: DEMO_ROOMS[0],         // A-301
+      time_slots: DEMO_TIME_SLOTS[2], // 10:15 - 11:15
+    },
+  },
+  {
+    id: 'sub2',
+    substitution_date: today,
+    absent_faculty_id: 'demo-faculty-001', // DEMO_USER_FACULTY is absent (self-assigned)
+    proxy_faculty_id: 'demo-faculty-003',
+    timetable_id: 'tt6',
+    reason: 'Medical Leave',
+    status: 'active',
+    created_by: 'demo-faculty-001',
+    created_at: new Date().toISOString(),
+    absent_faculty: { id: 'demo-faculty-001', full_name: 'Dr. Priya Sharma' },
+    proxy_faculty: { id: 'demo-faculty-003', full_name: 'Dr. Meera Joshi' },
+    timetable: {
+      id: 'tt6',
+      faculty_id: 'demo-faculty-001',
+      subjects: DEMO_SUBJECTS[0],   // Information Security
+      divisions: DEMO_DIVISIONS[1], // IT-B
+      rooms: DEMO_ROOMS[1],         // A-302
+      time_slots: DEMO_TIME_SLOTS[0], // 8:00 - 9:00
+    },
+  },
+]

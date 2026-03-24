@@ -8,6 +8,7 @@ import { StatusBadge, toast, Modal } from '../../components/ui'
 import { Eye, CheckCircle as CheckCircleIcon, XCircle as XCircleIcon, Search } from 'lucide-react'
 import { generateDLRPDF } from '../../services/reportService'
 import { exportDLRToExcel } from '../../services/excelService'
+import ProxyManagementCard from '../../components/admin/ProxyManagementCard'
 
 const StatCard = ({ label, value, icon: Icon, color, trend, onClick }) => (
   <button onClick={onClick} className="glass-card p-5 text-left w-full hover:scale-[1.01] transition-transform">
@@ -214,8 +215,10 @@ export default function AdminDashboard() {
         <StatCard label="Avg. Attendance" value={stats.avgAtt + '%'} icon={TrendingUp} color="#8b5cf6" trend={3} />
       </div>
 
+      {/* Main grid — 2/3 + 1/3 */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-        <div className="lg:col-span-2">
+        {/* Left: Pending Approvals */}
+        <div className="lg:col-span-2 space-y-4">
           <div className="flex items-center justify-between mb-4">
             <h2 className="font-display font-semibold text-base" style={{ color: 'var(--text-primary)' }}>Pending Approvals</h2>
             <button onClick={() => navigate('/admin/records')} className="text-xs font-semibold flex items-center gap-1" style={{ color: 'var(--brand)' }}>View all <ChevronRight className="w-3 h-3" /></button>
@@ -262,82 +265,24 @@ export default function AdminDashboard() {
           )}
         </div>
 
-        <Modal open={!!viewing} onClose={() => setViewing(null)} title="Review Lecture Record" size="lg">
-          {viewing && (
-            <div className="space-y-4">
-              <div className="grid grid-cols-2 gap-4">
-                {[
-                  ['Subject', viewing.subjects?.subject_name],
-                  ['Division', viewing.divisions?.division_name],
-                  ['Room', viewing.rooms?.room_number || '—'],
-                  ['Date', formatDate(viewing.lecture_date)],
-                  ['Actual Time', `${formatTime(viewing.actual_start)} – ${formatTime(viewing.actual_end)}`],
-                  ['Attendance', `${viewing.present_count} / ${viewing.total_students}`],
-                  ['Unit No.', viewing.unit_number || '—'],
-                  ['LCS', viewing.lcs_status?.replace(/_/g,' ')],
-                ].map(([k, v]) => (
-                  <div key={k}>
-                    <p className="form-label">{k}</p>
-                    <p className="text-sm font-semibold">{v || '—'}</p>
-                  </div>
-                ))}
-              </div>
-
-              <div className="glass-card p-4">
-                 <p className="form-label mb-2 flex items-center justify-between">
-                   <span>Individual Attendance</span>
-                   <span className="text-xs font-normal">{studentAttendance.length} students</span>
-                 </p>
-                 {loadingAttendance ? (
-                   <p className="text-xs opacity-50 text-center py-2">Fetching attendance...</p>
-                 ) : (
-                   <div className="max-h-[150px] overflow-y-auto pr-2 grid grid-cols-2 gap-2">
-                     {studentAttendance.map(att => (
-                       <div key={att.id} className="flex justify-between p-1.5 rounded-lg text-[11px] border" style={{ borderColor: 'var(--border-glass)' }}>
-                         <span className="truncate" style={{ color: 'var(--text-primary)' }}>{att.students?.full_name}</span>
-                         <span className={att.is_present ? 'text-green-500' : 'text-red-500'}>{att.is_present ? 'P' : 'A'}</span>
-                       </div>
-                     ))}
-                   </div>
-                 )}
-              </div>
-
-              <div className="space-y-1.5">
-                <label className="form-label">Admin Comment</label>
-                <textarea 
-                  className="input-field min-h-[80px] text-sm" 
-                  value={adminComment} 
-                  onChange={e => setAdminComment(e.target.value)} 
-                  placeholder="Feedback for faculty..."
-                />
-              </div>
-
-              <div className="flex gap-3 pt-2">
-                <button onClick={() => { handleApprove(viewing.id); setViewing(null) }} className="btn-success flex-1 flex items-center justify-center gap-2">
-                  <CheckCircleIcon className="w-4 h-4" /> Approve
-                </button>
-                <button onClick={() => { handleReject(viewing.id); setViewing(null) }} className="btn-danger flex-1 flex items-center justify-center gap-2">
-                  <XCircleIcon className="w-4 h-4" /> Reject
-                </button>
-              </div>
-            </div>
-          )}
-        </Modal>
-
+        {/* Right sidebar */}
         <div className="space-y-4">
           <div className="glass-card p-5">
             <h2 className="font-display font-semibold text-sm mb-3" style={{ color: 'var(--text-primary)' }}>Faculty Status</h2>
             <div className="space-y-3">
-              {facultyStatus.map(f => (
+              {facultyStatus.length === 0 ? (
+                <p className="text-xs opacity-50 text-center py-4">No data</p>
+              ) : facultyStatus.map(f => (
                 <div key={f.id} className="flex items-center gap-3">
-                  <div className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold text-white flex-shrink-0" style={{ background: f.submittedToday ? 'var(--brand)' : 'var(--text-secondary)', opacity: f.submittedToday ? 1 : 0.4 }}>
-                    {f.full_name[0]}
+                  <div className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
+                    style={{ background: f.submittedToday ? 'var(--brand)' : 'rgba(255,255,255,0.12)' }}>
+                    {f.initials || f.full_name[0]}
                   </div>
                   <div className="flex-1 min-w-0">
-                    <p className="text-xs font-semibold truncate">{f.full_name}</p>
+                    <p className="text-xs font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{f.full_name}</p>
                     <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>{f.recordCount} records</p>
                   </div>
-                  <div className={`w-2 h-2 rounded-full ${f.submittedToday ? 'bg-green-500' : 'bg-slate-400 opacity-40'}`} />
+                  <div className={`w-2 h-2 rounded-full flex-shrink-0 ${f.submittedToday ? 'bg-green-500' : 'bg-slate-500 opacity-40'}`} />
                 </div>
               ))}
             </div>
@@ -346,15 +291,73 @@ export default function AdminDashboard() {
           <div className="glass-card p-5">
             <h2 className="font-display font-semibold text-sm mb-3" style={{ color: 'var(--text-primary)' }}>Day Management</h2>
             <div className="flex items-center gap-2 p-3 rounded-xl mb-3" style={{ background: 'var(--border-glass)' }}>
-              <AlertTriangle className="w-4 h-4 text-amber-500" />
+              <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0" />
               <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>Locking prevents faculty edits.</p>
             </div>
             <button onClick={() => alert('Day locked! (demo)')} className="btn-secondary w-full flex items-center justify-center gap-2 text-sm">
               <Lock className="w-4 h-4" /> Lock Today
             </button>
           </div>
+
+          <ProxyManagementCard />
         </div>
       </div>
+
+      {/* Review Modal — outside the grid */}
+      <Modal open={!!viewing} onClose={() => setViewing(null)} title="Review Lecture Record" size="lg">
+        {viewing && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-2 gap-4">
+              {[
+                ['Subject', viewing.subjects?.subject_name],
+                ['Division', viewing.divisions?.division_name],
+                ['Room', viewing.rooms?.room_number || '—'],
+                ['Date', formatDate(viewing.lecture_date)],
+                ['Actual Time', `${formatTime(viewing.actual_start)} – ${formatTime(viewing.actual_end)}`],
+                ['Attendance', `${viewing.present_count} / ${viewing.total_students}`],
+                ['Unit No.', viewing.unit_number || '—'],
+                ['LCS', viewing.lcs_status?.replace(/_/g,' ')],
+              ].map(([k, v]) => (
+                <div key={k}>
+                  <p className="form-label">{k}</p>
+                  <p className="text-sm font-semibold">{v || '—'}</p>
+                </div>
+              ))}
+            </div>
+            <div className="glass-card p-4">
+              <p className="form-label mb-2 flex items-center justify-between">
+                <span>Individual Attendance</span>
+                <span className="text-xs font-normal">{studentAttendance.length} students</span>
+              </p>
+              {loadingAttendance ? (
+                <p className="text-xs opacity-50 text-center py-2">Fetching attendance...</p>
+              ) : (
+                <div className="max-h-[150px] overflow-y-auto pr-2 grid grid-cols-2 gap-2">
+                  {studentAttendance.map(att => (
+                    <div key={att.id} className="flex justify-between p-1.5 rounded-lg text-[11px] border" style={{ borderColor: 'var(--border-glass)' }}>
+                      <span className="truncate" style={{ color: 'var(--text-primary)' }}>{att.students?.full_name}</span>
+                      <span className={att.is_present ? 'text-green-500' : 'text-red-500'}>{att.is_present ? 'P' : 'A'}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+            </div>
+            <div className="space-y-1.5">
+              <label className="form-label">Admin Comment</label>
+              <textarea className="input-field min-h-[80px] text-sm" value={adminComment}
+                onChange={e => setAdminComment(e.target.value)} placeholder="Feedback for faculty..." />
+            </div>
+            <div className="flex gap-3 pt-2">
+              <button onClick={() => { handleApprove(viewing.id); setViewing(null) }} className="btn-success flex-1 flex items-center justify-center gap-2">
+                <CheckCircleIcon className="w-4 h-4" /> Approve
+              </button>
+              <button onClick={() => { handleReject(viewing.id); setViewing(null) }} className="btn-danger flex-1 flex items-center justify-center gap-2">
+                <XCircleIcon className="w-4 h-4" /> Reject
+              </button>
+            </div>
+          </div>
+        )}
+      </Modal>
     </div>
   )
 }

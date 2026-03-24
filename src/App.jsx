@@ -8,10 +8,10 @@ import LoginPage from './pages/Login'
 const FacultyLayout = lazy(() => import('./pages/faculty/FacultyLayout'))
 const FacultyDashboard = lazy(() => import('./pages/faculty/FacultyDashboard'))
 const SubmitLecture = lazy(() => import('./pages/faculty/SubmitLecture'))
-const AttendancePage = lazy(() => import('./pages/faculty/AttendancePage'))
 const HistoryPage = lazy(() => import('./pages/faculty/HistoryPage'))
 const SupportPage = lazy(() => import('./pages/faculty/Support'))
 const ProfilePage = lazy(() => import('./pages/faculty/ProfilePage'))
+const TimetableView = lazy(() => import('./pages/faculty/TimetableView'))
 
 const AdminLayout = lazy(() => import('./pages/admin/AdminLayout'))
 const AdminDashboard = lazy(() => import('./pages/admin/AdminDashboard'))
@@ -34,7 +34,7 @@ export default function App() {
               <Route path="/faculty" element={<AuthGuard requireRole="faculty"><FacultyLayout /></AuthGuard>}>
                 <Route index element={<FacultyDashboard />} />
                 <Route path="submit" element={<SubmitLecture />} />
-                <Route path="attendance" element={<AttendancePage />} />
+                <Route path="timetable" element={<TimetableView />} />
                 <Route path="history" element={<HistoryPage />} />
                 <Route path="support" element={<SupportPage />} />
                 <Route path="profile" element={<ProfilePage />} />
