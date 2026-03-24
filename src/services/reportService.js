@@ -2,7 +2,10 @@ import jsPDF from 'jspdf'
 import 'jspdf-autotable'
 import { format } from 'date-fns'
 import { formatTime, attendancePercent } from '../utils/helpers'
+<<<<<<< HEAD
 import vitLogoUrl from '../assets/vit-logo.png'
+=======
+>>>>>>> 5661d6d4811369cc687fcf7d71d6d5fce20903f4
 
 const LCS_ROOMS = ['E101', 'E201', 'E204', 'M202']
 
@@ -11,6 +14,7 @@ export const generateDLRPDF = (records, dateStr, department = 'Information Techn
   const pageW = doc.internal.pageSize.getWidth()
   const pageH = doc.internal.pageSize.getHeight()
 
+<<<<<<< HEAD
   // Calculate statistics
   const totalLectures = records.length
   const approved = records.filter(r => r.approval_status === 'approved').length
@@ -58,6 +62,43 @@ export const generateDLRPDF = (records, dateStr, department = 'Information Techn
 
   // Summary position
   const summaryY = headerEndY + 10
+=======
+  // ── Header ────────────────────────────────────────────────────────────────
+  doc.setFillColor(18, 24, 38)
+  doc.rect(0, 0, pageW, 28, 'F')
+
+  doc.setTextColor(255, 255, 255)
+  doc.setFont('helvetica', 'bold')
+  doc.setFontSize(16)
+  doc.text('VIDYALANKAR INSTITUTE OF TECHNOLOGY', pageW / 2, 10, { align: 'center' })
+
+  doc.setFontSize(11)
+  doc.setFont('helvetica', 'normal')
+  doc.text('Department of ' + department, pageW / 2, 16, { align: 'center' })
+
+  doc.setFontSize(10)
+  doc.text('DAILY LECTURE RECORD (DLR)', pageW / 2, 22, { align: 'center' })
+
+  // ── Date info ─────────────────────────────────────────────────────────────
+  doc.setTextColor(60, 60, 60)
+  doc.setFontSize(9)
+  const formattedDate = format(new Date(dateStr), 'EEEE, dd MMMM yyyy')
+  doc.text(`Date: ${formattedDate}`, 14, 34)
+  doc.text(`Generated: ${format(new Date(), 'dd/MM/yyyy HH:mm')}`, pageW - 14, 34, { align: 'right' })
+
+  // ── Summary stats bar ─────────────────────────────────────────────────────
+  const totalLectures = records.length
+  const approved = records.filter(r => r.approval_status === 'approved').length
+  const pending = records.filter(r => r.approval_status === 'pending').length
+  const substitutionCount = records.filter(r => r.is_substitution).length
+  const avgAttendance = records.length > 0
+    ? Math.round(records.reduce((sum, r) => sum + attendancePercent(r.present_count, r.total_students), 0) / records.length)
+    : 0
+
+  const summaryY = 38
+  doc.setFillColor(245, 247, 255)
+  doc.roundedRect(14, summaryY, pageW - 28, 12, 2, 2, 'F')
+>>>>>>> 5661d6d4811369cc687fcf7d71d6d5fce20903f4
 
   doc.setFont('helvetica', 'bold')
   doc.setFontSize(8)
@@ -382,4 +423,7 @@ export const generateAttendancePDF = (record, students, attendance) => {
 
   doc.save(`Attendance_${record.subjects?.short_name}_${record.divisions?.division_name}_${record.lecture_date}.pdf`)
 }
+<<<<<<< HEAD
 
+=======
+>>>>>>> 5661d6d4811369cc687fcf7d71d6d5fce20903f4

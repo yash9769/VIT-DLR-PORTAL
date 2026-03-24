@@ -181,6 +181,7 @@ export default function TimetableView() {
                 <div className="space-y-2">
                   {dayEntries.map(e => {
                     const ci = facultyColor[e.users?.id] ?? 0
+<<<<<<< HEAD
                     const roomNum = e.rooms?.room_number || e.custom_room || ''
                     const isLCS = ['E101','E201','E204','M202'].includes(roomNum)
                     const isLab = (e.custom_subject || e.subjects?.subject_name || '').toLowerCase().includes('lab')
@@ -240,6 +241,38 @@ export default function TimetableView() {
                       )
                     })
                   )}
+=======
+                    return (
+                      <div key={e.id} className="glass-card p-3 flex gap-3 items-start">
+                        <div className="w-12 flex-shrink-0 text-center">
+                          <p className="text-xs font-bold leading-tight" style={{ color: TEXT_COLORS[ci] }}>{e.time_slots?.start_time?.slice(0,5)}</p>
+                          <div className="w-px h-3 mx-auto my-0.5 rounded-full opacity-40" style={{ background: TEXT_COLORS[ci] }} />
+                          <p className="text-[10px]" style={{ color:'var(--text-secondary)' }}>{e.time_slots?.end_time?.slice(0,5)}</p>
+                        </div>
+                        <div className="flex-1 min-w-0">
+                          <div className="flex items-center gap-1.5 mb-1 flex-wrap">
+                            {e.batch_number && (
+                              <span className="text-[9px] px-1.5 py-0.5 rounded font-bold uppercase"
+                                style={{ background: BADGE_COLORS[ci], color: TEXT_COLORS[ci] }}>
+                                Batch {e.batch_number}
+                              </span>
+                            )}
+                            <p className="font-semibold text-sm truncate" style={{ color:'var(--text-primary)' }}>
+                              {e.subjects?.short_name || e.subjects?.subject_name || '—'}
+                            </p>
+                          </div>
+                          <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[10px]" style={{ color:'var(--text-secondary)' }}>
+                            <span className="flex items-center gap-1"><Users className="w-3 h-3" />{e.divisions?.division_name || '—'}</span>
+                            <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{e.rooms?.room_number || e.custom_room || '—'}</span>
+                            <span className="flex items-center gap-1 font-semibold" style={{ color: TEXT_COLORS[ci] }}>
+                              {e.users?.initials || e.users?.full_name || '—'}
+                            </span>
+                          </div>
+                        </div>
+                      </div>
+                    )
+                  })}
+>>>>>>> 5661d6d4811369cc687fcf7d71d6d5fce20903f4
                 </div>
               </div>
             )
