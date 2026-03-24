@@ -23,6 +23,7 @@ export default function TimetablePage() {
   const [filterDivision, setFilterDivision] = useState('')
   const [filterSem, setFilterSem] = useState('')
   const [filterBatch, setFilterBatch] = useState('')
+  const [filterSubject, setFilterSubject] = useState('')
   const [showModal, setShowModal] = useState(false)
   const [editEntry, setEditEntry] = useState(null)
   const [deleteId, setDeleteId] = useState(null)
@@ -93,13 +94,14 @@ export default function TimetablePage() {
 
   const semesters = [...new Set(timetable.map(t => t.divisions?.semester).filter(Boolean))].sort((a,b)=>a-b)
   const batches   = [...new Set(timetable.map(t => t.batch_number).filter(Boolean))].sort()
-  const hasActiveFilters = filterDay !== 'All' || filterFaculty || filterDivision || filterSem || filterBatch
+  const hasActiveFilters = filterDay !== 'All' || filterFaculty || filterDivision || filterSem || filterBatch || filterSubject
   const filtered = timetable.filter(t => {
     if (filterDay !== 'All' && t.day_of_week !== filterDay) return false
     if (filterFaculty  && t.faculty_id !== filterFaculty) return false
     if (filterDivision && t.division_id !== filterDivision) return false
     if (filterSem      && String(t.divisions?.semester) !== String(filterSem)) return false
     if (filterBatch    && String(t.batch_number) !== filterBatch) return false
+    if (filterSubject  && t.subject_id !== filterSubject) return false
     return true
   })
 
@@ -400,28 +402,32 @@ export default function TimetablePage() {
             </div>
           </div>
         </div>
-        <div className="flex gap-2 flex-wrap">
-          <select className="select-field text-sm flex-1 min-w-[120px]" value={filterDay} onChange={e => setFilterDay(e.target.value)}>
-            <option value="All">All Days</option>
-            {DAYS.map(d => <option key={d} value={d}>{d}</option>)}
-          </select>
-          <select className="select-field text-sm flex-1 min-w-[140px]" value={filterFaculty} onChange={e => setFilterFaculty(e.target.value)}>
-            <option value="">All Faculty</option>
-            {faculties.map(f => <option key={f.id} value={f.id}>{f.full_name}</option>)}
-          </select>
-          <select className="select-field text-sm flex-1 min-w-[120px]" value={filterSem} onChange={e => setFilterSem(e.target.value)}>
-            <option value="">All Semesters</option>
-            {semesters.map(s => <option key={s} value={s}>Sem {s}</option>)}
-          </select>
-          <select className="select-field text-sm flex-1 min-w-[130px]" value={filterDivision} onChange={e => setFilterDivision(e.target.value)}>
-            <option value="">All Divisions</option>
-            {divisions.map(d => <option key={d.id} value={d.id}>{d.division_name}</option>)}
-          </select>
-          <select className="select-field text-sm flex-1 min-w-[110px]" value={filterBatch} onChange={e => setFilterBatch(e.target.value)}>
-            <option value="">All Batches</option>
-            {batches.map(b => <option key={b} value={b}>Batch {b}</option>)}
-          </select>
-        </div>
+          <div className="flex gap-2 flex-wrap">
+            <select className="select-field text-sm flex-1 min-w-[120px]" value={filterDay} onChange={e => setFilterDay(e.target.value)}>
+              <option value="All">All Days</option>
+              {DAYS.map(d => <option key={d} value={d}>{d}</option>)}
+            </select>
+            <select className="select-field text-sm flex-1 min-w-[140px]" value={filterFaculty} onChange={e => setFilterFaculty(e.target.value)}>
+              <option value="">All Faculty</option>
+              {faculties.map(f => <option key={f.id} value={f.id}>{f.full_name}</option>)}
+            </select>
+            <select className="select-field text-sm flex-1 min-w-[120px]" value={filterSem} onChange={e => setFilterSem(e.target.value)}>
+              <option value="">All Semesters</option>
+              {semesters.map(s => <option key={s} value={s}>Sem {s}</option>)}
+            </select>
+            <select className="select-field text-sm flex-1 min-w-[130px]" value={filterDivision} onChange={e => setFilterDivision(e.target.value)}>
+              <option value="">All Divisions</option>
+              {divisions.map(d => <option key={d.id} value={d.id}>{d.division_name}</option>)}
+            </select>
+            <select className="select-field text-sm flex-1 min-w-[110px]" value={filterBatch} onChange={e => setFilterBatch(e.target.value)}>
+              <option value="">All Batches</option>
+              {batches.map(b => <option key={b} value={b}>Batch {b}</option>)}
+            </select>
+            <select className="select-field text-sm flex-1 min-w-[120px]" value={filterSubject} onChange={e => setFilterSubject(e.target.value)}>
+              <option value="">All Subjects</option>
+              {subjects.map(s => <option key={s.id} value={s.id}>{s.subject_name}</option>)}
+            </select>
+          </div>
         {hasActiveFilters && <p className="text-xs opacity-50">{filtered.length} of {timetable.length} entries shown</p>}
       </div>
 
