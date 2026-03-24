@@ -181,7 +181,6 @@ export default function TimetableView() {
                 <div className="space-y-2">
                   {dayEntries.map(e => {
                     const ci = facultyColor[e.users?.id] ?? 0
-<<<<<<< HEAD
                     const roomNum = e.rooms?.room_number || e.custom_room || ''
                     const isLCS = ['E101','E201','E204','M202'].includes(roomNum)
                     const isLab = (e.custom_subject || e.subjects?.subject_name || '').toLowerCase().includes('lab')
@@ -241,7 +240,6 @@ export default function TimetableView() {
                       )
                     })
                   )}
-=======
                     return (
                       <div key={e.id} className="glass-card p-3 flex gap-3 items-start">
                         <div className="w-12 flex-shrink-0 text-center">
@@ -272,7 +270,6 @@ export default function TimetableView() {
                       </div>
                     )
                   })}
->>>>>>> 5661d6d4811369cc687fcf7d71d6d5fce20903f4
                 </div>
               </div>
             )
