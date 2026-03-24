@@ -1,4 +1,3 @@
-<<<<<<< HEAD
 import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { Clock, BookOpen, Users, FileText, Upload, ChevronDown, Check, AlertCircle } from 'lucide-react'
@@ -656,7 +655,6 @@ export default function SubmitLecture() {
     </div>
   )
 }
-=======
 import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { Clock, BookOpen, Users, FileText, Upload, ChevronDown, Check, AlertCircle } from 'lucide-react'
@@ -1283,4 +1281,3 @@ export default function SubmitLecture() {
     </div>
   )
 }
->>>>>>> 5661d6d4811369cc687fcf7d71d6d5fce20903f4
