@@ -1,0 +1,99 @@
+
+--- File: BE Sem VIII Attendance List AY 2025-26.xlsx ---
+Sheets: DIV A, BE DIV A  Regular , BE DIV B Regular , ADV HON - AIML, Sheet4, Sheet5, Sheet6, DIV B
+Sheet: DIV A | Row 1: [ 'TE ATTENDANCE SHEET\r\nSemester VI' ]
+Sheet: DIV A | Row 2: []
+Sheet: DIV A | Row 3: [ 'SR NO', 'ROLL NUMBER', 'NAME OF THE STUDENT' ]
+Sheet: BE DIV A  Regular  | Row 1: [
+  '                                                                                      Department of Information Technology                                                                                       Attendance Sheet  Academic Year 2025-26                                                                                                                                                                               '
+]
+Sheet: BE DIV A  Regular  | Row 2: [ 'Class', 'BE - VIII', 'Division', 'INFT', 'Subject ' ]
+Sheet: BE DIV A  Regular  | Row 3: [ 'Week No. ', 'Division - A', 'Subject ', ' ', 'Faculty ' ]
+Sheet: BE DIV B Regular  | Row 1: [
+  '                                                                                      Department of Information Technology                                                                                       Attendance Sheet  Academic Year 2025-26                                                                                                                                                                              '
+]
+Sheet: BE DIV B Regular  | Row 2: [ 'Class', 'BE - VIII', ' ', 'INFT', 'Subject ' ]
+Sheet: BE DIV B Regular  | Row 3: [ 'Week No. ', 'Division - B', ' ', ' ', 'Faculty ' ]
+Sheet: ADV HON - AIML | Row 1: [
+  '                 Department of Information Technology                                                                          Attendance Sheet  Academic Year 2024-25'
+]
+Sheet: ADV HON - AIML | Row 2: [
+  'Class',    'TE - VI',
+  'Division', 'A & B',
+  'INFT',     ' ',
+  ' ',        ' '
+]
+Sheet: ADV HON - AIML | Row 3: [
+  'Week No. ',
+  ' ',
+  'Subject ',
+  'ADV HONOURS: AIML: ETHICS IN AI',
+  ' ',
+  'Faculty ',
+  ' ',
+  ' '
+]
+Sheet: Sheet4 | Row 1: [
+  '                                                                                      Department of Information Technology               Attendance Sheet  Academic Year 2024-25'
+]
+Sheet: Sheet4 | Row 2: [ 'Class', 'TE - VI', 'Division', 'A', 'INFT' ]
+Sheet: Sheet4 | Row 3: [
+  'Week No. ',
+  <1 empty item>,
+  'Subject ',
+  ' ',
+  <1 empty item>,
+  'Faculty '
+]
+Sheet: Sheet5 is empty
+Sheet: Sheet6 | Row 1: [
+  '                                                                       Department of Information Technology     Attendance Sheet  Academic Year 2024-25'
+]
+Sheet: Sheet6 | Row 2: [ 'Class', 'TE - V', 'Division', 'A & B', 'INFT' ]
+Sheet: Sheet6 | Row 3: [
+  'Week No. ',
+  <1 empty item>,
+  'Subject ',
+  'AIML',
+  <1 empty item>,
+  'Faculty '
+]
+Sheet: DIV B | Row 1: [ 'TE ATTENDANCE SHEET\r\nSemester VI' ]
+Sheet: DIV B | Row 2: []
+Sheet: DIV B | Row 3: [ 'SR NO', 'ROLL NUMBER', 'NAME OF THE STUDENT' ]
+
+--- File: SE Sem-IV Attendance List AY 2025-26.xlsx ---
+Sheets: SE A, SE B, SE C
+Sheet: SE A | Row 1: [
+  '                                                                                                         Department of Information Technology                            Attendance Sheet  Academic Year 2025-26'
+]
+Sheet: SE A | Row 2: [ 'Class', 'SE - IV', 'Division - A', 'INFT', 'Subject ' ]
+Sheet: SE A | Row 3: [ 'Week No. ', ' ', ' ', <1 empty item>, 'Faculty ' ]
+Sheet: SE B | Row 1: [
+  '                                                                                        Department of Information Technology               Attendance Sheet  Academic Year 2025-26'
+]
+Sheet: SE B | Row 2: [ 'Class', 'SE - IV', 'Division - B', 'INFT', 'Subject ' ]
+Sheet: SE B | Row 3: [ 'Week No. ', ' ', ' ', <1 empty item>, 'Faculty ' ]
+Sheet: SE C | Row 1: [
+  '                                                                                                          Department of Information Technology                                                 Attendance Sheet  Academic Year 2025-26'
+]
+Sheet: SE C | Row 2: [ 'Class', 'SE - IV', 'Division - C', 'INFT', 'Subject ', ' ' ]
+Sheet: SE C | Row 3: [ 'Week No. ', ' ', ' ', <1 empty item>, 'Faculty ', ' ' ]
+
+--- File: TE Sem-VI Attendance List AY 2025-26.xlsx ---
+Sheets: TE A, TE B, TE C
+Sheet: TE A | Row 1: [
+  '                                                                               Department of Information Technology                Attendance Sheet  Academic Year 2025-26'
+]
+Sheet: TE A | Row 2: [ 'Class', 'TE - VI', <1 empty item>, 'INFT', 'Subject ' ]
+Sheet: TE A | Row 3: [ 'Week No. ', 'Division - A', ' ', <1 empty item>, 'Faculty ' ]
+Sheet: TE B | Row 1: [
+  '                                                                             Department of Information Technology          Attendance Sheet  Academic Year 2025-26'
+]
+Sheet: TE B | Row 2: [ 'Class', 'TE - VI', <1 empty item>, 'INFT', 'Subject ' ]
+Sheet: TE B | Row 3: [ 'Week No. ', 'Division - B', <2 empty items>, 'Faculty ' ]
+Sheet: TE C | Row 1: [
+  '                                                           Department of Information Technology                                        Attendance Sheet  Academic Year 2025-26'
+]
+Sheet: TE C | Row 2: [ 'Class', 'TE - VI', <1 empty item>, 'INFT', 'Subject ' ]
+Sheet: TE C | Row 3: [ 'Week No. ', 'Division - C', <2 empty items>, 'Faculty ' ]
