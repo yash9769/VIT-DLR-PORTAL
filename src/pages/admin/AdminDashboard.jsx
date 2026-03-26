@@ -48,6 +48,7 @@ export default function AdminDashboard() {
 
   const todayStr = today()
   const dayName = format(new Date(), 'EEEE')
+  const [lockedToday, setLockedToday] = useState(false)
 
   useEffect(() => {
     fetchDashboardData()
@@ -57,6 +58,15 @@ export default function AdminDashboard() {
     try {
       setLoading(true)
       
+      // 0. Check if today is locked
+      const { data: lockData } = await supabase
+        .from('locked_dates')
+        .select('*')
+        .eq('locked_date', todayStr)
+        .single()
+      
+      setLockedToday(!!lockData)
+
       // 1. Fetch Basic Record Stats
       const { data: records, error: recError } = await supabase
         .from('lecture_records')
@@ -191,6 +201,48 @@ export default function AdminDashboard() {
     }
   }
 
+  const [selectedLockDate, setSelectedLockDate] = useState(today())
+  const [isLocked, setIsLocked] = useState(false)
+
+  const checkLockStatus = async (date) => {
+    const { data: lockData } = await supabase
+      .from('locked_dates')
+      .select('*')
+      .eq('locked_date', date)
+      .maybeSingle()
+    setIsLocked(!!lockData)
+  }
+
+  const toggleLock = async () => {
+    try {
+      if (isLocked) {
+        // Unlock
+        const { error } = await supabase
+          .from('locked_dates')
+          .delete()
+          .eq('locked_date', selectedLockDate)
+        
+        if (error) throw error
+        toast.success(`Date ${selectedLockDate} unlocked`)
+      } else {
+        // Lock
+        const { error } = await supabase
+          .from('locked_dates')
+          .insert({
+            locked_date: selectedLockDate,
+            locked_by: (await supabase.auth.getUser()).data.user.id
+          })
+        
+        if (error) throw error
+        toast.success(`Date ${selectedLockDate} locked`)
+      }
+      checkLockStatus(selectedLockDate)
+    } catch (error) {
+      console.error('Error toggling lock:', error)
+      toast.error('Failed to change lock status')
+    }
+  }
+
   return (
     <div className="p-6 space-y-6 animate-fade-in">
       <div className="flex items-center justify-between flex-wrap gap-3">
@@ -289,16 +341,49 @@ export default function AdminDashboard() {
                ))}
              </div>
            </div>
-
           <div className="glass-card p-5">
             <h2 className="font-display font-semibold text-sm mb-3" style={{ color: 'var(--text-primary)' }}>Day Management</h2>
-            <div className="flex items-center gap-2 p-3 rounded-xl mb-3" style={{ background: 'var(--border-glass)' }}>
-              <AlertTriangle className="w-4 h-4 text-amber-500 flex-shrink-0" />
-              <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>Locking prevents faculty edits.</p>
+            <div className={`p-4 rounded-xl mb-4 border transition-colors ${isLocked ? 'bg-red-500/10 border-red-500/30' : 'bg-emerald-500/10 border-emerald-500/30'}`}>
+              <div className="flex items-start gap-3">
+                <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${isLocked ? 'bg-red-500/20' : 'bg-emerald-500/20'}`}>
+                  {isLocked ? <Lock className="w-5 h-5 text-red-500" /> : <TrendingUp className="w-5 h-5 text-emerald-500" />}
+                </div>
+                <div>
+                  <p className="font-display font-bold text-sm" style={{ color: isLocked ? '#f85149' : '#3fb950' }}>
+                    {isLocked ? 'Records Locked' : 'Records Open'}
+                  </p>
+                  <p className="text-[10px] mt-0.5" style={{ color: 'var(--text-secondary)' }}>
+                    {isLocked ? 'Faculty cannot edit records for this date.' : 'Faculty can edit and fix attendance.'}
+                  </p>
+                </div>
+              </div>
             </div>
-            <button onClick={() => alert('Day locked! (demo)')} className="btn-secondary w-full flex items-center justify-center gap-2 text-sm">
-              <Lock className="w-4 h-4" /> Lock Today
-            </button>
+
+            <div className="space-y-3">
+              <div>
+                <label className="text-[10px] font-bold uppercase tracking-wider block mb-1.5 opacity-60">Manage Date</label>
+                <input 
+                  type="date" 
+                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-brand-glow outline-none transition-colors"
+                  value={selectedLockDate}
+                  onChange={(e) => setSelectedLockDate(e.target.value)}
+                />
+              </div>
+              <button 
+                onClick={toggleLock} 
+                className={`w-full py-4 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg ${
+                  isLocked 
+                    ? 'bg-gradient-to-r from-emerald-500 to-emerald-600' 
+                    : 'bg-gradient-to-r from-red-500 to-red-600'
+                } text-white`}
+              >
+                {isLocked ? <CheckCircle className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
+                {isLocked ? 'Unlock Date for Faculty' : 'Lock Records Permanently'}
+              </button>
+            </div>
+            <p className="text-[11px] mt-4 opacity-70 leading-relaxed italic" style={{ color: 'var(--text-secondary)' }}>
+              Locking a date finalizes all records and attendance. Only unlock if a faculty correction is truly necessary.
+            </p>
           </div>
 
           <ProxyManagementCard />

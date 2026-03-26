@@ -189,13 +189,20 @@ export default function FacultyDashboard() {
       const todaySubmittedIds = new Set(
         records?.filter(r => r.lecture_date === todayStr).map(r => r.timetable_id) || []
       )
-      const todayPending = (timetable || []).filter(t => !todaySubmittedIds.has(t.id)).length
+      const todayPendingCount = (timetable || []).filter(t => !todaySubmittedIds.has(t.id)).length
       const awaitingApproval = records?.filter(r => r.approval_status === 'pending').length || 0
+      const rejectedCount = records?.filter(r => r.approval_status === 'rejected').length || 0
       const avgAtt = records?.length > 0
         ? Math.round(records.reduce((s, r) => s + attendancePercent(r.present_count, r.total_students), 0) / records.length)
         : 0
-
-      setStats({ todayPending, awaitingApproval, avgAttendance: avgAtt, totalRecords: records?.length || 0 })
+      
+      setStats({ 
+        todayPending: todayPendingCount, 
+        awaitingApproval, 
+        avgAttendance: avgAtt, 
+        totalRecords: records?.length || 0,
+        rejectedCount
+      })
     } catch (error) {
       console.error('Error fetching dashboard data:', error)
     } finally {
@@ -281,6 +288,29 @@ export default function FacultyDashboard() {
             </p>
           </div>
         </div>
+      )}
+
+      {/* Rejected / Action Required Alert */}
+      {stats.rejectedCount > 0 && !iAmAbsent && (
+        <button 
+          onClick={() => navigate('/faculty/history')} 
+          className="w-full flex items-center gap-3 p-4 rounded-2xl transition-all active:scale-98" 
+          style={{ background: 'rgba(248,81,73,0.08)', border: '1px solid rgba(248,81,73,0.4)', boxShadow: '0 4px 20px rgba(248,81,73,0.1)' }}
+        >
+          <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(248,81,73,0.15)' }}>
+            <AlertTriangle className="w-5 h-5 text-red-500" />
+          </div>
+          <div className="flex-1 text-left min-w-0">
+            <p className="font-bold text-sm text-red-500 uppercase tracking-wider">Action Required</p>
+            <p className="font-semibold text-xs mt-0.5" style={{ color: 'var(--text-primary)' }}>
+              {stats.rejectedCount} Lecture Record{stats.rejectedCount > 1 ? 's' : ''} Rejected
+            </p>
+            <p className="text-[10px] mt-0.5" style={{ color: 'var(--text-secondary)' }}>
+              Tap to view reasons and edit records
+            </p>
+          </div>
+          <ChevronRight className="w-4 h-4 text-red-500 opacity-60" />
+        </button>
       )}
 
       {/* Pending alert */}

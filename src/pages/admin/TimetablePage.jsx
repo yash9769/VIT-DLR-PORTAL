@@ -110,7 +110,17 @@ export default function TimetablePage() {
   const facultyInitials = (t) => t.faculty?.initials || (t.faculty?.full_name ? t.faculty.full_name.split(' ').map(w => w[0]).join('') : (t.custom_faculty ? t.custom_faculty.slice(0,3).toUpperCase() : '—'))
   const divisionLabel = (t) => t.custom_division || t.divisions?.division_name || '—'
   const subjectLabel = (t) => t.custom_subject || t.subjects?.subject_name || '—'
-  const subjectShortLabel = (t) => t.custom_subject || t.subjects?.subject_code || t.subjects?.subject_name?.slice(0, 10) || '—'
+  const subjectShortLabel = (t) => {
+    const raw = t.custom_subject || t.subjects?.subject_name || t.subjects?.subject_code || '—'
+    const primary = raw.split('/')[0].trim()
+    // If it's already an abbreviation (all caps, no spaces), just use it
+    if (/^[A-Z0-9]{2,5}$/.test(primary)) return primary
+    // Otherwise, generate it: "Python Programming" -> "PP" or "PGM"
+    // Let's go with first letters of each word
+    const words = primary.split(/[\s_-]+/).filter(w => w.length > 0 && !(['AND', 'OF', 'FOR', 'TO', 'WITH'].includes(w.toUpperCase())))
+    if (words.length === 1 && words[0].length > 4) return words[0].slice(0,3).toUpperCase()
+    return words.map(w => w[0]).join('').toUpperCase()
+  }
   const roomLabel = (t) => t.custom_room || t.rooms?.room_number || '—'
   const timeSlotLabel = (t) => t.custom_time_slot || t.time_slots?.slot_label?.replace('Lab: ', '') || '—'
 
@@ -244,46 +254,44 @@ export default function TimetablePage() {
     const days = filterDay === 'All' ? DAYS : [filterDay]
     return (
       <div className="overflow-x-auto">
-        <table className="w-full text-xs" style={{ minWidth: `${Math.max(700, days.length * 130 + 110)}px` }}>
+        <table className="w-full text-xs" style={{ minWidth: `${Math.max(600, days.length * 90 + 80)}px` }}>
           <thead>
             <tr>
-              <th className="p-2 text-left font-semibold sticky left-0 z-10" style={{ color: 'var(--text-secondary)', width: '120px', background: 'var(--bg-secondary)' }}>Time Slot</th>
-              {days.map(d => <th key={d} className="p-2 text-center font-semibold" style={{ color: 'var(--text-secondary)' }}>{d}</th>)}
+              <th className="p-1 px-2 text-left font-semibold sticky left-0 z-10" style={{ color: 'var(--text-secondary)', width: '80px', background: 'var(--bg-secondary)' }}>Time Slot</th>
+              {days.map(d => <th key={d} className="p-1 text-center font-semibold" style={{ color: 'var(--text-secondary)' }}>{d.slice(0,3)}</th>)}
             </tr>
           </thead>
           <tbody>
             {/* 1-hour slots */}
-            <tr><td colSpan={days.length + 1} className="px-2 pt-3 pb-1">
-              <p className="text-[10px] font-bold uppercase tracking-widest opacity-40">Regular Lectures (1 hr)</p>
+            <tr><td colSpan={days.length + 1} className="px-1 pt-1 opacity-50">
+              <p className="text-[9px] font-bold uppercase tracking-widest">Regular Lectures</p>
             </td></tr>
             {regularSlots.map(slot => {
               const hasAny = filtered.some(t => t.time_slot_id === slot.id)
               return (
                 <tr key={slot.id} className="border-t" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
-                  <td className="p-2 font-mono text-xs sticky left-0 z-10" style={{ color: 'var(--text-secondary)', verticalAlign: 'top', background: 'var(--bg-secondary)' }}>
-                    {slot.slot_label}
+                  <td className="p-1 px-2 font-mono text-[10px] sticky left-0 z-10" style={{ color: 'var(--text-secondary)', verticalAlign: 'middle', background: 'var(--bg-secondary)' }}>
+                    {slot.slot_label.split('(')[0]}
                   </td>
                   {days.map(day => {
                     const entries = filtered.filter(t => t.day_of_week === day && t.time_slot_id === slot.id)
                     return (
-                      <td key={day} className="p-1" style={{ verticalAlign: 'top', minWidth: '120px' }}>
+                      <td key={day} className="p-0.5" style={{ verticalAlign: 'top', minWidth: '90px' }}>
                         {entries.map(e => {
                           const bc = e.batch_number ? getBatchColor(Number(e.batch_number)) : { bg: 'rgba(74,108,247,0.12)', border: 'rgba(74,108,247,0.25)', text: '#7090ff' }
                           return (
-                            <div key={e.id} className="mb-1 p-2 rounded-lg text-xs cursor-pointer group relative"
+                            <div key={e.id} className="p-0.5 px-1 rounded text-[10px] cursor-pointer group relative flex flex-col items-center justify-center text-center leading-[1.1]"
                               style={{ background: bc.bg, border: `1px solid ${bc.border}` }}
                               onClick={() => openEdit(e)}>
-                              {e.batch_number && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded mb-1 inline-block" style={{ background: bc.bg, color: bc.text, border: `1px solid ${bc.border}` }}>B{e.batch_number}</span>}
-                              <p className="font-semibold truncate" style={{ color: bc.text }}>{subjectShortLabel(e)}</p>
-                              <div className="flex flex-col gap-0.5 mt-1 border-t border-white/10 pt-1">
-                                <p className="truncate font-medium" style={{ color: 'var(--text-secondary)', fontSize: '10px' }}>{divisionLabel(e)}</p>
-                                <p className="truncate" style={{ color: 'var(--text-secondary)', fontSize: '10px' }}>
-                                  <span className="font-bold">{facultyInitials(e)}</span> · {roomLabel(e)}
-                                </p>
-                              </div>
-                              <div className="absolute top-1 right-1 hidden group-hover:flex gap-1">
-                                <button onClick={ev => { ev.stopPropagation(); openEdit(e) }} className="w-5 h-5 rounded flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.15)' }}><Edit2 className="w-3 h-3" /></button>
-                                <button onClick={ev => { ev.stopPropagation(); setDeleteId(e.id) }} className="w-5 h-5 rounded flex items-center justify-center" style={{ background: 'rgba(248,81,73,0.2)' }}><Trash2 className="w-3 h-3 text-red-400" /></button>
+                              <p className="font-bold truncate w-full" style={{ color: bc.text }}>{subjectShortLabel(e)}</p>
+                              <p className="opacity-80 truncate w-full font-medium" style={{ color: 'var(--text-secondary)', fontSize: '8.5px' }}>
+                                {facultyInitials(e)} · {roomLabel(e)}
+                                {e.batch_number && <span className="ml-0.5 opacity-100 font-bold" style={{color: bc.text}}>(B{e.batch_number})</span>}
+                              </p>
+                              
+                              <div className="absolute inset-0 hidden group-hover:flex items-center justify-center gap-1 bg-black/60 rounded">
+                                <button onClick={ev => { ev.stopPropagation(); openEdit(e) }} className="w-4 h-4 rounded flex items-center justify-center" style={{ background: 'var(--brand)', color: 'white' }}><Edit2 className="w-2.5 h-2.5" /></button>
+                                <button onClick={ev => { ev.stopPropagation(); setDeleteId(e.id) }} className="w-4 h-4 rounded flex items-center justify-center bg-red-500 text-white"><Trash2 className="w-2.5 h-2.5" /></button>
                               </div>
                             </div>
                           )
@@ -296,41 +304,44 @@ export default function TimetablePage() {
             })}
 
             {/* 2-hour lab slots */}
-            <tr><td colSpan={days.length + 1} className="px-2 pt-4 pb-1">
-              <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: '#d29922', opacity: 0.8 }}>
-                🧪 Lab / Elective Slots (2 hrs · up to 4 batches each)
+            <tr><td colSpan={days.length + 1} className="px-1 pt-2 opacity-50">
+              <p className="text-[9px] font-bold uppercase tracking-widest" style={{ color: '#d29922' }}>
+                Lab / Elective Slots
               </p>
             </td></tr>
             {labSlots.map(slot => (
               <tr key={slot.id} className="border-t" style={{ borderColor: 'rgba(210,153,34,0.15)' }}>
-                <td className="p-2 font-mono text-xs sticky left-0 z-10" style={{ color: '#d29922', verticalAlign: 'top', background: 'var(--bg-secondary)' }}>
-                  <FlaskConical className="w-3 h-3 inline mr-1 opacity-70" />
-                  {slot.slot_label.replace('Lab: ', '')}
+                <td className="p-1 px-2 font-mono text-[10px] sticky left-0 z-10" style={{ color: '#d29922', verticalAlign: 'middle', background: 'var(--bg-secondary)' }}>
+                  <FlaskConical className="w-2.5 h-2.5 inline mr-1 opacity-70" />
+                  {slot.slot_label.replace('Lab: ', '').split('(')[0]}
                 </td>
                 {days.map(day => {
                   const entries = filtered.filter(t => t.day_of_week === day && t.time_slot_id === slot.id)
                   return (
-                    <td key={day} className="p-1" style={{ verticalAlign: 'top', minWidth: '120px' }}>
-                      <div className="flex flex-wrap gap-1">
+                    <td key={day} className="p-0.5" style={{ verticalAlign: 'top', minWidth: '90px' }}>
+                      <div className="flex flex-wrap gap-0.5">
                         {entries.map(e => {
                           const bc = e.batch_number ? getBatchColor(Number(e.batch_number)) : { bg: 'rgba(210,153,34,0.12)', border: 'rgba(210,153,34,0.3)', text: '#d29922' }
                           return (
-                            <div key={e.id} className="p-2 rounded-lg text-xs cursor-pointer group relative flex-1 min-w-[80px]"
+                            <div key={e.id} className="p-0.5 px-1 rounded text-[10px] cursor-pointer group relative flex-1 min-w-[70px] flex flex-col items-center justify-center text-center leading-[1.1]"
                               style={{ background: bc.bg, border: `1px solid ${bc.border}` }}
                               onClick={() => openEdit(e)}>
-                              {e.batch_number && <span className="text-[9px] font-bold" style={{ color: bc.text }}>B{e.batch_number} · </span>}
-                              <span className="font-semibold" style={{ color: bc.text }}>{subjectShortLabel(e)}</span>
-                              <p className="truncate mt-0.5" style={{ color: 'var(--text-secondary)', fontSize: '10px' }}>
+                              <p className="font-bold truncate w-full" style={{ color: bc.text }}>
+                                {e.batch_number && <span className="font-black mr-0.5">B{e.batch_number}</span>}
+                                {subjectShortLabel(e)}
+                              </p>
+                              <p className="opacity-80 truncate w-full mt-0.5" style={{ color: 'var(--text-secondary)', fontSize: '8.5px' }}>
                                 <span className="font-bold">{facultyInitials(e)}</span> · {roomLabel(e)}
                               </p>
-                              <div className="absolute top-1 right-1 hidden group-hover:flex gap-0.5">
-                                <button onClick={ev => { ev.stopPropagation(); openEdit(e) }} className="w-4 h-4 rounded flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.15)' }}><Edit2 className="w-2.5 h-2.5" /></button>
-                                <button onClick={ev => { ev.stopPropagation(); setDeleteId(e.id) }} className="w-4 h-4 rounded flex items-center justify-center" style={{ background: 'rgba(248,81,73,0.2)' }}><Trash2 className="w-2.5 h-2.5 text-red-400" /></button>
+                              
+                              <div className="absolute inset-0 hidden group-hover:flex items-center justify-center gap-1 bg-black/60 rounded">
+                                <button onClick={ev => { ev.stopPropagation(); openEdit(e) }} className="w-4 h-4 rounded flex items-center justify-center" style={{ background: '#d29922', color: 'black' }}><Edit2 className="w-2.5 h-2.5" /></button>
+                                <button onClick={ev => { ev.stopPropagation(); setDeleteId(e.id) }} className="w-4 h-4 rounded flex items-center justify-center bg-red-500 text-white" ><Trash2 className="w-2.5 h-2.5" /></button>
                               </div>
                             </div>
                           )
                         })}
-                        {entries.length === 0 && <span className="text-[10px] opacity-20 px-1">—</span>}
+                        {entries.length === 0 && <span className="text-[10px] opacity-10 px-1">—</span>}
                       </div>
                     </td>
                   )
@@ -375,7 +386,7 @@ export default function TimetablePage() {
   )
 
   return (
-    <div className="p-6 space-y-5 animate-fade-in">
+    <div className="p-3 space-y-4 animate-fade-in">
       <div className="flex items-center justify-between flex-wrap gap-3">
         <div>
           <h1 className="font-display font-bold text-xl" style={{ color: 'var(--text-primary)' }}>Timetable Management</h1>
@@ -435,7 +446,7 @@ export default function TimetablePage() {
         {hasActiveFilters && <p className="text-xs opacity-50">{filtered.length} of {timetable.length} entries shown</p>}
       </div>
 
-      <div className="glass-card p-4 overflow-x-auto">
+      <div className="glass-card p-2 overflow-x-auto">
         {loading ? (
           <div className="text-center py-10 opacity-50 text-sm">Loading timetable...</div>
         ) : view === 'grid' ? <GridView /> : (

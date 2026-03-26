@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { format, parseISO } from 'date-fns'
-import { Filter, FileText, Clock, Users, ChevronLeft, Edit2, Check, X, AlertCircle, Save } from 'lucide-react'
+import { Filter, FileText, Clock, Users, ChevronLeft, Edit2, Check, X, AlertCircle, Save, Lock } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { supabase } from '../../lib/supabase'
 import { formatDate, formatTime, attendancePercent } from '../../utils/helpers'
@@ -23,6 +23,7 @@ export default function HistoryPage() {
   const [editing, setEditing] = useState(false)
   const [editForm, setEditForm] = useState({})
   const [saving, setSaving] = useState(false)
+  const [lockedDates, setLockedDates] = useState([])
 
   useEffect(() => {
     if (profile?.id) {
@@ -33,9 +34,14 @@ export default function HistoryPage() {
   const fetchHistory = async () => {
     try {
       setLoading(true)
+      
+      // Fetch locked dates
+      const { data: locks } = await supabase.from('locked_dates').select('locked_date')
+      if (locks) setLockedDates(locks.map(l => l.locked_date))
+
       const { data, error } = await supabase
         .from('lecture_records')
-        .select('*, subjects(*), divisions(*), rooms:room_id(*)')
+        .select('*, subjects(*), divisions(*), rooms:room_id(*), attendance(student_id, is_present, students(full_name, roll_number))')
         .eq('faculty_id', profile.id)
         .order('lecture_date', { ascending: false })
       
@@ -59,6 +65,14 @@ export default function HistoryPage() {
   }
 
   const startEdit = () => {
+    // Initialize attendance from the fetched record
+    const att = {}
+    if (selected.attendance) {
+      selected.attendance.forEach(a => {
+        att[a.student_id] = a.is_present
+      })
+    }
+
     setEditForm({
       topic_covered: selected.topic_covered,
       subtopics: selected.subtopics || '',
@@ -70,6 +84,7 @@ export default function HistoryPage() {
       actual_end: selected.actual_end || '',
       present_count: selected.present_count,
       total_students: selected.total_students,
+      attendanceDetails: att,
     })
     setEditing(true)
   }
@@ -86,33 +101,70 @@ export default function HistoryPage() {
     }
     try {
       setSaving(true)
+      const { attendanceDetails, ...rest } = editForm
+      
       const { error } = await supabase
         .from('lecture_records')
         .update({
-          ...editForm,
+          ...rest,
           present_count: Number(editForm.present_count),
           total_students: Number(editForm.total_students),
           absent_count: Number(editForm.total_students) - Number(editForm.present_count),
           approval_status: 'pending', // re-submit for review
           rejection_reason: null,
           approved_at: null,
+          updated_at: new Date().toISOString()
         })
         .eq('id', selected.id)
         .eq('faculty_id', profile.id)
 
       if (error) throw error
-      toast.success('Record resubmitted for review!')
+
+      // Update attendance records if we have details
+      if (attendanceDetails && Object.keys(attendanceDetails).length > 0) {
+        // Delete old attendance
+        await supabase.from('attendance').delete().eq('lecture_record_id', selected.id)
+        
+        // Insert new ones
+        const newAtt = Object.entries(attendanceDetails).map(([sid, present]) => ({
+          lecture_record_id: selected.id,
+          student_id: sid,
+          is_present: present
+        }))
+        await supabase.from('attendance').insert(newAtt)
+      }
+
+      toast.success(selected.approval_status === 'approved' ? 'Record updated and resubmitted' : 'Record resubmitted for review!')
       await fetchHistory()
-      // Update the selected record to reflect new state
-      const updated = records.find(r => r.id === selected.id)
-      if (updated) setSelected({ ...updated, ...editForm, approval_status: 'pending' })
+      
       setEditing(false)
+      setSelected(null) // Return to list to refresh data properly
     } catch (error) {
       console.error(error)
       toast.error('Failed to update record')
     } finally {
       setSaving(false)
     }
+  }
+
+  const toggleStudent = (id) => {
+    const next = { ...editForm.attendanceDetails, [id]: !editForm.attendanceDetails[id] }
+    const presentCount = Object.values(next).filter(Boolean).length
+    setEditForm(prev => ({
+      ...prev,
+      attendanceDetails: next,
+      present_count: presentCount
+    }))
+  }
+
+  const markAll = (present) => {
+    const next = {}
+    Object.keys(editForm.attendanceDetails).forEach(id => { next[id] = present })
+    setEditForm(prev => ({
+      ...prev,
+      attendanceDetails: next,
+      present_count: present ? prev.total_students : 0
+    }))
   }
 
   const ef = (key, val) => setEditForm(f => ({ ...f, [key]: val }))
@@ -125,10 +177,15 @@ export default function HistoryPage() {
           <button onClick={() => { setSelected(null); setEditing(false) }} className="flex items-center gap-2 text-sm" style={{ color: 'var(--text-secondary)' }}>
             <ChevronLeft className="w-4 h-4" /> Back to History
           </button>
-          {r.approval_status === 'rejected' && !editing && (
+          {!lockedDates.includes(r.lecture_date) && !editing && (
             <button onClick={startEdit} className="flex items-center gap-2 text-sm btn-secondary py-1.5 px-3">
-              <Edit2 className="w-3.5 h-3.5" /> Edit & Resubmit
+              <Edit2 className="w-3.5 h-3.5" /> {r.approval_status === 'approved' ? 'Edit Record' : 'Edit & Resubmit'}
             </button>
+          )}
+          {lockedDates.includes(r.lecture_date) && !editing && (
+            <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg text-[11px] font-bold" style={{ background: 'rgba(248,81,73,0.1)', color: '#f85149', border: '1px solid rgba(248,81,73,0.2)' }}>
+              <Lock className="w-3 h-3" /> Locked by Admin
+            </div>
           )}
           {editing && (
             <div className="flex gap-2">
@@ -169,7 +226,7 @@ export default function HistoryPage() {
               <h2 className="font-display font-bold text-lg">{r.custom_subject || r.subjects?.subject_name}</h2>
               <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>{r.custom_division || r.divisions?.division_name} - {r.custom_room || r.rooms?.room_number || '—'}</p>
             </div>
-            <StatusBadge status={editing ? 'pending' : r.approval_status} />
+            <StatusBadge status={editing ? 'pending' : (lockedDates.includes(r.lecture_date) ? 'locked' : r.approval_status)} />
           </div>
           <div className="h-px" style={{ background: 'rgba(255,255,255,0.06)' }} />
 
@@ -209,16 +266,55 @@ export default function HistoryPage() {
                 <label className="form-label">Unit Number</label>
                 <input type="number" className="input-field" min={1} max={10} value={editForm.unit_number} onChange={e => ef('unit_number', e.target.value)} />
               </div>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="form-label">Total Students</label>
-                  <input type="number" className="input-field text-center font-bold" value={editForm.total_students} onChange={e => ef('total_students', e.target.value)} />
+              {editForm.attendanceDetails && Object.keys(editForm.attendanceDetails).length > 0 ? (
+                <div className="space-y-3">
+                  <div className="flex justify-between items-center">
+                    <label className="form-label mb-0">Student Attendance</label>
+                    <span className="text-xs font-bold" style={{ color: Number(editForm.present_count)/Number(editForm.total_students) >= 0.75 ? '#3fb950' : '#f85149' }}>
+                      {editForm.present_count} / {editForm.total_students} ({Math.round(Number(editForm.present_count)/Number(editForm.total_students)*100)}%)
+                    </span>
+                  </div>
+                  <div className="flex gap-2">
+                    <button onClick={() => markAll(true)} className="flex-1 py-1.5 rounded-lg text-[10px] font-bold"
+                      style={{ background:'rgba(63,185,80,0.15)',color:'#3fb950',border:'1px solid rgba(63,185,80,0.3)' }}>All Present</button>
+                    <button onClick={() => markAll(false)} className="flex-1 py-1.5 rounded-lg text-[10px] font-bold"
+                      style={{ background:'rgba(248,81,73,0.1)',color:'#f85149',border:'1px solid rgba(248,81,73,0.25)' }}>All Absent</button>
+                  </div>
+                  <div className="grid grid-cols-2 gap-2 max-h-60 overflow-y-auto pr-1">
+                    {selected.attendance?.map(a => {
+                      const sid = a.student_id
+                      const present = editForm.attendanceDetails[sid]
+                      return (
+                        <button key={sid} onClick={() => toggleStudent(sid)}
+                          className="p-2 rounded-lg text-left transition-all active:scale-95"
+                          style={{ background:present?'rgba(63,185,80,0.08)':'rgba(248,81,73,0.05)', border:`1px solid ${present?'rgba(63,185,80,0.3)':'rgba(248,81,73,0.2)'}` }}>
+                          <div className="flex items-center gap-2">
+                            <div className="w-5 h-5 rounded flex items-center justify-center text-[10px] font-bold flex-shrink-0"
+                              style={{ background:present?'rgba(63,185,80,0.2)':'rgba(248,81,73,0.15)',color:present?'#3fb950':'#f85149' }}>
+                              {present?'✓':'✗'}
+                            </div>
+                            <div className="min-w-0">
+                              <p className="text-[9px] font-bold truncate leading-none" style={{ color:present?'#3fb950':'#f85149' }}>{a.students?.roll_number}</p>
+                              <p className="text-[10px] truncate leading-tight mt-0.5" style={{ color:'var(--text-primary)' }}>{a.students?.full_name}</p>
+                            </div>
+                          </div>
+                        </button>
+                      )
+                    })}
+                  </div>
                 </div>
-                <div>
-                  <label className="form-label">Present</label>
-                  <input type="number" className="input-field text-center font-bold" min={0} max={editForm.total_students} value={editForm.present_count} onChange={e => ef('present_count', e.target.value)} />
+              ) : (
+                <div className="grid grid-cols-2 gap-3">
+                  <div>
+                    <label className="form-label">Total Students</label>
+                    <input type="number" className="input-field text-center font-bold" value={editForm.total_students} onChange={e => ef('total_students', e.target.value)} />
+                  </div>
+                  <div>
+                    <label className="form-label">Present</label>
+                    <input type="number" className="input-field text-center font-bold" min={0} max={editForm.total_students} value={editForm.present_count} onChange={e => ef('present_count', e.target.value)} />
+                  </div>
                 </div>
-              </div>
+              )}
               <div>
                 <label className="form-label">LCS Status</label>
                 <div className="grid grid-cols-3 gap-2">
@@ -304,9 +400,9 @@ export default function HistoryPage() {
                   <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>{r.custom_division || r.divisions?.division_name} - {formatDate(r.lecture_date)}</p>
                 </div>
                 <div className="flex flex-col items-end gap-1">
-                  <StatusBadge status={r.approval_status} />
-                  {r.approval_status === 'rejected' && (
-                    <span className="text-[10px] font-bold" style={{ color: '#f85149' }}>Tap to edit</span>
+                  <StatusBadge status={lockedDates.includes(r.lecture_date) ? 'locked' : r.approval_status} />
+                  {!lockedDates.includes(r.lecture_date) && (
+                    <span className="text-[10px] font-bold" style={{ color: r.approval_status === 'approved' ? 'var(--text-secondary)' : '#f85149' }}>Tap to edit</span>
                   )}
                 </div>
               </div>

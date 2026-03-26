@@ -276,7 +276,6 @@ export default function SubmitLecture() {
 
       setSubmitted(true)
       toast.success('Lecture record submitted successfully!')
-      setTimeout(() => navigate('/faculty'), 1800)
     } catch (error) {
       console.error('Error submitting lecture record:', error)
       toast.error('Failed to submit lecture record. Please try again.')
@@ -314,6 +313,14 @@ export default function SubmitLecture() {
         </div>
         <h2 className="font-display font-bold text-2xl mb-2" style={{ color: 'var(--text-primary)' }}>Submitted!</h2>
         <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Your lecture record has been submitted for admin review.</p>
+        <p className="text-[11px] mt-2 font-medium" style={{ color: '#d29922' }}>
+          <AlertCircle className="w-3 h-3 inline mr-1" />
+          Marked a student absent by mistake? You can edit this record in <strong>History</strong>.
+        </p>
+        <div className="flex gap-3 mt-6 w-full max-w-xs">
+          <button onClick={() => navigate('/faculty')} className="btn-secondary flex-1 py-3 text-sm font-bold">Dashboard</button>
+          <button onClick={() => navigate('/faculty/history')} className="btn-primary flex-1 py-3 text-sm font-bold">View History</button>
+        </div>
         <div className="mt-6 glass-card p-4 w-full text-left space-y-2">
           <div className="flex justify-between text-sm">
             <span style={{ color: 'var(--text-secondary)' }}>Subject</span>
