@@ -31,11 +31,11 @@ export default function ApprovalsPage() {
         .from('lecture_records')
         .select(`
           *,
-          subjects (*),
-          divisions (*),
-          rooms:room_id (*),
-          faculty:faculty_id (full_name),
-          original_faculty:original_faculty_id (full_name)
+          subjects:subjects!subject_id (*),
+          divisions:divisions!division_id (*),
+          rooms:rooms!room_id (*),
+          faculty:users!faculty_id (full_name),
+          original_faculty:users!original_faculty_id (full_name)
         `)
         .order('lecture_date', { ascending: false })
       

@@ -148,8 +148,8 @@ export default function AdminSubmitDLR() {
       lcs_status: form.lcs_status,
       smartboard_pdf_uploaded: form.smartboard_pdf_uploaded,
       remarks: form.remarks,
-      total_students: students.length > 0 ? students.length : Number(form.total_students),
-      present_count: presentCount > 0 ? presentCount : Number(form.present_count),
+      total_students: students.length > 0 ? students.length : (Number(form.total_students) || 60),
+      present_count: (students.length > 0) ? presentCount : (Number(form.present_count) || Number(form.total_students) || 60),
       approval_status: 'pending',
       submitted_at: new Date().toISOString(),
     }
@@ -409,7 +409,7 @@ export default function AdminSubmitDLR() {
               <p className="text-xs mt-1 opacity-30">You can still submit with a manual count.</p>
               <div className="mt-4 space-y-1.5">
                 <label className="form-label">Manual Present Count</label>
-                <input type="number" className="input-field w-full" placeholder="e.g. 45" value={form.present_count} onChange={e => setForm(f => ({ ...f, present_count: e.target.value }))} />
+                <input type="number" className="input-field w-full" placeholder="e.g. 60" value={form.present_count} onChange={e => setForm(f => ({ ...f, present_count: e.target.value }))} />
               </div>
             </div>
           ) : (

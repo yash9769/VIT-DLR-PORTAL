@@ -22,6 +22,8 @@ const ReportsPage = lazy(() => import('./pages/admin/ReportsPage'))
 const SystemIssuesPage = lazy(() => import('./pages/admin/SystemIssues'))
 const StudentsPage = lazy(() => import('./pages/admin/StudentsPage'))
 
+const AdminDayView = lazy(() => import('./pages/admin/AdminDayView'))
+
 export default function App() {
   return (
     <BrowserRouter>
@@ -42,6 +44,7 @@ export default function App() {
               <Route path="/admin" element={<AuthGuard requireRole="admin"><AdminLayout /></AuthGuard>}>
                 <Route index element={<AdminDashboard />} />
                 <Route path="timetable" element={<TimetablePage />} />
+                <Route path="day-view" element={<AdminDayView />} />
                 <Route path="records" element={<ApprovalsPage />} />
                 <Route path="faculty" element={<FacultyPage />} />
                 <Route path="reports" element={<ReportsPage />} />

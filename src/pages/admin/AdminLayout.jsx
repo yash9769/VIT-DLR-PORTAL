@@ -10,7 +10,7 @@ import vitLogo from '../../assets/vit-logo.png'
 
 const NAV_GROUPS = [
   { label: 'Overview', items: [{ path: '/admin', label: 'Dashboard', icon: LayoutDashboard, exact: true }] },
-  { label: 'Academic', items: [{ path: '/admin/timetable', label: 'Timetable', icon: Calendar }, { path: '/admin/records', label: 'Lecture Records', icon: FileText }] },
+  { label: 'Academic', items: [{ path: '/admin/timetable', label: 'Timetable', icon: Calendar }, { path: '/admin/day-view', label: 'Day View (Submit DLR)', icon: Calendar }, { path: '/admin/records', label: 'Lecture Records', icon: FileText }] },
   { label: 'Management', items: [{ path: '/admin/faculty', label: 'Faculty', icon: Users }, { path: '/admin/students', label: 'Students', icon: GraduationCap }] },
   { label: 'Reports', items: [{ path: '/admin/reports', label: 'Reports', icon: Settings }] },
   { label: 'Support', items: [{ path: '/admin/issues', label: 'Support Center', icon: LifeBuoy }] },

@@ -33,9 +33,9 @@ export const DEMO_SUBJECTS = [
 ]
 
 export const DEMO_DIVISIONS = [
-  { id: 'div1', division_name: 'IT-A', year: 3, semester: 6, department: 'IT', strength: 60 },
-  { id: 'div2', division_name: 'IT-B', year: 3, semester: 6, department: 'IT', strength: 58 },
-  { id: 'div3', division_name: 'IT-A1', year: 3, semester: 6, department: 'IT', strength: 30 },
+  { id: 'div1', division_name: 'INFT-6-A', year: 3, semester: 6, department: 'INFT', strength: 60 },
+  { id: 'div2', division_name: 'INFT-6-B', year: 3, semester: 6, department: 'INFT', strength: 58 },
+  { id: 'div3', division_name: 'INFT-6-A1', year: 3, semester: 6, department: 'INFT', strength: 30 },
 ]
 
 export const DEMO_ROOMS = [
@@ -46,10 +46,10 @@ export const DEMO_ROOMS = [
 ]
 
 export const DEMO_FACULTY_LIST = [
-  { id: 'demo-faculty-001', full_name: 'Dr. Priya Sharma',    department: 'IT', role: 'faculty' },
-  { id: 'demo-faculty-002', full_name: 'Prof. Anand Kulkarni', department: 'IT', role: 'faculty' },
-  { id: 'demo-faculty-003', full_name: 'Dr. Meera Joshi',      department: 'IT', role: 'faculty' },
-  { id: 'demo-faculty-004', full_name: 'Prof. Vikram Desai',   department: 'IT', role: 'faculty' },
+  { id: 'demo-faculty-001', full_name: 'Dr. Priya Sharma',    department: 'INFT', role: 'faculty' },
+  { id: 'demo-faculty-002', full_name: 'Prof. Anand Kulkarni', department: 'INFT', role: 'faculty' },
+  { id: 'demo-faculty-003', full_name: 'Dr. Meera Joshi',      department: 'INFT', role: 'faculty' },
+  { id: 'demo-faculty-004', full_name: 'Prof. Vikram Desai',   department: 'INFT', role: 'faculty' },
 ]
 
 const today = new Date().toISOString().split('T')[0]
@@ -110,7 +110,7 @@ export const DEMO_STUDENTS = [
 
 export const DEMO_NOTIFICATIONS = [
   { id: 'n1', title: 'DLR Pending', message: 'You have 1 pending DLR submission for yesterday.', type: 'warning', is_read: false, created_at: new Date().toISOString() },
-  { id: 'n2', title: 'Record Approved', message: 'Your lecture record for IS (IT-A) has been approved by HOD.', type: 'success', is_read: false, created_at: new Date(Date.now() - 3600000).toISOString() },
+  { id: 'n2', title: 'Record Approved', message: 'Your lecture record for IS (INFT-6-A) has been approved by HOD.', type: 'success', is_read: false, created_at: new Date(Date.now() - 3600000).toISOString() },
 ]
 
 export const DEMO_SUBSTITUTIONS = [

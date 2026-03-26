@@ -1,4 +1,5 @@
 import { useState, useEffect } from 'react'
+import { useLocation } from 'react-router-dom'
 import { format, parseISO } from 'date-fns'
 import { Filter, FileText, Clock, Users, ChevronLeft, Edit2, Check, X, AlertCircle, Save, Lock } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
@@ -16,6 +17,7 @@ const LCS_OPTIONS = [
 
 export default function HistoryPage() {
   const { profile } = useAuth()
+  const location = useLocation()
   const [loading, setLoading] = useState(true)
   const [records, setRecords] = useState([])
   const [filter, setFilter] = useState('All')
@@ -30,6 +32,17 @@ export default function HistoryPage() {
       fetchHistory()
     }
   }, [profile?.id])
+
+  // Handle auto-edit from navigation state
+  useEffect(() => {
+    if (!loading && records.length > 0 && location.state?.autoEditId) {
+      const recordToEdit = records.find(r => r.id === location.state.autoEditId)
+      if (recordToEdit) {
+        setSelected(recordToEdit)
+        startEdit(recordToEdit)
+      }
+    }
+  }, [loading, records, location.state])
 
   const fetchHistory = async () => {
     try {
@@ -64,26 +77,27 @@ export default function HistoryPage() {
     setEditForm({})
   }
 
-  const startEdit = () => {
+  const startEdit = (rec = selected) => {
+    if (!rec) return
     // Initialize attendance from the fetched record
     const att = {}
-    if (selected.attendance) {
-      selected.attendance.forEach(a => {
+    if (rec.attendance) {
+      rec.attendance.forEach(a => {
         att[a.student_id] = a.is_present
       })
     }
 
     setEditForm({
-      topic_covered: selected.topic_covered,
-      subtopics: selected.subtopics || '',
-      unit_number: selected.unit_number || '',
-      remarks: selected.remarks || '',
-      lcs_status: selected.lcs_status,
-      smartboard_pdf_uploaded: selected.smartboard_pdf_uploaded,
-      actual_start: selected.actual_start || '',
-      actual_end: selected.actual_end || '',
-      present_count: selected.present_count,
-      total_students: selected.total_students,
+      topic_covered: rec.topic_covered,
+      subtopics: rec.subtopics || '',
+      unit_number: rec.unit_number || '',
+      remarks: rec.remarks || '',
+      lcs_status: rec.lcs_status,
+      smartboard_pdf_uploaded: rec.smartboard_pdf_uploaded,
+      actual_start: rec.actual_start || '',
+      actual_end: rec.actual_end || '',
+      present_count: rec.present_count,
+      total_students: rec.total_students,
       attendanceDetails: att,
     })
     setEditing(true)

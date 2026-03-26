@@ -82,7 +82,7 @@ export default function TimetablePage() {
       setLoading(true)
       const { data, error } = await supabase
         .from('timetable')
-        .select(`*, subjects(*), divisions(*), rooms:room_id(*), faculty:faculty_id(full_name, initials), time_slots:time_slot_id(*)`)
+        .select(`*, subjects:subjects!subject_id(*), divisions:divisions!division_id(*), rooms:rooms!room_id(*), faculty:users!faculty_id(full_name, initials), time_slots:time_slots!time_slot_id(*)`)
       if (error) throw error
       setTimetable(data || [])
     } catch {
@@ -194,7 +194,11 @@ export default function TimetablePage() {
     if (useCustomTimeSlot && !form.custom_time_slot.trim()) { toast.error('Custom Time Slot is required'); return }
 
     const found = checkConflicts(form)
-    if (found.length > 0) return
+    if (found.length > 0) {
+      if (!window.confirm("There are scheduling conflicts. Do you still want to save this slot?")) {
+        return
+      }
+    }
 
     try {
       const payload = {
@@ -253,12 +257,12 @@ export default function TimetablePage() {
   const GridView = () => {
     const days = filterDay === 'All' ? DAYS : [filterDay]
     return (
-      <div className="overflow-x-auto">
-        <table className="w-full text-xs" style={{ minWidth: `${Math.max(600, days.length * 90 + 80)}px` }}>
+      <div className="overflow-x-auto border border-white/20 rounded-lg shadow-lg">
+        <table className="w-full text-xs border-collapse" style={{ minWidth: `${Math.max(600, days.length * 90 + 80)}px` }}>
           <thead>
             <tr>
-              <th className="p-1 px-2 text-left font-semibold sticky left-0 z-10" style={{ color: 'var(--text-secondary)', width: '80px', background: 'var(--bg-secondary)' }}>Time Slot</th>
-              {days.map(d => <th key={d} className="p-1 text-center font-semibold" style={{ color: 'var(--text-secondary)' }}>{d.slice(0,3)}</th>)}
+              <th className="p-1 px-2 text-left font-semibold sticky left-0 z-10 border border-white/20" style={{ color: 'var(--text-secondary)', width: '80px', background: 'var(--bg-secondary)' }}>Time Slot</th>
+              {days.map(d => <th key={d} className="p-1 text-center font-semibold border border-white/20" style={{ color: 'var(--text-secondary)' }}>{d.slice(0,3)}</th>)}
             </tr>
           </thead>
           <tbody>
@@ -270,13 +274,13 @@ export default function TimetablePage() {
               const hasAny = filtered.some(t => t.time_slot_id === slot.id)
               return (
                 <tr key={slot.id} className="border-t" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
-                  <td className="p-1 px-2 font-mono text-[10px] sticky left-0 z-10" style={{ color: 'var(--text-secondary)', verticalAlign: 'middle', background: 'var(--bg-secondary)' }}>
+                  <td className="p-1 px-2 font-mono text-[10px] sticky left-0 z-10 border border-white/20" style={{ color: 'var(--text-secondary)', verticalAlign: 'middle', background: 'var(--bg-secondary)' }}>
                     {slot.slot_label.split('(')[0]}
                   </td>
                   {days.map(day => {
-                    const entries = filtered.filter(t => t.day_of_week === day && t.time_slot_id === slot.id)
+                    const entries = filtered.filter(t => t.day_of_week === day && t.time_slot_id === slot.id).sort((a, b) => (a.batch_number || 0) - (b.batch_number || 0))
                     return (
-                      <td key={day} className="p-0.5" style={{ verticalAlign: 'top', minWidth: '90px' }}>
+                      <td key={day} className="p-0.5 border border-white/20" style={{ verticalAlign: 'top', minWidth: '90px' }}>
                         {entries.map(e => {
                           const bc = e.batch_number ? getBatchColor(Number(e.batch_number)) : { bg: 'rgba(74,108,247,0.12)', border: 'rgba(74,108,247,0.25)', text: '#7090ff' }
                           return (
@@ -311,14 +315,14 @@ export default function TimetablePage() {
             </td></tr>
             {labSlots.map(slot => (
               <tr key={slot.id} className="border-t" style={{ borderColor: 'rgba(210,153,34,0.15)' }}>
-                <td className="p-1 px-2 font-mono text-[10px] sticky left-0 z-10" style={{ color: '#d29922', verticalAlign: 'middle', background: 'var(--bg-secondary)' }}>
+                <td className="p-1 px-2 font-mono text-[10px] sticky left-0 z-10 border border-white/20" style={{ color: '#d29922', verticalAlign: 'middle', background: 'var(--bg-secondary)' }}>
                   <FlaskConical className="w-2.5 h-2.5 inline mr-1 opacity-70" />
                   {slot.slot_label.replace('Lab: ', '').split('(')[0]}
                 </td>
                 {days.map(day => {
-                  const entries = filtered.filter(t => t.day_of_week === day && t.time_slot_id === slot.id)
+                  const entries = filtered.filter(t => t.day_of_week === day && t.time_slot_id === slot.id).sort((a, b) => (a.batch_number || 0) - (b.batch_number || 0))
                   return (
-                    <td key={day} className="p-0.5" style={{ verticalAlign: 'top', minWidth: '90px' }}>
+                    <td key={day} className="p-0.5 border border-white/20" style={{ verticalAlign: 'top', minWidth: '90px' }}>
                       <div className="flex flex-wrap gap-0.5">
                         {entries.map(e => {
                           const bc = e.batch_number ? getBatchColor(Number(e.batch_number)) : { bg: 'rgba(210,153,34,0.12)', border: 'rgba(210,153,34,0.3)', text: '#d29922' }
@@ -432,7 +436,7 @@ export default function TimetablePage() {
             </select>
             <select className="select-field text-sm flex-1 min-w-[130px]" value={filterDivision} onChange={e => setFilterDivision(e.target.value)}>
               <option value="">All Divisions</option>
-              {divisions.map(d => <option key={d.id} value={d.id}>{d.division_name}</option>)}
+              {divisions.filter(d => !filterSem || d.semester == filterSem).map(d => <option key={d.id} value={d.id}>{d.division_name}</option>)}
             </select>
             <select className="select-field text-sm flex-1 min-w-[110px]" value={filterBatch} onChange={e => setFilterBatch(e.target.value)}>
               <option value="">All Batches</option>
@@ -494,7 +498,7 @@ export default function TimetablePage() {
         )}
       </div>
 
-      <Modal open={showModal} onClose={() => setShowModal(false)} title={editEntry ? 'Edit Timetable Entry' : 'Add Timetable Entry'} size="md">
+      <Modal open={showModal} onClose={() => setShowModal(false)} title={<div className="flex items-center justify-between w-full pr-8"><span>{editEntry ? 'Edit Timetable Entry' : 'Add Timetable Entry'}</span> <button onClick={() => { setUseCustomFaculty(true); setUseCustomSubject(true); setUseCustomRoom(true); setForm(f => ({...f, custom_faculty: 'DO', custom_subject: 'DO', custom_room: 'DO', faculty_id: '', subject_id: '', room_id: ''})); setConflicts([]); }} className="text-xs bg-brand-500/20 text-brand-300 hover:bg-brand-500/30 px-2 py-1 rounded">Set as Ditto (DO)</button></div>} size="md">
         <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar">
           <ConflictWarning conflicts={conflicts} />
 
@@ -573,7 +577,9 @@ export default function TimetablePage() {
           </button>
           <div className="flex gap-2">
             <button onClick={() => setShowModal(false)} className="btn-secondary">Cancel</button>
-            <button onClick={handleSave} disabled={conflicts.length > 0} className="btn-primary disabled:opacity-40">Save</button>
+            <button onClick={handleSave} className={`btn-primary ${conflicts.length > 0 ? 'bg-orange-500 hover:bg-orange-600 border-none' : ''}`}>
+              {conflicts.length > 0 ? 'Save with Conflicts' : 'Save'}
+            </button>
           </div>
         </div>
       </Modal>

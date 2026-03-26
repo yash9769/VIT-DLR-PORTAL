@@ -14,6 +14,20 @@ DECLARE
   v_div_id UUID;
 BEGIN
 
+  -- 1. Ensure Divisions Exist (Naming: INFT-4-A, etc.)
+  INSERT INTO public.divisions (division_name, year, semester, department, strength) VALUES
+  ('INFT-4-A', 2, 4, 'INFT', 80),
+  ('INFT-4-B', 2, 4, 'INFT', 75),
+  ('INFT-4-C', 2, 4, 'INFT', 75),
+  ('INFT-6-A', 3, 6, 'INFT', 80),
+  ('INFT-6-B', 3, 6, 'INFT', 80),
+  ('INFT-6-C', 3, 6, 'INFT', 75)
+  ON CONFLICT (division_name, department, year) DO UPDATE SET 
+    year = EXCLUDED.year,
+    semester = EXCLUDED.semester,
+    department = EXCLUDED.department,
+    strength = EXCLUDED.strength;
+
   -- Division: INFT-4-A
   SELECT id INTO v_div_id FROM public.divisions WHERE division_name = 'INFT-4-A' LIMIT 1;
   IF v_div_id IS NOT NULL THEN

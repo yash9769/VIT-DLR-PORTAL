@@ -9,11 +9,11 @@ ALTER TABLE public.students ADD COLUMN IF NOT EXISTS batch_number INTEGER;
 DELETE FROM public.students;
 
 
--- Division IT-A  Sem 4  Year 2  (79 students)
+-- Division INFT-4-A  Sem 4  Year 2  (79 students)
 DO $$ DECLARE v_div UUID; BEGIN
   SELECT id INTO v_div FROM public.divisions
-    WHERE division_name='IT-A' AND year=2 AND department='IT' LIMIT 1;
-  IF v_div IS NULL THEN RAISE WARNING 'Division IT-A year 2 not found'; RETURN; END IF;
+    WHERE division_name='INFT-4-A' AND year=2 AND department='INFT' LIMIT 1;
+  IF v_div IS NULL THEN RAISE WARNING 'Division INFT-4-A year 2 not found'; RETURN; END IF;
   INSERT INTO public.students (roll_number, full_name, division_id, batch_number)
     VALUES ('24101A0002','SHAYAAN CHITRE', v_div, 1)
     ON CONFLICT (roll_number) DO UPDATE SET full_name=EXCLUDED.full_name,
@@ -332,11 +332,11 @@ DO $$ DECLARE v_div UUID; BEGIN
       division_id=EXCLUDED.division_id, batch_number=EXCLUDED.batch_number;
 END $$;
 
--- Division IT-B  Sem 4  Year 2  (74 students)
+-- Division INFT-4-B  Sem 4  Year 2  (74 students)
 DO $$ DECLARE v_div UUID; BEGIN
   SELECT id INTO v_div FROM public.divisions
-    WHERE division_name='IT-B' AND year=2 AND department='IT' LIMIT 1;
-  IF v_div IS NULL THEN RAISE WARNING 'Division IT-B year 2 not found'; RETURN; END IF;
+    WHERE division_name='INFT-4-B' AND year=2 AND department='INFT' LIMIT 1;
+  IF v_div IS NULL THEN RAISE WARNING 'Division INFT-4-B year 2 not found'; RETURN; END IF;
   INSERT INTO public.students (roll_number, full_name, division_id, batch_number)
     VALUES ('24101B0001','MOHAMMED YUSUF SAYED', v_div, 1)
     ON CONFLICT (roll_number) DO UPDATE SET full_name=EXCLUDED.full_name,
@@ -635,11 +635,11 @@ DO $$ DECLARE v_div UUID; BEGIN
       division_id=EXCLUDED.division_id, batch_number=EXCLUDED.batch_number;
 END $$;
 
--- Division IT-C  Sem 4  Year 2  (74 students)
+-- Division INFT-4-C  Sem 4  Year 2  (74 students)
 DO $$ DECLARE v_div UUID; BEGIN
   SELECT id INTO v_div FROM public.divisions
-    WHERE division_name='IT-C' AND year=2 AND department='IT' LIMIT 1;
-  IF v_div IS NULL THEN RAISE WARNING 'Division IT-C year 2 not found'; RETURN; END IF;
+    WHERE division_name='INFT-4-C' AND year=2 AND department='INFT' LIMIT 1;
+  IF v_div IS NULL THEN RAISE WARNING 'Division INFT-4-C year 2 not found'; RETURN; END IF;
   INSERT INTO public.students (roll_number, full_name, division_id, batch_number)
     VALUES ('24101C0002','SHREEMAN KUMAR', v_div, 1)
     ON CONFLICT (roll_number) DO UPDATE SET full_name=EXCLUDED.full_name,
@@ -938,11 +938,11 @@ DO $$ DECLARE v_div UUID; BEGIN
       division_id=EXCLUDED.division_id, batch_number=EXCLUDED.batch_number;
 END $$;
 
--- Division IT-A  Sem 6  Year 3  (78 students)
+-- Division INFT-6-A  Sem 6  Year 3  (78 students)
 DO $$ DECLARE v_div UUID; BEGIN
   SELECT id INTO v_div FROM public.divisions
-    WHERE division_name='IT-A' AND year=3 AND department='IT' LIMIT 1;
-  IF v_div IS NULL THEN RAISE WARNING 'Division IT-A year 3 not found'; RETURN; END IF;
+    WHERE division_name='INFT-6-A' AND year=3 AND department='INFT' LIMIT 1;
+  IF v_div IS NULL THEN RAISE WARNING 'Division INFT-6-A year 3 not found'; RETURN; END IF;
   INSERT INTO public.students (roll_number, full_name, division_id, batch_number)
     VALUES ('23101A0001','MAYANK EKBOTE', v_div, 1)
     ON CONFLICT (roll_number) DO UPDATE SET full_name=EXCLUDED.full_name,
@@ -1257,11 +1257,11 @@ DO $$ DECLARE v_div UUID; BEGIN
       division_id=EXCLUDED.division_id, batch_number=EXCLUDED.batch_number;
 END $$;
 
--- Division IT-B  Sem 6  Year 3  (78 students)
+-- Division INFT-6-B  Sem 6  Year 3  (78 students)
 DO $$ DECLARE v_div UUID; BEGIN
   SELECT id INTO v_div FROM public.divisions
-    WHERE division_name='IT-B' AND year=3 AND department='IT' LIMIT 1;
-  IF v_div IS NULL THEN RAISE WARNING 'Division IT-B year 3 not found'; RETURN; END IF;
+    WHERE division_name='INFT-6-B' AND year=3 AND department='INFT' LIMIT 1;
+  IF v_div IS NULL THEN RAISE WARNING 'Division INFT-6-B year 3 not found'; RETURN; END IF;
   INSERT INTO public.students (roll_number, full_name, division_id, batch_number)
     VALUES ('23101B0002','VISHANT GAWALI', v_div, 1)
     ON CONFLICT (roll_number) DO UPDATE SET full_name=EXCLUDED.full_name,
@@ -1576,11 +1576,11 @@ DO $$ DECLARE v_div UUID; BEGIN
       division_id=EXCLUDED.division_id, batch_number=EXCLUDED.batch_number;
 END $$;
 
--- Division IT-C  Sem 6  Year 3  (74 students)
+-- Division INFT-6-C  Sem 6  Year 3  (74 students)
 DO $$ DECLARE v_div UUID; BEGIN
   SELECT id INTO v_div FROM public.divisions
-    WHERE division_name='IT-C' AND year=3 AND department='IT' LIMIT 1;
-  IF v_div IS NULL THEN RAISE WARNING 'Division IT-C year 3 not found'; RETURN; END IF;
+    WHERE division_name='INFT-6-C' AND year=3 AND department='INFT' LIMIT 1;
+  IF v_div IS NULL THEN RAISE WARNING 'Division INFT-6-C year 3 not found'; RETURN; END IF;
   INSERT INTO public.students (roll_number, full_name, division_id, batch_number)
     VALUES ('23101C0002','MOHIT SINGH SONGRA', v_div, 1)
     ON CONFLICT (roll_number) DO UPDATE SET full_name=EXCLUDED.full_name,
@@ -1879,11 +1879,11 @@ DO $$ DECLARE v_div UUID; BEGIN
       division_id=EXCLUDED.division_id, batch_number=EXCLUDED.batch_number;
 END $$;
 
--- Division IT-A  Sem 8  Year 4  (78 students)
+-- Division INFT-8-A  Sem 8  Year 4  (78 students)
 DO $$ DECLARE v_div UUID; BEGIN
   SELECT id INTO v_div FROM public.divisions
-    WHERE division_name='IT-A' AND year=4 AND department='IT' LIMIT 1;
-  IF v_div IS NULL THEN RAISE WARNING 'Division IT-A year 4 not found'; RETURN; END IF;
+    WHERE division_name='INFT-8-A' AND year=4 AND department='INFT' LIMIT 1;
+  IF v_div IS NULL THEN RAISE WARNING 'Division INFT-8-A year 4 not found'; RETURN; END IF;
   INSERT INTO public.students (roll_number, full_name, division_id, batch_number)
     VALUES ('22101A0002','Siddhi Shinde', v_div, 1)
     ON CONFLICT (roll_number) DO UPDATE SET full_name=EXCLUDED.full_name,
@@ -2198,11 +2198,11 @@ DO $$ DECLARE v_div UUID; BEGIN
       division_id=EXCLUDED.division_id, batch_number=EXCLUDED.batch_number;
 END $$;
 
--- Division IT-B  Sem 8  Year 4  (72 students)
+-- Division INFT-8-B  Sem 8  Year 4  (72 students)
 DO $$ DECLARE v_div UUID; BEGIN
   SELECT id INTO v_div FROM public.divisions
-    WHERE division_name='IT-B' AND year=4 AND department='IT' LIMIT 1;
-  IF v_div IS NULL THEN RAISE WARNING 'Division IT-B year 4 not found'; RETURN; END IF;
+    WHERE division_name='INFT-8-B' AND year=4 AND department='INFT' LIMIT 1;
+  IF v_div IS NULL THEN RAISE WARNING 'Division INFT-8-B year 4 not found'; RETURN; END IF;
   INSERT INTO public.students (roll_number, full_name, division_id, batch_number)
     VALUES ('16101B0071','Tushar Kadvatar', v_div, 1)
     ON CONFLICT (roll_number) DO UPDATE SET full_name=EXCLUDED.full_name,

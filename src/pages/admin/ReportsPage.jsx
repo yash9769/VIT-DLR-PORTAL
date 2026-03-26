@@ -43,8 +43,8 @@ export default function ReportsPage() {
     try {
       setLoading(true)
       const [r, t, f] = await Promise.all([
-        supabase.from('lecture_records').select('*, subjects(*), divisions(*), rooms:room_id(*), faculty:faculty_id(*)'),
-        supabase.from('timetable').select('*, subjects(*), divisions(*), rooms:room_id(*), faculty:faculty_id(*), time_slots:time_slot_id(*)'),
+        supabase.from('lecture_records').select('*, subjects:subjects!subject_id(*), divisions:divisions!division_id(*), rooms:rooms!room_id(*), faculty:users!faculty_id(*)'),
+        supabase.from('timetable').select('*, subjects:subjects!subject_id(*), divisions:divisions!division_id(*), rooms:rooms!room_id(*), faculty:users!faculty_id(*), time_slots:time_slots!time_slot_id(*)'),
         supabase.from('users').select('*').eq('role', 'faculty')
       ])
       setRecords(r.data || [])

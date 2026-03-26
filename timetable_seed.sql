@@ -40,14 +40,14 @@ ON CONFLICT (room_number) DO NOTHING;
 
 -- ── STEP 4: Add divisions ─────────────────────────────────────
 INSERT INTO public.divisions (division_name, year, semester, department, strength) VALUES
-  ('IT-A', 2, 4, 'IT', 64), ('IT-B', 2, 4, 'IT', 62), ('IT-C', 2, 4, 'IT', 62),
-  ('IT-A', 3, 6, 'IT', 60), ('IT-B', 3, 6, 'IT', 60), ('IT-C', 3, 6, 'IT', 60),
-  ('IT-A', 4, 8, 'IT', 55), ('IT-B', 4, 8, 'IT', 55)
+  ('INFT-4-A', 2, 4, 'INFT', 80), ('INFT-4-B', 2, 4, 'INFT', 75), ('INFT-4-C', 2, 4, 'INFT', 75),
+  ('INFT-6-A', 3, 6, 'INFT', 80), ('INFT-6-B', 3, 6, 'INFT', 80), ('INFT-6-C', 3, 6, 'INFT', 75),
+  ('INFT-8-A', 4, 8, 'INFT', 75), ('INFT-8-B', 4, 8, 'INFT', 75)
 ON CONFLICT (division_name, department, year) DO NOTHING;
 
 -- ── STEP 5: Add subjects ──────────────────────────────────────
 INSERT INTO public.subjects (subject_code, subject_name, short_name, department, lecture_type) VALUES
-  ('S-TEST',    'Test / Examination Period',            'TEST',     'IT', 'theory'),
+  ('S-TEST',    'Test / Examination Period',            'TEST',     'INFT', 'theory'),
   ('S-ADSBI',   'Advanced Databases & Business Intel',  'ADSBI',    'IT', 'practical'),
   ('S-SPD',     'Soft Skills & Personality Dev',        'SPD',      'IT', 'practical'),
   ('S-MVRP',    'Mini / Research Project',              'MVRP',     'IT', 'practical'),
@@ -82,38 +82,72 @@ INSERT INTO public.subjects (subject_code, subject_name, short_name, department,
   ('S-PGMLAB',  'Programming Lab',                      'PGM LAB',  'IT', 'practical'),
   ('S-PROJ1',   'Minor Project Phase 1',                'PROJECT-1','IT', 'practical'),
   ('S-PROJ2',   'Major Project Phase 2',                'PROJECT-2','IT', 'practical'),
-  ('S-SBPROJ',  'Startup / Business Project',           'SB_PROJECT','IT','practical'),
-  ('S-SCD',     'Seminar / Course Design',              'SCD',      'IT', 'theory'),
-  ('S-NGAIML',  'Next Gen AI/ML',                       'NG-AIML',  'IT', 'practical'),
-  ('S-NGAIML1', 'Next Gen AI/ML Lab 1',                 'NG-AIML-1','IT', 'practical'),
-  ('S-NGAIML2', 'Next Gen AI/ML Lab 2',                 'NG-AIML-2','IT', 'practical'),
-  ('S-NGAIML3', 'Next Gen AI/ML Lab 3',                 'NG-AIML-3','IT', 'practical'),
-  ('S-NGCS',    'Next Gen Cyber Security',              'NG-CS',    'IT', 'practical'),
-  ('S-NGDS',    'Next Gen Data Science',                'NG-DS',    'IT', 'practical')
+  ('S-ADSBI',   'Advanced Databases & Business Intel',  'ADSBI',    'INFT', 'practical'),
+  ('S-SPD',     'Soft Skills & Personality Dev',        'SPD',      'INFT', 'practical'),
+  ('S-MVRP',    'Mini / Research Project',              'MVRP',     'INFT', 'practical'),
+  ('S-AT',      'Aptitude Training',                    'AT',       'INFT', 'theory'),
+  ('S-DBMS',    'Database Management Systems',          'DBMS',     'INFT', 'theory'),
+  ('S-OS',      'Operating Systems',                    'OS',       'INFT', 'theory'),
+  ('S-CN',      'Computer Networks',                    'CN',       'INFT', 'theory'),
+  ('S-PY',      'Python Programming',                   'PY',       'INFT', 'theory'),
+  ('S-FBET',    'Foreign Business English Training',    'FBET',     'INFT', 'theory'),
+  ('S-EM4',     'Engineering Mathematics IV',           'EM 4',     'INFT', 'theory'),
+  ('S-PCD1',    'Project / Course Design 1',            'PCD1',     'INFT', 'theory'),
+  ('S-OSLAB',   'Operating Systems Lab',                'OS LAB',   'INFT', 'practical'),
+  ('S-CNLAB',   'Computer Networks Lab',                'CN LAB',   'INFT', 'practical'),
+  ('S-DBMSLAB', 'Database Management Systems Lab',      'DBMS LAB', 'INFT', 'practical'),
+  ('S-STQA',    'Software Testing & QA',                'STQA',     'INFT', 'theory'),
+  ('S-STQALAB', 'Software Testing Lab',                 'STQA LAB', 'INFT', 'practical'),
+  ('S-SC',      'Security & Cloud',                     'SC',       'INFT', 'theory'),
+  ('S-SCLAB',   'Security & Cloud Lab',                 'SC LAB',   'INFT', 'practical'),
+  ('S-CC',      'Cloud Computing',                      'CC',       'INFT', 'theory'),
+  ('S-CCLAB',   'Cloud Computing Lab',                  'CC LAB',   'INFT', 'practical'),
+  ('S-DEVOPS',  'DevOps',                               'DEVOPS',   'INFT', 'theory'),
+  ('S-DVLAB',   'DevOps Lab',                           'DEVOPS LAB','INFT','practical'),
+  ('S-BI',      'Business Intelligence',                'BI',       'INFT', 'theory'),
+  ('S-UIUX',    'UI/UX Design',                         'UI/UX',    'INFT', 'practical'),
+  ('S-DFE',     'Data Forensics & Ethics',              'DFE',      'INFT', 'theory'),
+  ('S-DFELAB',  'Data Forensics & Ethics Lab',          'DFE LAB',  'INFT', 'practical'),
+  ('S-DF',      'Digital Forensics',                    'DF',       'INFT', 'theory'),
+  ('S-DFLAB',   'Digital Forensics Lab',                'DF LAB',   'INFT', 'practical'),
+  ('S-SSEH',    'Social Science Ethics & Humanity',     'SSEH',     'INFT', 'theory'),
+  ('S-SSEHLAB', 'SSEH Lab',                             'SSEH LAB', 'INFT', 'practical'),
+  ('S-PGM',     'Programming',                          'PGM',      'INFT', 'theory'),
+  ('S-PGMLAB',  'Programming Lab',                      'PGM LAB',  'INFT', 'practical'),
+  ('S-PROJ1',   'Minor Project Phase 1',                'PROJECT-1','INFT', 'practical'),
+  ('S-PROJ2',   'Major Project Phase 2',                'PROJECT-2','INFT', 'practical'),
+  ('S-SBPROJ',  'Startup / Business Project',           'SB_PROJECT','INFT','practical'),
+  ('S-SCD',     'Seminar / Course Design',              'SCD',      'INFT', 'theory'),
+  ('S-NGAIML',  'Next Gen AI/ML',                       'NG-AIML',  'INFT', 'practical'),
+  ('S-NGAIML1', 'Next Gen AI/ML Lab 1',                 'NG-AIML-1','INFT', 'practical'),
+  ('S-NGAIML2', 'Next Gen AI/ML Lab 2',                 'NG-AIML-2','INFT', 'practical'),
+  ('S-NGAIML3', 'Next Gen AI/ML Lab 3',                 'NG-AIML-3','INFT', 'practical'),
+  ('S-NGCS',    'Next Gen Cyber Security',              'NG-CS',    'INFT', 'practical'),
+  ('S-NGDS',    'Next Gen Data Science',                'NG-DS',    'INFT', 'practical')
 ON CONFLICT (subject_code) DO NOTHING;
 
 -- ── STEP 6: Placeholder faculty for unknown codes ─────────────
 INSERT INTO public.users (id, email, full_name, role, department, initials, is_active) VALUES
-  (gen_random_uuid(),'test.period@placeholder.vit','Test / Exam Period',   'faculty','IT','TEST',true),
-  (gen_random_uuid(),'ex1@placeholder.vit',         'External Faculty EX1', 'faculty','IT','EX1', true),
-  (gen_random_uuid(),'ex2@placeholder.vit',         'External Faculty EX2', 'faculty','IT','EX2', true),
-  (gen_random_uuid(),'gn@placeholder.vit',          'Faculty GN',           'faculty','IT','GN',  true),
-  (gen_random_uuid(),'sam@placeholder.vit',         'Faculty SAM',          'faculty','IT','SAM', true),
-  (gen_random_uuid(),'et1@placeholder.vit',         'External Trainer ET1', 'faculty','IT','ET1', true),
-  (gen_random_uuid(),'et2@placeholder.vit',         'External Trainer ET2', 'faculty','IT','ET2', true),
-  (gen_random_uuid(),'sm@placeholder.vit',          'Faculty SM',           'faculty','IT','SM',  true),
-  (gen_random_uuid(),'usk@placeholder.vit',         'Faculty USK',          'faculty','IT','USK', true),
-  (gen_random_uuid(),'ank@placeholder.vit',         'Faculty ANK',          'faculty','IT','ANK', true),
-  (gen_random_uuid(),'ras@placeholder.vit',         'Faculty RAS',          'faculty','IT','RAS', true),
-  (gen_random_uuid(),'swa@placeholder.vit',         'Faculty SWA',          'faculty','IT','SWA', true),
-  (gen_random_uuid(),'it1@placeholder.vit',         'Project Mentor IT1',   'faculty','IT','IT1', true),
-  (gen_random_uuid(),'it2@placeholder.vit',         'Project Mentor IT2',   'faculty','IT','IT2', true),
-  (gen_random_uuid(),'it3@placeholder.vit',         'Project Mentor IT3',   'faculty','IT','IT3', true),
-  (gen_random_uuid(),'it4@placeholder.vit',         'Project Mentor IT4',   'faculty','IT','IT4', true),
-  (gen_random_uuid(),'it5@placeholder.vit',         'Project Mentor IT5',   'faculty','IT','IT5', true),
-  (gen_random_uuid(),'it6@placeholder.vit',         'Project Mentor IT6',   'faculty','IT','IT6', true),
-  (gen_random_uuid(),'it7@placeholder.vit',         'Project Mentor IT7',   'faculty','IT','IT7', true),
-  (gen_random_uuid(),'it8@placeholder.vit',         'Project Mentor IT8',   'faculty','IT','IT8', true)
+  (gen_random_uuid(),'test.period@placeholder.vit','Test / Exam Period',   'faculty','INFT','TEST',true),
+  (gen_random_uuid(),'ex1@placeholder.vit',         'External Faculty EX1', 'faculty','INFT','EX1', true),
+  (gen_random_uuid(),'ex2@placeholder.vit',         'External Faculty EX2', 'faculty','INFT','EX2', true),
+  (gen_random_uuid(),'gn@placeholder.vit',          'Faculty GN',           'faculty','INFT','GN',  true),
+  (gen_random_uuid(),'sam@placeholder.vit',         'Faculty SAM',          'faculty','INFT','SAM', true),
+  (gen_random_uuid(),'et1@placeholder.vit',         'External Trainer ET1', 'faculty','INFT','ET1', true),
+  (gen_random_uuid(),'et2@placeholder.vit',         'External Trainer ET2', 'faculty','INFT','ET2', true),
+  (gen_random_uuid(),'sm@placeholder.vit',          'Faculty SM',           'faculty','INFT','SM',  true),
+  (gen_random_uuid(),'usk@placeholder.vit',         'Faculty USK',          'faculty','INFT','USK', true),
+  (gen_random_uuid(),'ank@placeholder.vit',         'Faculty ANK',          'faculty','INFT','ANK', true),
+  (gen_random_uuid(),'ras@placeholder.vit',         'Faculty RAS',          'faculty','INFT','RAS', true),
+  (gen_random_uuid(),'swa@placeholder.vit',         'Faculty SWA',          'faculty','INFT','SWA', true),
+  (gen_random_uuid(),'it1@placeholder.vit',         'Project Mentor INFT1',   'faculty','INFT','INFT1', true),
+  (gen_random_uuid(),'it2@placeholder.vit',         'Project Mentor INFT2',   'faculty','INFT','INFT2', true),
+  (gen_random_uuid(),'it3@placeholder.vit',         'Project Mentor INFT3',   'faculty','INFT','INFT3', true),
+  (gen_random_uuid(),'it4@placeholder.vit',         'Project Mentor INFT4',   'faculty','INFT','INFT4', true),
+  (gen_random_uuid(),'it5@placeholder.vit',         'Project Mentor INFT5',   'faculty','INFT','INFT5', true),
+  (gen_random_uuid(),'it6@placeholder.vit',         'Project Mentor INFT6',   'faculty','INFT','INFT6', true),
+  (gen_random_uuid(),'it7@placeholder.vit',         'Project Mentor INFT7',   'faculty','INFT','INFT7', true),
+  (gen_random_uuid(),'it8@placeholder.vit',         'Project Mentor INFT8',   'faculty','INFT','INFT8', true)
 ON CONFLICT (email) DO NOTHING;
 
 -- ── STEP 7: Clear existing timetable ──────────────────────────
@@ -129,8 +163,9 @@ DECLARE
   v_year  INT := CASE p_sem WHEN 4 THEN 2 WHEN 6 THEN 3 WHEN 8 THEN 4 END;
   v_div   UUID; v_sub UUID; v_fac UUID; v_rm UUID; v_ts UUID;
   v_start TIME := SPLIT_PART(p_time, '-', 1)::TIME;
+  v_div_name TEXT := 'INFT-' || p_sem || '-' || p_div;
 BEGIN
-  SELECT id INTO v_div FROM public.divisions   WHERE division_name = 'IT-' || p_div AND year = v_year LIMIT 1;
+  SELECT id INTO v_div FROM public.divisions   WHERE division_name = v_div_name AND year = v_year LIMIT 1;
   SELECT id INTO v_sub FROM public.subjects    WHERE short_name = p_sub              LIMIT 1;
   SELECT id INTO v_fac FROM public.users       WHERE initials   = COALESCE(p_fac,'TEST') LIMIT 1;
   SELECT id INTO v_rm  FROM public.rooms       WHERE room_number = p_room            LIMIT 1;

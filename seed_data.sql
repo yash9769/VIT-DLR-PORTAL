@@ -13,33 +13,33 @@ ON CONFLICT (room_number) DO NOTHING;
 
 -- 2. SUBJECTS
 INSERT INTO public.subjects (subject_code, subject_name, short_name, department, semester, credits, lecture_type) VALUES
-('CSC401', 'Database Management Systems', 'DBMS', 'IT', 4, 4, 'theory'),
-('CSC402', 'Advanced Web Programming', 'AWP', 'IT', 4, 3, 'practical'),
-('CSC403', 'Operating Systems', 'OS', 'IT', 4, 4, 'theory'),
-('CSC404', 'Machine Learning', 'ML', 'IT', 6, 4, 'theory'),
-('CSC405', 'Cloud Computing', 'CC', 'IT', 6, 3, 'practical')
+('CSC401', 'Database Management Systems', 'DBMS', 'INFT', 4, 4, 'theory'),
+('CSC402', 'Advanced Web Programming', 'AWP', 'INFT', 4, 3, 'practical'),
+('CSC403', 'Operating Systems', 'OS', 'INFT', 4, 4, 'theory'),
+('CSC404', 'Machine Learning', 'ML', 'INFT', 6, 4, 'theory'),
+('CSC405', 'Cloud Computing', 'CC', 'INFT', 6, 3, 'practical')
 ON CONFLICT (subject_code) DO NOTHING;
 
 -- 3. DIVISIONS
 INSERT INTO public.divisions (division_name, year, semester, department, strength) VALUES
-('IT-A', 2, 4, 'IT', 64),
-('IT-B', 2, 4, 'IT', 62),
-('IT-ML-A', 3, 6, 'IT', 60)
+('INFT-4-A', 2, 4, 'INFT', 64),
+('INFT-4-B', 2, 4, 'INFT', 62),
+('INFT-6-A', 3, 6, 'INFT', 60)
 ON CONFLICT (division_name, department, year) DO NOTHING;
 
--- 4. STUDENTS (Sample for IT-A)
+-- 4. STUDENTS (Sample for INFT-4-A)
 DO $$
 DECLARE
     div_id UUID;
 BEGIN
-    SELECT id INTO div_id FROM public.divisions WHERE division_name = 'IT-A' LIMIT 1;
+    SELECT id INTO div_id FROM public.divisions WHERE division_name = 'INFT-4-A' LIMIT 1;
     
     INSERT INTO public.students (roll_number, full_name, division_id, email) VALUES
-    ('22IT101', 'Aditya Sharma', div_id, 'aditya.s@example.com'),
-    ('22IT102', 'Bhakti Patel', div_id, 'bhakti.p@example.com'),
-    ('22IT103', 'Chetan Kumar', div_id, 'chetan.k@example.com'),
-    ('22IT104', 'Deepika Iyer', div_id, 'deepika.i@example.com'),
-    ('22IT105', 'Eshan Verma', div_id, 'eshan.v@example.com')
+    ('22INFT101', 'Aditya Sharma', div_id, 'aditya.s@example.com'),
+    ('22INFT102', 'Bhakti Patel', div_id, 'bhakti.p@example.com'),
+    ('22INFT103', 'Chetan Kumar', div_id, 'chetan.k@example.com'),
+    ('22INFT104', 'Deepika Iyer', div_id, 'deepika.i@example.com'),
+    ('22INFT105', 'Eshan Verma', div_id, 'eshan.v@example.com')
     ON CONFLICT (roll_number) DO NOTHING;
 END $$;
 
@@ -72,8 +72,8 @@ BEGIN
     END IF;
 
     -- Get common IDs
-    SELECT id INTO div_a FROM public.divisions WHERE division_name = 'IT-A' LIMIT 1;
-    SELECT id INTO div_b FROM public.divisions WHERE division_name = 'IT-B' LIMIT 1;
+    SELECT id INTO div_a FROM public.divisions WHERE division_name = 'INFT-4-A' LIMIT 1;
+    SELECT id INTO div_b FROM public.divisions WHERE division_name = 'INFT-4-B' LIMIT 1;
     SELECT id INTO sub_dbms FROM public.subjects WHERE short_name = 'DBMS' LIMIT 1;
     SELECT id INTO sub_awp FROM public.subjects WHERE short_name = 'AWP' LIMIT 1;
     SELECT id INTO sub_os FROM public.subjects WHERE short_name = 'OS' LIMIT 1;
