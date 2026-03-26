@@ -82,7 +82,7 @@ export default function TimetablePage() {
       setLoading(true)
       const { data, error } = await supabase
         .from('timetable')
-        .select(`*, subjects(*), divisions(*), rooms:room_id(*), faculty:faculty_id(full_name), time_slots:time_slot_id(*)`)
+        .select(`*, subjects(*), divisions(*), rooms:room_id(*), faculty:faculty_id(full_name, initials), time_slots:time_slot_id(*)`)
       if (error) throw error
       setTimetable(data || [])
     } catch {
@@ -99,17 +99,18 @@ export default function TimetablePage() {
     if (filterDay !== 'All' && t.day_of_week !== filterDay) return false
     if (filterFaculty  && t.faculty_id !== filterFaculty) return false
     if (filterDivision && t.division_id !== filterDivision) return false
-    if (filterSem      && String(t.divisions?.semester) !== String(filterSem)) return false
-    if (filterBatch    && String(t.batch_number) !== filterBatch) return false
-    if (filterSubject  && t.subject_id !== filterSubject) return false
+    if (filterSem      && t.divisions?.semester != filterSem) return false
+    if (filterBatch    && t.batch_number != filterBatch) return false
+    if (filterSubject  && t.subject_id  != filterSubject) return false
     return true
   })
 
   // Label helpers
   const facultyLabel = (t) => t.custom_faculty || t.faculty?.full_name || '—'
+  const facultyInitials = (t) => t.faculty?.initials || (t.faculty?.full_name ? t.faculty.full_name.split(' ').map(w => w[0]).join('') : (t.custom_faculty ? t.custom_faculty.slice(0,3).toUpperCase() : '—'))
   const divisionLabel = (t) => t.custom_division || t.divisions?.division_name || '—'
-  const subjectLabel = (t) => t.custom_subject || t.subjects?.subject_name || t.subjects?.short_name || '—'
-  const subjectShortLabel = (t) => t.custom_subject || t.subjects?.short_name || t.subjects?.subject_name || '—'
+  const subjectLabel = (t) => t.custom_subject || t.subjects?.subject_name || '—'
+  const subjectShortLabel = (t) => t.custom_subject || t.subjects?.subject_code || t.subjects?.subject_name?.slice(0, 10) || '—'
   const roomLabel = (t) => t.custom_room || t.rooms?.room_number || '—'
   const timeSlotLabel = (t) => t.custom_time_slot || t.time_slots?.slot_label?.replace('Lab: ', '') || '—'
 
@@ -277,7 +278,7 @@ export default function TimetablePage() {
                               <div className="flex flex-col gap-0.5 mt-1 border-t border-white/10 pt-1">
                                 <p className="truncate font-medium" style={{ color: 'var(--text-secondary)', fontSize: '10px' }}>{divisionLabel(e)}</p>
                                 <p className="truncate" style={{ color: 'var(--text-secondary)', fontSize: '10px' }}>
-                                  {facultyLabel(e).split(' ').slice(-1)[0]} · {roomLabel(e)}
+                                  <span className="font-bold">{facultyInitials(e)}</span> · {roomLabel(e)}
                                 </p>
                               </div>
                               <div className="absolute top-1 right-1 hidden group-hover:flex gap-1">
@@ -320,9 +321,8 @@ export default function TimetablePage() {
                               {e.batch_number && <span className="text-[9px] font-bold" style={{ color: bc.text }}>B{e.batch_number} · </span>}
                               <span className="font-semibold" style={{ color: bc.text }}>{subjectShortLabel(e)}</span>
                               <p className="truncate mt-0.5" style={{ color: 'var(--text-secondary)', fontSize: '10px' }}>
-                                {facultyLabel(e).split(' ').slice(-1)[0]}
+                                <span className="font-bold">{facultyInitials(e)}</span> · {roomLabel(e)}
                               </p>
-                              <p className="truncate" style={{ color: 'var(--text-secondary)', fontSize: '10px' }}>{roomLabel(e)}</p>
                               <div className="absolute top-1 right-1 hidden group-hover:flex gap-0.5">
                                 <button onClick={ev => { ev.stopPropagation(); openEdit(e) }} className="w-4 h-4 rounded flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.15)' }}><Edit2 className="w-2.5 h-2.5" /></button>
                                 <button onClick={ev => { ev.stopPropagation(); setDeleteId(e.id) }} className="w-4 h-4 rounded flex items-center justify-center" style={{ background: 'rgba(248,81,73,0.2)' }}><Trash2 className="w-2.5 h-2.5 text-red-400" /></button>
