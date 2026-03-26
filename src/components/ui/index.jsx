@@ -1,67 +1,12 @@
 import { cls } from '../../utils/helpers'
-import { Loader2, AlertTriangle, CheckCircle, XCircle, Info, X, Moon, Sun } from 'lucide-react'
+import { Loader2, AlertTriangle, CheckCircle, XCircle, Info, X } from 'lucide-react'
 import { useState, useEffect, createContext, useContext } from 'react'
 
-// ─── Theme Context ───────────────────────────────────────────────────────────
-const ThemeContext = createContext()
 
-export const ThemeProvider = ({ children }) => {
-  const [isLight, setIsLight] = useState(() => {
-    if (typeof window !== 'undefined') {
-      const saved = localStorage.getItem('theme')
-      return saved === 'light' || (!saved && window.matchMedia('(prefers-color-scheme: light)').matches)
-    }
-    return false
-  })
-
-  useEffect(() => {
-    const root = window.document.documentElement
-    if (isLight) {
-      root.classList.add('light')
-      localStorage.setItem('theme', 'light')
-    } else {
-      root.classList.remove('light')
-      localStorage.setItem('theme', 'dark')
-    }
-  }, [isLight])
-
-  const toggleTheme = () => setIsLight(!isLight)
-
-  return (
-    <ThemeContext.Provider value={{ isLight, toggleTheme }}>
-      {children}
-    </ThemeContext.Provider>
-  )
-}
-
-export const useTheme = () => {
-  const context = useContext(ThemeContext)
-  if (!context) throw new Error('useTheme must be used within a ThemeProvider')
-  return context
-}
-
-// ─── Theme Toggle ─────────────────────────────────────────────────────────────
-export const ThemeToggle = ({ className = '' }) => {
-  const { isLight, toggleTheme } = useTheme()
-  
-  return (
-    <button
-      onClick={toggleTheme}
-      className={cls(
-        'w-10 h-10 rounded-xl flex items-center justify-center transition-all duration-300',
-        'bg-white/5 border border-white/10 hover:bg-white/10 active:scale-90',
-        className
-      )}
-      aria-label="Toggle theme"
-    >
-      {isLight ? (
-        <Sun className="w-5 h-5 text-amber-500 animate-in fade-in zoom-in spin-in-90 duration-500" />
-      ) : (
-        <Moon className="w-5 h-5 text-blue-400 animate-in fade-in zoom-in -spin-in-90 duration-500" />
-      )}
-    </button>
-  )
-}
+// ─── Theme Context (REMOVED: Light Mode Only) ───────────────────────────────
+export const ThemeProvider = ({ children }) => <>{children}</>
+export const useTheme = () => ({ isLight: true, toggleTheme: () => {} })
+export const ThemeToggle = () => null
 
 // ─── Spinner ────────────────────────────────────────────────────────────────
 export const Spinner = ({ size = 'md', className = '' }) => {
@@ -104,9 +49,9 @@ const toastIcons = {
 
 export const Toast = ({ message, type = 'info', onClose }) => (
   <div className={cls(
-    'flex items-start gap-3 p-4 rounded-2xl shadow-glass-lg animate-slide-up max-w-sm w-full',
-    'border border-white/10'
-  )} style={{ background: 'rgba(22,27,34,0.95)', backdropFilter: 'blur(16px)' }}>
+    'flex items-start gap-3 p-4 rounded-2xl shadow-xl animate-slide-up max-w-sm w-full',
+    'border border-slate-200'
+  )} style={{ background: 'rgba(255,255,255,0.98)', backdropFilter: 'blur(16px)' }}>
     {toastIcons[type]}
     <p className="text-sm flex-1 font-body" style={{ color: 'var(--text-primary)' }}>{message}</p>
     <button onClick={onClose} className="opacity-50 hover:opacity-100 transition-opacity">
@@ -158,9 +103,9 @@ export const Modal = ({ open, onClose, title, children, size = 'md' }) => {
   const sizes = { sm: 'max-w-sm', md: 'max-w-lg', lg: 'max-w-2xl', xl: 'max-w-4xl', full: 'max-w-6xl' }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4" style={{ background: 'rgba(0,0,0,0.7)', backdropFilter: 'blur(4px)' }} onClick={(e) => e.target === e.currentTarget && onClose?.()}>
-      <div className={cls('glass-card w-full animate-slide-up overflow-hidden', sizes[size])}>
-        <div className="flex items-center justify-between p-5 border-b" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
+    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-[2px]" onClick={(e) => e.target === e.currentTarget && onClose?.()}>
+      <div className={cls('glass-card w-full animate-slide-up overflow-hidden bg-white shadow-2xl', sizes[size])}>
+        <div className="flex items-center justify-between p-5 border-b border-slate-100">
           <h2 className="font-display font-semibold text-base" style={{ color: 'var(--text-primary)' }}>{title}</h2>
           <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors hover:bg-white/10">
             <X className="w-4 h-4" style={{ color: 'var(--text-secondary)' }} />

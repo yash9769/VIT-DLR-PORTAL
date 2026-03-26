@@ -1,7 +1,7 @@
 import { useState } from 'react'
 import { Eye, EyeOff, ShieldCheck, Zap, FileSpreadsheet, History } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
-import { Spinner, toast, DemoModeBanner, ThemeToggle } from '../components/ui'
+import { Spinner, toast, DemoModeBanner } from '../components/ui'
 import vitLogo from '../assets/vit-logo.png'
 
 export default function LoginPage() {
@@ -44,7 +44,6 @@ export default function LoginPage() {
       {demoMode && <DemoModeBanner />}
       
       <div className="absolute top-6 right-6 z-50">
-        <ThemeToggle />
       </div>
 
       {/* Background Decor */}

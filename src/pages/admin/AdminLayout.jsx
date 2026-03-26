@@ -3,7 +3,7 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { LayoutDashboard, Calendar, FileText, Settings, ChevronLeft, ChevronRight, LogOut, Bell, Menu, Users, LifeBuoy, GraduationCap } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { cls } from '../../utils/helpers'
-import { DemoModeBanner, ThemeToggle } from '../../components/ui'
+import { DemoModeBanner } from '../../components/ui'
 import { useNotifications } from '../../hooks/useNotifications'
 import { formatDistanceToNow } from 'date-fns'
 import vitLogo from '../../assets/vit-logo.png'
@@ -115,7 +115,6 @@ export default function AdminLayout() {
             </div>
           </div>
           <div className="flex items-center gap-2">
-            <ThemeToggle className="!w-9 !h-9" />
             
             <button 
               onClick={() => setShowNotifications(!showNotifications)}

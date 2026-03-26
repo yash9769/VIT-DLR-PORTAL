@@ -4,21 +4,6 @@
 
 @layer base {
   :root {
-    --bg-primary: #0d1117;
-    --bg-secondary: #0d1117;
-    --bg-card: rgba(22, 27, 34, 0.7);
-    --border-glass: rgba(255, 255, 255, 0.06);
-    --text-primary: #e6edf3;
-    --text-secondary: #8b949e;
-    --brand: #4A6CF7;
-    --brand-glow: rgba(74, 108, 247, 0.3);
-    --success: #3fb950;
-    --warning: #d29922;
-    --danger: #f85149;
-    --card-shadow: 0 8px 32px rgba(0,0,0,0.3);
-  }
-
-  .light {
     --bg-primary: #f1f5f9;
     --bg-secondary: #ffffff;
     --bg-card: rgba(255, 255, 255, 0.85);
@@ -27,6 +12,9 @@
     --text-secondary: #334155;
     --brand: #4A6CF7;
     --brand-glow: rgba(74, 108, 247, 0.1);
+    --success: #3fb950;
+    --warning: #d29922;
+    --danger: #f85149;
     --card-shadow: 0 8px 32px rgba(0,0,0,0.08);
   }
 
@@ -54,9 +42,9 @@
 @layer components {
   /* Glass card */
   .glass-card {
-    @apply backdrop-blur-md border border-white/[0.08] rounded-2xl;
+    @apply backdrop-blur-md border border-slate-200 rounded-2xl;
     background: var(--bg-card);
-    box-shadow: 0 8px 32px rgba(0,0,0,0.2), inset 0 1px 0 rgba(255,255,255,0.06);
+    box-shadow: var(--card-shadow), inset 0 1px 0 rgba(255,255,255,0.5);
   }
 
   /* Premium button */
@@ -64,80 +52,82 @@
     @apply relative overflow-hidden font-semibold text-white rounded-xl px-6 py-3 
            transition-all duration-200 active:scale-95 select-none;
     background: linear-gradient(135deg, #4A6CF7, #3355e8);
-    box-shadow: 0 4px 20px rgba(74, 108, 247, 0.4);
+    box-shadow: 0 4px 20px rgba(74, 108, 247, 0.3);
   }
-  .btn-primary:hover { box-shadow: 0 6px 28px rgba(74, 108, 247, 0.55); transform: translateY(-1px); }
+  .btn-primary:hover { box-shadow: 0 6px 28px rgba(74, 108, 247, 0.45); transform: translateY(-1px); }
   .btn-primary:active { transform: translateY(0) scale(0.98); }
 
   .btn-secondary {
     @apply font-medium rounded-xl px-6 py-3 transition-all duration-200 active:scale-95 select-none;
-    background: rgba(255,255,255,0.06);
-    border: 1px solid rgba(255,255,255,0.1);
+    background: #ffffff;
+    border: 1.5px solid #e2e8f0;
     color: var(--text-primary);
+    box-shadow: 0 2px 4px rgba(0,0,0,0.04);
   }
-  .btn-secondary:hover { background: rgba(255,255,255,0.1); }
+  .btn-secondary:hover { background: #f8fafc; border-color: #cbd5e1; }
 
   .btn-danger {
     @apply font-semibold text-white rounded-xl px-6 py-3 transition-all duration-200 active:scale-95;
     background: linear-gradient(135deg, #f85149, #d73a3a);
-    box-shadow: 0 4px 16px rgba(248, 81, 73, 0.35);
+    box-shadow: 0 4px 16px rgba(248, 81, 73, 0.25);
   }
 
   .btn-success {
     @apply font-semibold text-white rounded-xl px-6 py-3 transition-all duration-200 active:scale-95;
     background: linear-gradient(135deg, #3fb950, #2da040);
-    box-shadow: 0 4px 16px rgba(63, 185, 80, 0.35);
+    box-shadow: 0 4px 16px rgba(63, 185, 80, 0.25);
   }
 
   /* Input field */
   .input-field {
     @apply w-full rounded-xl px-4 py-3 font-body text-sm transition-all duration-200 outline-none;
-    background: rgba(255,255,255,0.05);
-    border: 1px solid rgba(255,255,255,0.1);
+    background: #ffffff;
+    border: 1.5px solid #e2e8f0;
     color: var(--text-primary);
   }
   .input-field:focus {
-    border-color: rgba(74, 108, 247, 0.6);
-    background: rgba(74, 108, 247, 0.05);
-    box-shadow: 0 0 0 3px rgba(74, 108, 247, 0.15);
+    border-color: #4A6CF7;
+    background: #ffffff;
+    box-shadow: 0 0 0 3px rgba(74, 108, 247, 0.1);
   }
-  .input-field::placeholder { color: var(--text-secondary); }
+  .input-field::placeholder { color: #94a3b8; }
 
   /* Select */
   .select-field {
     @apply input-field appearance-none cursor-pointer;
   }
   .select-field option {
-    background: #1e2533;
+    background: #ffffff;
     color: var(--text-primary);
   }
 
   /* Label */
   .form-label {
-    @apply block text-xs font-semibold uppercase tracking-widest mb-2;
-    color: var(--text-secondary);
+    @apply block text-xs font-bold uppercase tracking-widest mb-2;
+    color: #64748b;
     font-family: 'Sora', sans-serif;
   }
 
   /* Badge */
   .badge {
-    @apply inline-flex items-center gap-1 px-2.5 py-1 rounded-full text-xs font-semibold;
+    @apply inline-flex items-center gap-1 px-3 py-1 rounded-full text-[10px] font-bold uppercase tracking-wider;
   }
-  .badge-pending { background: rgba(210, 153, 34, 0.15); color: #f0b429; border: 1px solid rgba(210, 153, 34, 0.3); }
-  .badge-approved { background: rgba(63, 185, 80, 0.15); color: #3fb950; border: 1px solid rgba(63, 185, 80, 0.3); }
-  .badge-rejected { background: rgba(248, 81, 73, 0.15); color: #f85149; border: 1px solid rgba(248, 81, 73, 0.3); }
-  .badge-locked { background: rgba(139, 148, 158, 0.15); color: #8b949e; border: 1px solid rgba(139, 148, 158, 0.3); }
+  .badge-pending { background: #fef3c7; color: #92400e; border: 1.5px solid #fde68a; }
+  .badge-approved { background: #dcfce7; color: #166534; border: 1.5px solid #bbf7d0; }
+  .badge-rejected { background: #fee2e2; color: #991b1b; border: 1.5px solid #fecaca; }
+  .badge-locked { background: #f1f5f9; color: #475569; border: 1.5px solid #e2e8f0; }
 
   /* Table */
   .data-table { @apply w-full text-sm; }
   .data-table th {
-    @apply px-4 py-3 text-left font-semibold uppercase tracking-wider text-xs;
-    color: var(--text-secondary);
-    background: rgba(255,255,255,0.03);
+    @apply px-4 py-4 text-left font-bold uppercase tracking-wider text-[10px];
+    color: #64748b;
+    background: #f8fafc;
     font-family: 'Sora', sans-serif;
+    border-bottom: 2px solid #e2e8f0;
   }
-  .data-table td { @apply px-4 py-3 border-b; border-color: rgba(255,255,255,0.05); }
-  .data-table tr:hover td { background: rgba(255,255,255,0.02); }
+  .data-table td { @apply px-4 py-4 border-b; border-color: #f1f5f9; background: #ffffff; }
+  .data-table tr:hover td { background: #f8fafc; }
 
   /* Stat card */
   .stat-card {
@@ -149,11 +139,11 @@
     @apply flex flex-col items-center gap-1 py-2 px-4 rounded-xl transition-all duration-200 cursor-pointer select-none;
   }
   .nav-item.active { color: var(--brand); }
-  .nav-item:not(.active) { color: var(--text-secondary); }
+  .nav-item:not(.active) { color: #94a3b8; }
 
   /* Skeleton loading */
   .skeleton {
-    background: linear-gradient(90deg, rgba(255,255,255,0.05) 25%, rgba(255,255,255,0.1) 50%, rgba(255,255,255,0.05) 75%);
+    background: linear-gradient(90deg, #f1f5f9 25%, #e2e8f0 50%, #f1f5f9 75%);
     background-size: 200% 100%;
     animation: shimmer 1.5s infinite;
     @apply rounded-lg;
@@ -161,7 +151,7 @@
 
   /* Status indicator */
   .status-dot {
-    @apply w-2 h-2 rounded-full inline-block animate-pulse-dot;
+    @apply w-2.5 h-2.5 rounded-full inline-block animate-pulse-dot shadow-sm;
   }
 
   /* Mobile touch button (large) */
@@ -171,17 +161,17 @@
 
   /* Attendance chip */
   .attendance-chip {
-    @apply rounded-xl p-3 text-center font-semibold text-sm transition-all duration-150 active:scale-95 cursor-pointer select-none border;
+    @apply rounded-xl p-3 text-center font-bold text-sm transition-all duration-150 active:scale-95 cursor-pointer select-none border-2 shadow-sm;
   }
   .attendance-chip.present {
-    background: rgba(63, 185, 80, 0.15);
-    border-color: rgba(63, 185, 80, 0.4);
-    color: #3fb950;
+    background: #dcfce7;
+    border-color: #86efac;
+    color: #166534;
   }
   .attendance-chip.absent {
-    background: rgba(248, 81, 73, 0.08);
-    border-color: rgba(248, 81, 73, 0.2);
-    color: var(--text-secondary);
+    background: #f8fafc;
+    border-color: #e2e8f0;
+    color: #94a3b8;
   }
   .attendance-chip.absent:active, .attendance-chip.present:active {
     transform: scale(0.94);
@@ -189,15 +179,15 @@
 }
 
 /* Scrollbar */
-::-webkit-scrollbar { width: 6px; height: 6px; }
-::-webkit-scrollbar-track { background: transparent; }
-::-webkit-scrollbar-thumb { background: rgba(255,255,255,0.1); border-radius: 3px; }
-::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.2); }
+::-webkit-scrollbar { width: 8px; height: 8px; }
+::-webkit-scrollbar-track { background: #f1f5f9; }
+::-webkit-scrollbar-thumb { background: #cbd5e1; border-radius: 4px; border: 2px solid #f1f5f9; }
+::-webkit-scrollbar-thumb:hover { background: #94a3b8; }
 
 /* Grid bg pattern */
 .grid-bg {
   background-image: 
-    linear-gradient(rgba(74,108,247,0.04) 1px, transparent 1px),
-    linear-gradient(90deg, rgba(74,108,247,0.04) 1px, transparent 1px);
+    linear-gradient(#e2e8f0 1px, transparent 1px),
+    linear-gradient(90deg, #e2e8f0 1px, transparent 1px);
   background-size: 40px 40px;
 }

@@ -3,7 +3,7 @@ import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { LayoutDashboard, FileText, Users, History, Bell, LogOut, ChevronRight, LifeBuoy, User, Calendar } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { cls } from '../../utils/helpers'
-import { DemoModeBanner, ThemeToggle } from '../../components/ui'
+import { DemoModeBanner } from '../../components/ui'
 import { useNotifications } from '../../hooks/useNotifications'
 import { formatDistanceToNow } from 'date-fns'
 
@@ -45,7 +45,6 @@ export default function FacultyLayout() {
         </div>
 
         <div className="flex items-center gap-2">
-          <ThemeToggle />
           
           {/* Notification bell */}
           <button
