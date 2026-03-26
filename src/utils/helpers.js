@@ -57,10 +57,12 @@ export const detectConflicts = (newEntry, existingEntries, excludeId = null) => 
     if (e.time_slot_id !== newEntry.time_slot_id) continue
 
     if (e.faculty_id === newEntry.faculty_id) {
-      conflicts.push({ type: 'faculty', message: `Faculty already has a class at this time (${e.divisions?.division_name} - ${e.subjects?.short_name})` })
+      const fName = e.faculty?.full_name || 'Faculty'
+      conflicts.push({ type: 'faculty', message: `${fName} already has a class at this time (${e.divisions?.division_name} - ${e.subjects?.subject_name || e.custom_subject || 'Class'})` })
     }
     if (e.room_id && e.room_id === newEntry.room_id && newEntry.room_id) {
-      conflicts.push({ type: 'room', message: `Room ${e.rooms?.room_number} is already booked at this time` })
+      const fName = e.faculty?.full_name || e.custom_faculty || 'another faculty'
+      conflicts.push({ type: 'room', message: `Room ${e.rooms?.room_number} is already booked at this time by ${fName} (${e.subjects?.subject_name || e.custom_subject || 'Class'})` })
     }
     // Division conflict: skip if BOTH entries have a valid batch_number (batch lab mode)
     const newBatch = newEntry.batch_number ? Number(newEntry.batch_number) : null
@@ -69,7 +71,8 @@ export const detectConflicts = (newEntry, existingEntries, excludeId = null) => 
       if (newBatch && eBatch && newBatch !== eBatch) {
         // Same division, different batches → allowed for labs, no conflict
       } else {
-        conflicts.push({ type: 'division', message: `${e.divisions?.division_name} already has a class at this time (${e.subjects?.short_name})${eBatch ? ` – Batch ${eBatch}` : ''}` })
+        const fName = e.faculty?.full_name || e.custom_faculty || 'Faculty'
+        conflicts.push({ type: 'division', message: `${e.divisions?.division_name} already has a class at this time: ${fName} (${e.subjects?.subject_name || e.custom_subject || 'Class'})${eBatch ? ` – Batch ${eBatch}` : ''}` })
       }
     }
   }
