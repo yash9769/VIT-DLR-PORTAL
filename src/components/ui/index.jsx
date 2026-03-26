@@ -1,6 +1,7 @@
 import { cls } from '../../utils/helpers'
 import { Loader2, AlertTriangle, CheckCircle, XCircle, Info, X } from 'lucide-react'
 import { useState, useEffect, createContext, useContext } from 'react'
+import vitLogo from '../../assets/vit-logo.png'
 
 
 // ─── Theme Context (REMOVED: Light Mode Only) ───────────────────────────────
@@ -17,10 +18,13 @@ export const Spinner = ({ size = 'md', className = '' }) => {
 // ─── Loading Screen ──────────────────────────────────────────────────────────
 export const LoadingScreen = ({ text = 'Loading…' }) => (
   <div className="fixed inset-0 flex flex-col items-center justify-center gap-4" style={{ background: 'var(--bg-primary)' }}>
-    <div className="w-16 h-16 rounded-2xl flex items-center justify-center mb-2" style={{ background: 'linear-gradient(135deg,#4A6CF7,#3355e8)', boxShadow: '0 8px 32px rgba(74,108,247,0.4)' }}>
-      <svg viewBox="0 0 24 24" fill="none" className="w-8 h-8 text-white" stroke="currentColor" strokeWidth={2}>
-        <path d="M12 2L2 7l10 5 10-5-10-5z" /><path d="M2 17l10 5 10-5" /><path d="M2 12l10 5 10-5" />
-      </svg>
+    <div className="w-24 h-24 flex items-center justify-center mb-4 relative">
+      <div className="absolute inset-0 bg-brand-500/10 rounded-full blur-2xl animate-pulse" />
+      <img 
+        src={vitLogo} 
+        alt="VIT Logo" 
+        className="w-20 h-20 object-contain relative z-10 animate-pulse-gentle"
+      />
     </div>
     <Spinner size="lg" />
     <p className="text-sm font-body" style={{ color: 'var(--text-secondary)' }}>{text}</p>
