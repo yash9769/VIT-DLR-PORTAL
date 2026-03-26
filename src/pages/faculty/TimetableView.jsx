@@ -186,84 +186,53 @@ export default function TimetableView() {
                     const isLab = (e.custom_subject || e.subjects?.subject_name || '').toLowerCase().includes('lab')
                     return (
                       <div key={e.id} className="glass-card p-3 flex gap-3 items-start"
-                            style={{
-                              background: isLCS ? 'rgba(255,255,0,0.07)' : isLab ? 'rgba(63,185,80,0.06)' : undefined,
-                              border: isLCS ? '1px solid rgba(255,220,0,0.3)' : isLab ? '1px solid rgba(63,185,80,0.2)' : undefined,
-                            }}>
-                            <div className="w-12 flex-shrink-0 text-center">
-                              <p className="text-xs font-bold leading-tight" style={{ color: TEXT_COLORS[ci] }}>
-                                {e.time_slots?.start_time?.slice(0,5) || '—'}
-                              </p>
-                              <div className="w-px h-3 mx-auto my-0.5 rounded-full opacity-40" style={{ background: TEXT_COLORS[ci] }} />
-                              <p className="text-[10px]" style={{ color:'var(--text-secondary)' }}>
-                                {e.time_slots?.end_time?.slice(0,5) || ''}
-                              </p>
-                            </div>
-                            <div className="flex-1 min-w-0">
-                              <div className="flex items-center gap-1.5 mb-1 flex-wrap">
-                                {e.batch_number && (
-                                  <span className="text-[9px] px-1.5 py-0.5 rounded font-bold uppercase"
-                                    style={{ background: BADGE_COLORS[ci], color: TEXT_COLORS[ci] }}>
-                                    B{e.batch_number}
-                                  </span>
-                                )}
-                                {isLCS && (
-                                  <span className="text-[9px] px-1.5 py-0.5 rounded font-bold"
-                                    style={{ background:'rgba(255,220,0,0.2)', color:'#8a6d00' }}>
-                                    📹 LCS
-                                  </span>
-                                )}
-                                {isLab && !isLCS && (
-                                  <span className="text-[9px] px-1.5 py-0.5 rounded font-bold"
-                                    style={{ background:'rgba(63,185,80,0.15)', color:'#3fb950' }}>
-                                    Lab
-                                  </span>
-                                )}
-                                <p className="font-semibold text-sm truncate" style={{ color:'var(--text-primary)' }}>
-                                  {e.custom_subject || e.subjects?.short_name || e.subjects?.subject_name || '—'}
-                                </p>
-                              </div>
-                              <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[10px]" style={{ color:'var(--text-secondary)' }}>
-                                <span className="flex items-center gap-1">
-                                  <Users className="w-3 h-3" />
-                                  {e.custom_division || e.divisions?.division_name || '—'}
-                                </span>
-                                <span className="flex items-center gap-1" style={{ color: isLCS ? '#8a6d00' : 'var(--text-secondary)' }}>
-                                  <MapPin className="w-3 h-3" />{roomNum || '—'}
-                                </span>
-                                <span className="flex items-center gap-1 font-semibold" style={{ color: TEXT_COLORS[ci] }}>
-                                  {e.users?.initials || e.users?.full_name?.split(' ').map(w=>w[0]).join('') || '—'}
-                                </span>
-                              </div>
-                            </div>
-                          </div>
-                      )
-                    })
-                  )}
-                    return (
-                      <div key={e.id} className="glass-card p-3 flex gap-3 items-start">
+                        style={{
+                          background: isLCS ? 'rgba(255,255,0,0.07)' : isLab ? 'rgba(63,185,80,0.06)' : undefined,
+                          border: isLCS ? '1px solid rgba(255,220,0,0.3)' : isLab ? '1px solid rgba(63,185,80,0.2)' : undefined,
+                        }}>
                         <div className="w-12 flex-shrink-0 text-center">
-                          <p className="text-xs font-bold leading-tight" style={{ color: TEXT_COLORS[ci] }}>{e.time_slots?.start_time?.slice(0,5)}</p>
+                          <p className="text-xs font-bold leading-tight" style={{ color: TEXT_COLORS[ci] }}>
+                            {e.time_slots?.start_time?.slice(0,5) || '—'}
+                          </p>
                           <div className="w-px h-3 mx-auto my-0.5 rounded-full opacity-40" style={{ background: TEXT_COLORS[ci] }} />
-                          <p className="text-[10px]" style={{ color:'var(--text-secondary)' }}>{e.time_slots?.end_time?.slice(0,5)}</p>
+                          <p className="text-[10px]" style={{ color:'var(--text-secondary)' }}>
+                            {e.time_slots?.end_time?.slice(0,5) || ''}
+                          </p>
                         </div>
                         <div className="flex-1 min-w-0">
                           <div className="flex items-center gap-1.5 mb-1 flex-wrap">
                             {e.batch_number && (
                               <span className="text-[9px] px-1.5 py-0.5 rounded font-bold uppercase"
                                 style={{ background: BADGE_COLORS[ci], color: TEXT_COLORS[ci] }}>
-                                Batch {e.batch_number}
+                                B{e.batch_number}
+                              </span>
+                            )}
+                            {isLCS && (
+                              <span className="text-[9px] px-1.5 py-0.5 rounded font-bold"
+                                style={{ background:'rgba(255,220,0,0.2)', color:'#8a6d00' }}>
+                                📹 LCS
+                              </span>
+                            )}
+                            {isLab && !isLCS && (
+                              <span className="text-[9px] px-1.5 py-0.5 rounded font-bold"
+                                style={{ background:'rgba(63,185,80,0.15)', color:'#3fb950' }}>
+                                Lab
                               </span>
                             )}
                             <p className="font-semibold text-sm truncate" style={{ color:'var(--text-primary)' }}>
-                              {e.subjects?.short_name || e.subjects?.subject_name || '—'}
+                              {e.custom_subject || e.subjects?.short_name || e.subjects?.subject_name || '—'}
                             </p>
                           </div>
                           <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[10px]" style={{ color:'var(--text-secondary)' }}>
-                            <span className="flex items-center gap-1"><Users className="w-3 h-3" />{e.divisions?.division_name || '—'}</span>
-                            <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{e.rooms?.room_number || e.custom_room || '—'}</span>
+                            <span className="flex items-center gap-1">
+                              <Users className="w-3 h-3" />
+                              {e.custom_division || e.divisions?.division_name || '—'}
+                            </span>
+                            <span className="flex items-center gap-1" style={{ color: isLCS ? '#8a6d00' : 'var(--text-secondary)' }}>
+                              <MapPin className="w-3 h-3" />{roomNum || '—'}
+                            </span>
                             <span className="flex items-center gap-1 font-semibold" style={{ color: TEXT_COLORS[ci] }}>
-                              {e.users?.initials || e.users?.full_name || '—'}
+                              {e.users?.initials || e.users?.full_name?.split(' ').map(w=>w[0]).join('') || '—'}
                             </span>
                           </div>
                         </div>
