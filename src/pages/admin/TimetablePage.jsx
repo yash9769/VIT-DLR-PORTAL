@@ -274,8 +274,12 @@ export default function TimetablePage() {
                               onClick={() => openEdit(e)}>
                               {e.batch_number && <span className="text-[9px] font-bold px-1.5 py-0.5 rounded mb-1 inline-block" style={{ background: bc.bg, color: bc.text, border: `1px solid ${bc.border}` }}>B{e.batch_number}</span>}
                               <p className="font-semibold truncate" style={{ color: bc.text }}>{subjectShortLabel(e)}</p>
-                              <p className="truncate" style={{ color: 'var(--text-secondary)' }}>{divisionLabel(e)}</p>
-                              <p className="truncate" style={{ color: 'var(--text-secondary)' }}>{roomLabel(e)}</p>
+                              <div className="flex flex-col gap-0.5 mt-1 border-t border-white/10 pt-1">
+                                <p className="truncate font-medium" style={{ color: 'var(--text-secondary)', fontSize: '10px' }}>{divisionLabel(e)}</p>
+                                <p className="truncate" style={{ color: 'var(--text-secondary)', fontSize: '10px' }}>
+                                  {facultyLabel(e).split(' ').slice(-1)[0]} · {roomLabel(e)}
+                                </p>
+                              </div>
                               <div className="absolute top-1 right-1 hidden group-hover:flex gap-1">
                                 <button onClick={ev => { ev.stopPropagation(); openEdit(e) }} className="w-5 h-5 rounded flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.15)' }}><Edit2 className="w-3 h-3" /></button>
                                 <button onClick={ev => { ev.stopPropagation(); setDeleteId(e.id) }} className="w-5 h-5 rounded flex items-center justify-center" style={{ background: 'rgba(248,81,73,0.2)' }}><Trash2 className="w-3 h-3 text-red-400" /></button>
