@@ -1,7 +1,7 @@
 // Demo data used when Supabase is not configured
 export const DEMO_USER_FACULTY = {
   id: 'demo-faculty-001',
-  email: 'faculty@vit.edu',
+  email: 'faculty@vit.edu.in',
   full_name: 'Dr. Priya Sharma',
   role: 'faculty',
   department: 'Information Technology',
@@ -9,7 +9,7 @@ export const DEMO_USER_FACULTY = {
 
 export const DEMO_USER_ADMIN = {
   id: 'demo-admin-001',
-  email: 'admin@vit.edu',
+  email: 'admin@vit.edu.in',
   full_name: 'Prof. Rajesh Patil',
   role: 'admin',
   department: 'Information Technology',

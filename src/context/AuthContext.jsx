@@ -61,16 +61,16 @@ export function AuthProvider({ children }) {
   const signIn = async (email, password) => {
     // Demo mode sign-in
     if (DEMO_MODE) {
-      if (email === 'admin@vit.edu' && password === 'demo123') {
+      if (email === 'admin@vit.edu.in' && password === 'demo123') {
         setProfile(DEMO_USER_ADMIN)
         setUser({ id: DEMO_USER_ADMIN.id, email })
         return { error: null }
-      } else if (email === 'faculty@vit.edu' && password === 'demo123') {
+      } else if (email === 'faculty@vit.edu.in' && password === 'demo123') {
         setProfile(DEMO_USER_FACULTY)
         setUser({ id: DEMO_USER_FACULTY.id, email })
         return { error: null }
       }
-      return { error: { message: 'Invalid credentials. Try faculty@vit.edu or admin@vit.edu with demo123' } }
+      return { error: { message: 'Invalid credentials. Try faculty@vit.edu.in or admin@vit.edu.in with demo123' } }
     }
 
     const { error } = await supabase.auth.signInWithPassword({ email, password })

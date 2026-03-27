@@ -34,7 +34,7 @@ export default function LoginPage() {
 
   const fillDemo = (role) => {
     setForm({
-      email: role === 'admin' ? 'admin@vit.edu' : 'faculty@vit.edu',
+      email: role === 'admin' ? 'admin@vit.edu.in' : 'faculty@vit.edu.in',
       password: 'demo123'
     })
   }
@@ -92,7 +92,7 @@ export default function LoginPage() {
                   type="email"
                   required
                   className="input-field"
-                  placeholder="name@vit.edu"
+                  placeholder="name@vit.edu.in"
                   value={form.email}
                   onChange={(e) => setForm({ ...form, email: e.target.value })}
                 />

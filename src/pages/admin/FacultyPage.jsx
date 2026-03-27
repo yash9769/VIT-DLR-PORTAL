@@ -302,7 +302,7 @@ export default function FacultyPage() {
           </div>
           <div>
             <label className="form-label">Email</label>
-            <input type="email" className="input-field" placeholder="faculty@vit.edu" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} />
+            <input type="email" className="input-field" placeholder="faculty@vit.edu.in" value={form.email} onChange={e => setForm(f => ({ ...f, email: e.target.value }))} />
           </div>
           {!editing && (
             <div className="p-3 rounded-xl text-xs" style={{ background: 'rgba(210,153,34,0.1)', border: '1px solid rgba(210,153,34,0.3)', color: '#d29922' }}>
