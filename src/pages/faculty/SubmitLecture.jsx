@@ -270,6 +270,7 @@ export default function SubmitLecture() {
         assignments_given: Number(form.assignments_given),
         assignments_graded: Number(form.assignments_graded),
         
+        topic_covered: form.remarks || 'Main Lecture',
         remarks: form.remarks || null,
         is_substitution: form.is_substitution,
         submitted_at: new Date().toISOString()
