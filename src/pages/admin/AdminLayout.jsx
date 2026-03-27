@@ -2,7 +2,7 @@ import { useState } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { LayoutDashboard, Calendar, FileText, Settings, ChevronLeft, ChevronRight, LogOut, Bell, Menu, Users, LifeBuoy, GraduationCap } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
-import { cls } from '../../utils/helpers'
+import { cls, getInitials } from '../../utils/helpers'
 import { DemoModeBanner } from '../../components/ui'
 import { useNotifications } from '../../hooks/useNotifications'
 import { formatDistanceToNow } from 'date-fns'
@@ -72,7 +72,7 @@ export default function AdminLayout() {
         {(!collapsed || mobile) ? (
           <div className="flex items-center gap-3">
             <div className="w-8 h-8 rounded-lg flex items-center justify-center font-bold text-sm text-white flex-shrink-0" style={{ background: 'linear-gradient(135deg,#4A6CF7,#3355e8)' }}>
-              {profile?.full_name?.[0]}
+              {profile?.initials || getInitials(profile?.full_name)}
             </div>
             <div className="flex-1 min-w-0">
               <p className="font-semibold text-xs truncate" style={{ color: 'var(--text-primary)' }}>{profile?.full_name}</p>

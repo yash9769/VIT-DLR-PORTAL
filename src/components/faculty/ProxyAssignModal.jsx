@@ -1,8 +1,8 @@
 import { useState, useEffect, useRef } from 'react'
 import { X, Search, CheckCircle, ChevronRight, ChevronLeft, User, Clock, AlertTriangle } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
-import { toast } from '../ui'
-import { today, sendNotification, formatDate } from '../../utils/helpers'
+import { toast, Spinner, Modal } from '../ui'
+import { today, sendNotification, formatDate, cls, getInitials } from '../../utils/helpers'
 import { DEMO_SUBSTITUTIONS, DEMO_FACULTY_LIST, DEMO_TIMETABLE } from '../../lib/demoData'
 
 const DEMO_MODE = !import.meta.env.VITE_SUPABASE_URL
@@ -147,10 +147,9 @@ export default function ProxyAssignModal({ open, onClose, profile, todaySchedule
                 background: isSelected ? 'rgba(63,185,80,0.1)' : 'rgba(255,255,255,0.04)',
                 borderColor: isSelected ? 'rgba(63,185,80,0.5)' : 'rgba(255,255,255,0.08)',
               }}>
-              <div className="w-9 h-9 rounded-xl flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
-                style={{ background: isSelected ? '#3fb950' : 'rgba(74,108,247,0.4)' }}>
-                {fac.initials || fac.full_name?.[0] || '?'}
-              </div>
+                <div className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold text-white flex-shrink-0" style={{ background: 'linear-gradient(135deg,#4A6CF7,#3355e8)' }}>
+                  {fac.initials || getInitials(fac.full_name)}
+                </div>
               <div className="flex-1 min-w-0">
                 <p className="font-semibold text-sm truncate" style={{ color: 'var(--text-primary)' }}>{fac.full_name}</p>
                 <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>{fac.department}</p>
@@ -173,7 +172,7 @@ export default function ProxyAssignModal({ open, onClose, profile, todaySchedule
           background: 'var(--bg-secondary)', 
           border: '1px solid rgba(255,255,255,0.08)', 
           borderBottom: 'none',
-          paddingBottom: 'env(safe-area-inset-bottom)'
+          paddingBottom: 'calc(env(safe-area-inset-bottom) + 1.5rem)'
         }}>
 
         {/* Drag handle */}
@@ -300,10 +299,10 @@ export default function ProxyAssignModal({ open, onClose, profile, todaySchedule
                                 <p className="text-[10px] font-bold text-green-400">Assigned</p>
                                 <p className="text-xs font-semibold truncate max-w-[80px]" style={{ color: 'var(--text-primary)' }}>{proxy.full_name.split(' ')[0]}</p>
                               </div>
-                              <div className="w-9 h-9 rounded-xl flex items-center justify-center text-xs font-bold text-white"
-                                style={{ background: '#3fb950' }}>
-                                {proxy.initials || proxy.full_name[0]}
-                              </div>
+                                <div className="w-9 h-9 rounded-xl flex items-center justify-center text-xs font-bold text-white shadow-sm"
+                                  style={{ background: 'linear-gradient(135deg,#4A6CF7,#3355e8)' }}>
+                                  {proxy.initials || getInitials(proxy.full_name)}
+                                </div>
                             </div>
                           ) : (
                             <div className="flex items-center gap-1 text-xs font-semibold" style={{ color: '#f59e0b' }}>
@@ -353,8 +352,8 @@ export default function ProxyAssignModal({ open, onClose, profile, todaySchedule
                       </div>
                       <div className="flex items-center gap-2 flex-shrink-0">
                         <ChevronRight className="w-3.5 h-3.5 opacity-40" style={{ color: 'var(--text-secondary)' }} />
-                        <div className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold text-white" style={{ background: '#3fb950' }}>
-                          {proxy?.initials || proxy?.full_name?.[0]}
+                        <div className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold text-white shadow-sm" style={{ background: 'linear-gradient(135deg,#4A6CF7,#3355e8)' }}>
+                          {proxy?.initials || getInitials(proxy?.full_name)}
                         </div>
                         <p className="text-xs font-semibold max-w-[80px] truncate" style={{ color: '#3fb950' }}>{proxy?.full_name?.split(' ')[0]}</p>
                       </div>
@@ -373,7 +372,7 @@ export default function ProxyAssignModal({ open, onClose, profile, todaySchedule
         </div>
 
         {/* Navigation footer */}
-        <div className="flex gap-3 px-5 py-6 border-t flex-shrink-0" style={{ borderColor: 'rgba(255,255,255,0.08)', marginBottom: 'env(safe-area-inset-bottom)' }}>
+        <div className="flex gap-3 px-5 py-6 border-t flex-shrink-0" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
           {/* Back / Cancel */}
           {step === 0 || (step === 1 && assigningFor) ? (
             <button onClick={step === 0 ? onClose : () => { setAssigningFor(null); setSearch('') }}

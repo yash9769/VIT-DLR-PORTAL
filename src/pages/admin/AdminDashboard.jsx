@@ -3,7 +3,7 @@ import { format } from 'date-fns'
 import { useNavigate } from 'react-router-dom'
 import { FileText, Clock, CheckCircle, TrendingUp, AlertTriangle, Lock, Download, ChevronRight, LifeBuoy } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
-import { attendancePercent, formatDate, formatTime, today, sendNotification } from '../../utils/helpers'
+import { attendancePercent, formatDate, formatTime, today, sendNotification, getInitials } from '../../utils/helpers'
 import { StatusBadge, toast, Modal } from '../../components/ui'
 import { Eye, CheckCircle as CheckCircleIcon, XCircle as XCircleIcon, Search } from 'lucide-react'
 import { generateDLRPDF } from '../../services/reportService'
@@ -342,7 +342,7 @@ export default function AdminDashboard() {
                  <div key={f.id} className="flex items-center gap-3">
                    <div className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
                      style={{ background: f.submittedToday ? 'var(--brand)' : 'rgba(255,255,255,0.12)' }}>
-                     {f.initials || f.full_name[0]}
+                     {f.initials || getInitials(f.full_name)}
                    </div>
                    <div className="flex-1 min-w-0">
                      <p className="text-xs font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{f.full_name}</p>

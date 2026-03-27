@@ -4,6 +4,7 @@ import { Eye, EyeOff, Save, KeyRound, Award, UserCheck } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../context/AuthContext'
 import { toast, Spinner } from '../../components/ui'
+import { getInitials } from '../../utils/helpers'
 
 export default function ProfilePage() {
   const { user, profile, demoMode } = useAuth()
@@ -98,11 +99,32 @@ export default function ProfilePage() {
     }
   }
 
+  const handleForgotPassword = async () => {
+    if (demoMode) {
+      toast.error('Forgot password is not available in demo mode')
+      return
+    }
+
+    try {
+      setLoading(true)
+      const { error } = await supabase.auth.resetPasswordForEmail(profile.email, {
+        redirectTo: `${window.location.origin}/reset-password`,
+      })
+      if (error) throw error
+      toast.success(`A password reset link has been sent to your email: ${profile.email}`)
+    } catch (error) {
+      console.error('Error in forgot password:', error)
+      toast.error(error.message || 'Failed to send reset link')
+    } finally {
+      setLoading(false)
+    }
+  }
+
   return (
     <div className="px-4 pt-5 pb-24 space-y-6 animate-fade-in">
       <div className="flex items-center gap-4">
         <div className="w-20 h-20 rounded-2xl flex items-center justify-center text-3xl font-bold text-white shadow-xl" style={{ background: 'linear-gradient(135deg,#4A6CF7,#3355e8)' }}>
-          {profile?.full_name?.[0] || 'U'}
+          {profile?.initials || getInitials(profile?.full_name)}
         </div>
         <div>
           <h1 className="font-display font-bold text-2xl" style={{ color: 'var(--text-primary)' }}>My Profile</h1>
@@ -217,11 +239,21 @@ export default function ProfilePage() {
           >
             {updatingPassword ? <Spinner className="text-white" /> : (
               <>
-                <Save className="w-4 h-4" />
+                <KeyRound className="w-4 h-4" />
                 Update Password
               </>
             )}
           </button>
+
+          <div className="text-center mt-4">
+            <button 
+              type="button" 
+              onClick={handleForgotPassword}
+              className="text-xs font-semibold text-brand-500 hover:text-brand-400 transition-colors"
+            >
+              Forgot your current password?
+            </button>
+          </div>
           
           {demoMode && (
             <p className="text-[10px] text-yellow-500 font-bold uppercase tracking-wider text-center">

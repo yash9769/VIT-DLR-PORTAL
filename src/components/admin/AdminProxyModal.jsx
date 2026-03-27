@@ -3,7 +3,7 @@ import { Search, CheckCircle, AlertTriangle, ChevronRight, ChevronLeft, Clock } 
 import { Modal, toast } from '../ui'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../context/AuthContext'
-import { getDayName, today, sendNotification, formatDate } from '../../utils/helpers'
+import { getDayName, today, sendNotification, formatDate, getInitials } from '../../utils/helpers'
 import { DEMO_FACULTY_LIST, DEMO_TIMETABLE } from '../../lib/demoData'
 
 const DEMO_MODE = !import.meta.env.VITE_SUPABASE_URL
@@ -273,7 +273,7 @@ export default function AdminProxyModal({ open, onClose, onSuccess }) {
                     className="w-9 h-9 rounded-lg flex items-center justify-center text-sm font-bold text-white flex-shrink-0"
                     style={{ background: isSelected ? 'var(--brand)' : 'rgba(100,100,120,0.4)' }}
                   >
-                    {fac.full_name?.[0]}
+                    {getInitials(fac.full_name)}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>{fac.full_name}</p>
@@ -400,7 +400,7 @@ export default function AdminProxyModal({ open, onClose, onSuccess }) {
                     className="w-9 h-9 rounded-lg flex items-center justify-center text-sm font-bold text-white flex-shrink-0"
                     style={{ background: isSelected ? '#3fb950' : 'rgba(100,100,120,0.4)' }}
                   >
-                    {fac.full_name?.[0]}
+                    {getInitials(fac.full_name)}
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>{fac.full_name}</p>

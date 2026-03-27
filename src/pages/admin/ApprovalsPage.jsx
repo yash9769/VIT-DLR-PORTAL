@@ -5,7 +5,7 @@ import { formatDate, formatTime, attendancePercent } from '../../utils/helpers'
 import { SectionHeader, StatusBadge, Modal, toast, EmptyState } from '../../components/ui'
 import { generateDLRPDF } from '../../services/reportService'
 import { exportDLRToExcel } from '../../services/excelService'
-import { today, cls } from '../../utils/helpers'
+import { today, cls, getInitials } from '../../utils/helpers'
 
 export default function ApprovalsPage() {
   const [loading, setLoading] = useState(true)
@@ -239,7 +239,11 @@ export default function ApprovalsPage() {
                       <input type="checkbox" checked={selected.has(r.id)} onChange={() => toggleSelect(r.id)} className="rounded" />
                     </td>
                     <td>
-                      <div className="flex items-center gap-2">
+                      <div className="flex items-center gap-3">
+                        <div className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
+                             style={{ background: 'linear-gradient(135deg,#4A6CF7,#3355e8)' }}>
+                          {getInitials(r.faculty?.full_name)}
+                        </div>
                         <div className="flex-1">
                           <div className="flex items-center gap-1.5 flex-wrap">
                             <p className="font-medium text-sm" style={{ color: 'var(--text-primary)' }}>{r.faculty?.full_name}</p>

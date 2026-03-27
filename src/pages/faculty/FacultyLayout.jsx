@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
 import { LayoutDashboard, FileText, Users, History, Bell, LogOut, ChevronRight, LifeBuoy, User, Calendar } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
-import { cls } from '../../utils/helpers'
+import { cls, getInitials } from '../../utils/helpers'
 import { DemoModeBanner } from '../../components/ui'
 import { useNotifications } from '../../hooks/useNotifications'
 import { formatDistanceToNow } from 'date-fns'
@@ -36,7 +36,9 @@ export default function FacultyLayout() {
       <header className="sticky top-0 z-30 px-4 py-3 flex items-center justify-between" style={{ background: 'var(--bg-secondary)', backdropFilter: 'blur(16px)', borderBottom: '1px solid var(--border-glass)' }}>
         <div className="flex items-center gap-3 cursor-pointer" onClick={() => navigate('/faculty/profile')}>
           <div className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0 shadow-lg" style={{ background: 'linear-gradient(135deg,#4A6CF7,#3355e8)' }}>
-            <span className="text-white font-display font-bold text-sm">{profile?.full_name?.[0] || 'F'}</span>
+            <span className="text-white font-display font-bold text-sm">
+              {profile?.initials || getInitials(profile?.full_name)}
+            </span>
           </div>
           <div className="hidden sm:block">
             <p className="text-xs font-bold leading-tight" style={{ color: 'var(--text-primary)' }}>{profile?.full_name}</p>

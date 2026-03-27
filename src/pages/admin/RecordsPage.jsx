@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Search, Filter, CheckCircle, XCircle, Lock, Eye, Download } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
-import { formatDate, formatTime, attendancePercent, today, sendNotification } from '../../utils/helpers'
+import { formatDate, formatTime, attendancePercent, today, sendNotification, getInitials } from '../../utils/helpers'
 import { StatusBadge, Modal, toast } from '../../components/ui'
 import { generateDLRPDF } from '../../services/reportService'
 import { exportDLRToExcel } from '../../services/excelService'
@@ -176,7 +176,7 @@ export default function RecordsPage() {
                 <tr><td colSpan={11} className="text-center py-10" style={{ color: 'var(--text-secondary)' }}>No records found</td></tr>
               ) : filtered.map(r => (
                 <tr key={r.id}>
-                  <td className="text-sm font-medium">{r.faculty?.full_name?.split(' ').slice(-1)[0] || '—'}</td>
+                  <td className="text-sm font-medium">{getInitials(r.faculty?.full_name)}</td>
                   <td><span className="badge badge-pending text-xs">{r.custom_division || r.divisions?.division_name}</span></td>
                   <td className="text-sm">{r.custom_subject || r.subjects?.short_name || r.subjects?.subject_name}</td>
                   <td className="text-sm">{formatDate(r.lecture_date)}</td>

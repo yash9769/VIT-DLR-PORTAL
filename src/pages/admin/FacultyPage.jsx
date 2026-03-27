@@ -4,12 +4,7 @@ import * as XLSX from 'xlsx'
 import { supabase } from '../../lib/supabase'
 import { Modal, toast } from '../../components/ui'
 
-const getInitials = (name = '') =>
-  name
-    .split(/\s+/)
-    .map(w => w[0]?.toUpperCase())
-    .filter(Boolean)
-    .join('')
+import { getInitials } from '../../utils/helpers'
 
 export default function FacultyPage() {
   const [faculty, setFaculty] = useState([])
