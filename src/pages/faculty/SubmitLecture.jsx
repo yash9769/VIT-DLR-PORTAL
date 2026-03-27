@@ -487,28 +487,50 @@ export default function SubmitLecture() {
 
           {/* Section 4 & 5: Systems */}
           <div className="grid grid-cols-2 gap-4">
-            <div className="flex items-center gap-3 p-4 rounded-2xl cursor-pointer transition-all h-full" 
-                 style={{ background: form.lecture_capture_done ? 'rgba(63,185,80,0.1)' : 'rgba(255,255,255,0.04)', border: `1px solid ${form.lecture_capture_done ? 'rgba(63,185,80,0.3)' : 'rgba(255,255,255,0.08)'}` }}
+            <div className={`flex flex-col gap-2 p-4 rounded-2xl cursor-pointer transition-all hover:scale-[1.02] active:scale-95 group relative overflow-hidden`} 
+                 style={{ 
+                   background: form.lecture_capture_done ? 'rgba(63,185,80,0.12)' : 'rgba(255,255,255,0.03)', 
+                   border: `1.5px solid ${form.lecture_capture_done ? 'rgba(63,185,80,0.4)' : 'rgba(255,255,255,0.1)'}`,
+                   boxShadow: form.lecture_capture_done ? '0 0 20px rgba(63,185,80,0.1)' : 'none'
+                 }}
                  onClick={() => set('lecture_capture_done', !form.lecture_capture_done)}>
-              <div className="flex-1">
-                <p className="font-bold text-[11px] uppercase tracking-wider mb-1">Lecture Capture</p>
-                <p className="text-[10px] leading-tight" style={{ color: 'var(--text-secondary)' }}>Done Successfully?</p>
+              <div className="flex items-center justify-between mb-1">
+                <p className="font-bold text-[10px] uppercase tracking-widest" style={{ color: form.lecture_capture_done ? '#3fb950' : 'var(--text-secondary)' }}>Lecture Capture</p>
+                <div className={`w-5 h-5 rounded-full flex items-center justify-center transition-all ${form.lecture_capture_done ? 'bg-green-500 shadow-[0_0_10px_rgba(63,185,80,0.5)]' : 'bg-white/10'}`}>
+                  {form.lecture_capture_done ? <Check className="w-3 h-3 text-white" /> : <div className="w-1.5 h-1.5 rounded-full bg-white/20" />}
+                </div>
               </div>
-              <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${form.lecture_capture_done ? 'bg-green-500' : 'bg-white/10'}`}>
-                {form.lecture_capture_done ? <Check className="w-3.5 h-3.5 text-white" /> : <span className="text-[9px] text-white/40">N</span>}
+              <p className="text-[11px] font-semibold leading-tight pr-4">
+                {form.lecture_capture_done ? 'Recorded successfully' : 'Not recorded yet?'}
+              </p>
+              <div className="mt-2 flex items-center gap-1 opacity-40 group-hover:opacity-100 transition-opacity">
+                <div className="w-1 h-1 rounded-full bg-blue-400" />
+                <span className="text-[9px] uppercase tracking-tighter font-bold">Tap to toggle</span>
               </div>
+              {form.lecture_capture_done && <div className="absolute -right-2 -bottom-2 w-12 h-12 bg-green-500/10 blur-xl rounded-full" />}
             </div>
 
-            <div className="flex items-center gap-3 p-4 rounded-2xl cursor-pointer transition-all h-full" 
-                 style={{ background: form.smart_board_uploaded ? 'rgba(63,185,80,0.1)' : 'rgba(255,255,255,0.04)', border: `1px solid ${form.smart_board_uploaded ? 'rgba(63,185,80,0.3)' : 'rgba(255,255,255,0.08)'}` }}
+            <div className={`flex flex-col gap-2 p-4 rounded-2xl cursor-pointer transition-all hover:scale-[1.02] active:scale-95 group relative overflow-hidden`} 
+                 style={{ 
+                   background: form.smart_board_uploaded ? 'rgba(63,185,80,0.12)' : 'rgba(255,255,255,0.03)', 
+                   border: `1.5px solid ${form.smart_board_uploaded ? 'rgba(63,185,80,0.4)' : 'rgba(255,255,255,0.1)'}`,
+                   boxShadow: form.smart_board_uploaded ? '0 0 20px rgba(63,185,80,0.1)' : 'none'
+                 }}
                  onClick={() => set('smart_board_uploaded', !form.smart_board_uploaded)}>
-              <div className="flex-1">
-                <p className="font-bold text-[11px] uppercase tracking-wider mb-1">Smart Board PDF</p>
-                <p className="text-[10px] leading-tight" style={{ color: 'var(--text-secondary)' }}>Uploaded on VREFER?</p>
+              <div className="flex items-center justify-between mb-1">
+                <p className="font-bold text-[10px] uppercase tracking-widest" style={{ color: form.smart_board_uploaded ? '#3fb950' : 'var(--text-secondary)' }}>Smart Board PDF</p>
+                <div className={`w-5 h-5 rounded-full flex items-center justify-center transition-all ${form.smart_board_uploaded ? 'bg-green-500 shadow-[0_0_10px_rgba(63,185,80,0.5)]' : 'bg-white/10'}`}>
+                  {form.smart_board_uploaded ? <Check className="w-3 h-3 text-white" /> : <div className="w-1.5 h-1.5 rounded-full bg-white/20" />}
+                </div>
               </div>
-              <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${form.smart_board_uploaded ? 'bg-green-500' : 'bg-white/10'}`}>
-                {form.smart_board_uploaded ? <Check className="w-3.5 h-3.5 text-white" /> : <span className="text-[9px] text-white/40">N</span>}
+              <p className="text-[11px] font-semibold leading-tight pr-4">
+                {form.smart_board_uploaded ? 'PDF uploaded on VREFER' : 'Not uploaded manually?'}
+              </p>
+              <div className="mt-2 flex items-center gap-1 opacity-40 group-hover:opacity-100 transition-opacity">
+                <div className="w-1 h-1 rounded-full bg-blue-400" />
+                <span className="text-[9px] uppercase tracking-tighter font-bold">Tap to toggle</span>
               </div>
+              {form.smart_board_uploaded && <div className="absolute -right-2 -bottom-2 w-12 h-12 bg-green-500/10 blur-xl rounded-full" />}
             </div>
           </div>
         </div>
