@@ -152,7 +152,13 @@ export default function TimetablePage() {
   }
 
   const openCreate = () => {
-    setForm(emptyForm)
+    setForm({
+      ...emptyForm,
+      faculty_id: filterFaculty || '',
+      division_id: filterDivision || '',
+      day_of_week: filterDay !== 'All' ? filterDay : 'Monday',
+      subject_id: filterSubject || '',
+    })
     setUseCustomFaculty(false)
     setUseCustomDivision(false)
     setUseCustomSubject(false)
@@ -629,7 +635,7 @@ export default function TimetablePage() {
         )}
       </div>
 
-      <Modal open={showModal} onClose={() => setShowModal(false)} title={<div className="flex items-center justify-between w-full pr-8"><span>{editEntry ? 'Edit Timetable Entry' : 'Add Timetable Entry'}</span> <button onClick={() => { setUseCustomFaculty(true); setUseCustomSubject(true); setUseCustomRoom(true); setForm(f => ({...f, custom_faculty: 'DO', custom_subject: 'DO', custom_room: 'DO', faculty_id: '', subject_id: '', room_id: ''})); setConflicts([]); }} className="text-xs bg-brand-500/20 text-brand-300 hover:bg-brand-500/30 px-2 py-1 rounded">Set as Ditto (DO)</button></div>} size="md">
+      <Modal open={showModal} onClose={() => setShowModal(false)} title={<div className="flex items-center justify-between w-full pr-8"><span>{editEntry ? 'Edit Timetable Entry' : 'Add Timetable Entry'}</span> <button onClick={() => { setUseCustomFaculty(true); setUseCustomSubject(true); setUseCustomRoom(true); setForm(f => ({...f, custom_faculty: 'DO', custom_subject: 'DO', custom_room: 'DO', faculty_id: '', subject_id: '', room_id: ''})); setConflicts([]); }} className="text-xs bg-brand-500/20 text-brand-300 hover:bg-brand-500/30 px-2 py-1 rounded">Set as DO (Ditto)</button></div>} size="md">
         <div className="space-y-4 max-h-[70vh] overflow-y-auto pr-2 custom-scrollbar">
           <ConflictWarning conflicts={conflicts} />
 
@@ -773,7 +779,14 @@ export default function TimetablePage() {
               <div className="p-1.5 flex flex-col">
                 <p className="px-3 py-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-slate-800 mb-1">Empty Slot</p>
                 <button onClick={() => { 
-                  setForm({ ...emptyForm, day_of_week: contextMenu.entry.day, time_slot_id: contextMenu.entry.slotId })
+                  setForm({ 
+                    ...emptyForm, 
+                    day_of_week: contextMenu.entry.day, 
+                    time_slot_id: contextMenu.entry.slotId,
+                    division_id: filterDivision || '',
+                    faculty_id: filterFaculty || '',
+                    subject_id: filterSubject || '',
+                  })
                   setEditEntry(null); setShowModal(true); setContextMenu(null)
                 }} className="w-full flex items-center gap-3 px-3 py-2 text-sm text-slate-200 hover:bg-brand-500/20 hover:text-brand-400 rounded-lg transition-colors">
                   <Plus className="w-4 h-4 text-slate-500" /> <span>Add Entry Here</span>
