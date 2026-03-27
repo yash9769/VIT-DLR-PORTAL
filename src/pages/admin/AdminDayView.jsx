@@ -268,7 +268,7 @@ export default function AdminDayView() {
                         <div className="font-medium whitespace-nowrap">{entry.faculty?.full_name || entry.custom_faculty}</div>
                       </td>
                       <td className="py-3 px-4">
-                        <div className="font-medium whitespace-nowrap max-w-[200px] truncate">{entry.subjects?.subject_name || entry.custom_subject}</div>
+                        <div className="font-medium whitespace-nowrap max-w-[200px] truncate">{entry.custom_subject || entry.subjects?.short_name || entry.subjects?.subject_name}</div>
                       </td>
                       <td className="py-3 px-4">
                         <div className="font-medium whitespace-nowrap">

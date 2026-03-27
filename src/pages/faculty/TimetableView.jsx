@@ -193,55 +193,52 @@ export default function TimetableView() {
                     const isLCS = ['E101','E201','E204','M202'].includes(roomNum)
                     const isLab = (e.custom_subject || e.subjects?.subject_name || '').toLowerCase().includes('lab')
                     return (
-                      <div key={e.id} className="glass-card p-3 flex gap-3 items-start"
+                      <div key={e.id} className="glass-card p-3 flex gap-4 items-center"
                         style={{
                           background: isLCS ? 'rgba(255,255,0,0.07)' : isLab ? 'rgba(63,185,80,0.06)' : undefined,
                           border: isLCS ? '1px solid rgba(255,220,0,0.3)' : isLab ? '1px solid rgba(63,185,80,0.2)' : undefined,
                         }}>
-                        <div className="w-12 flex-shrink-0 text-center">
+                        {/* Time Column */}
+                        <div className="w-14 flex-shrink-0 text-center border-r border-white/10 pr-3">
                           <p className="text-xs font-bold leading-tight" style={{ color: TEXT_COLORS[ci] }}>
                             {formatTime(e.time_slots?.start_time)}
                           </p>
-                          <div className="w-px h-3 mx-auto my-0.5 rounded-full opacity-40" style={{ background: TEXT_COLORS[ci] }} />
-                          <p className="text-[10px]" style={{ color:'var(--text-secondary)' }}>
+                          <p className="text-[10px] mt-0.5 opacity-60" style={{ color: 'var(--text-secondary)' }}>
                             {formatTime(e.time_slots?.end_time)}
                           </p>
                         </div>
-                        <div className="flex-1 min-w-0">
-                          <div className="flex items-center gap-1.5 mb-1 flex-wrap">
-                            {e.batch_number && (
-                              <span className="text-[9px] px-1.5 py-0.5 rounded font-bold uppercase"
-                                style={{ background: BADGE_COLORS[ci], color: TEXT_COLORS[ci] }}>
-                                B{e.batch_number}
-                              </span>
-                            )}
-                            {isLCS && (
-                              <span className="text-[9px] px-1.5 py-0.5 rounded font-bold"
-                                style={{ background:'rgba(255,220,0,0.2)', color:'#8a6d00' }}>
-                                📹 LCS
-                              </span>
-                            )}
-                            {isLab && !isLCS && (
-                              <span className="text-[9px] px-1.5 py-0.5 rounded font-bold"
-                                style={{ background:'rgba(63,185,80,0.15)', color:'#3fb950' }}>
-                                Lab
-                              </span>
-                            )}
-                            <p className="font-semibold text-sm truncate" style={{ color:'var(--text-primary)' }}>
-                              {e.custom_subject || e.subjects?.short_name || e.subjects?.subject_name || '—'}
-                            </p>
+
+                        {/* Content Column */}
+                        <div className="flex-1 min-w-0 flex items-center justify-between gap-4">
+                          <div className="flex items-center gap-3 min-w-0">
+                            <div className="min-w-0">
+                              <p className="font-bold text-sm truncate" style={{ color: 'var(--text-primary)' }}>
+                                {e.custom_subject || e.subjects?.short_name || e.subjects?.subject_name || '—'}
+                              </p>
+                              <div className="flex items-center gap-2 mt-1">
+                                {e.batch_number && (
+                                  <span className="text-[9px] px-1.5 py-0.5 rounded font-bold uppercase"
+                                    style={{ background: BADGE_COLORS[ci], color: TEXT_COLORS[ci] }}>
+                                    B{e.batch_number}
+                                  </span>
+                                )}
+                                <span className="flex items-center gap-1 text-[10px]" style={{ color: 'var(--text-secondary)' }}>
+                                  <Users className="w-3 h-3 opacity-60" />
+                                  {e.custom_division || e.divisions?.division_name || '—'}
+                                </span>
+                                <span className="flex items-center gap-1 text-[10px]" style={{ color: isLCS ? '#8a6d00' : 'var(--text-secondary)' }}>
+                                  <MapPin className="w-3 h-3 opacity-60" />
+                                  {roomNum || '—'}
+                                </span>
+                              </div>
+                            </div>
                           </div>
-                          <div className="flex flex-wrap gap-x-3 gap-y-0.5 text-[10px]" style={{ color:'var(--text-secondary)' }}>
-                            <span className="flex items-center gap-1">
-                              <Users className="w-3 h-3" />
-                              {e.custom_division || e.divisions?.division_name || '—'}
-                            </span>
-                            <span className="flex items-center gap-1" style={{ color: isLCS ? '#8a6d00' : 'var(--text-secondary)' }}>
-                              <MapPin className="w-3 h-3" />{roomNum || '—'}
-                            </span>
-                            <span className="flex items-center gap-1 font-semibold" style={{ color: TEXT_COLORS[ci] }}>
+
+                          <div className="flex items-center gap-3">
+                            {isLCS && <span className="text-[10px] px-1.5 py-0.5 rounded font-bold bg-yellow-400/20 text-yellow-600 border border-yellow-400/30">📹 LCS</span>}
+                            <div className="px-3 py-1.5 rounded-xl text-xs font-black tracking-tight shadow-sm" style={{ background: BADGE_COLORS[ci], color: TEXT_COLORS[ci], border: `1px solid ${TEXT_COLORS[ci]}40` }}>
                               {e.users?.initials || e.users?.full_name?.split(' ').map(w=>w[0]).join('') || '—'}
-                            </span>
+                            </div>
                           </div>
                         </div>
                       </div>

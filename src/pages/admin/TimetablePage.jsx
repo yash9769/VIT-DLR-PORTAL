@@ -127,12 +127,13 @@ export default function TimetablePage() {
   const divisionLabel = (t) => t.custom_division || t.divisions?.division_name || '—'
   const subjectLabel = (t) => t.custom_subject || t.subjects?.subject_name || '—'
   const subjectShortLabel = (t) => {
-    const raw = t.custom_subject || t.subjects?.subject_name || t.subjects?.subject_code || '—'
+    if (t.custom_subject) return t.custom_subject
+    if (t.subjects?.short_name) return t.subjects.short_name
+    const raw = t.subjects?.subject_name || t.subjects?.subject_code || '—'
     const primary = raw.split('/')[0].trim()
     // If it's already an abbreviation (all caps, no spaces), just use it
     if (/^[A-Z0-9]{2,5}$/.test(primary)) return primary
-    // Otherwise, generate it: "Python Programming" -> "PP" or "PGM"
-    // Let's go with first letters of each word
+    // Otherwise, generate it: "Python Programming" -> "PP"
     const words = primary.split(/[\s_-]+/).filter(w => w.length > 0 && !(['AND', 'OF', 'FOR', 'TO', 'WITH'].includes(w.toUpperCase())))
     if (words.length === 1 && words[0].length > 4) return words[0].slice(0,3).toUpperCase()
     return words.map(w => w[0]).join('').toUpperCase()
@@ -404,20 +405,22 @@ export default function TimetablePage() {
                         {entries.map(e => {
                           const bc = e.batch_number ? getBatchColor(Number(e.batch_number)) : { bg: 'rgba(74,108,247,0.15)', border: 'rgba(74,108,247,0.4)', text: '#4a6cf7' }
                           return (
-                            <div key={e.id} className={`p-0.5 px-1 rounded text-[10px] cursor-pointer group relative flex flex-col items-center justify-center text-center leading-[1.1] mb-0.5 transition-all
+                            <div key={e.id} className={`p-1 px-1.5 rounded text-[10px] cursor-pointer group relative flex flex-row items-center gap-1.5 mb-1 transition-all
                               ${draggingId === e.id ? 'opacity-30' : 'opacity-100 hover:scale-[1.02] hover:shadow-lg'}`}
                               draggable="true"
                               onDragStart={(ev) => onDragStart(ev, e)}
                               onContextMenu={(ev) => handleContextMenu(ev, e)}
                               style={{ background: bc.bg, border: `1.5px solid ${bc.border}` }}
                               onClick={() => openEdit(e)}>
-                              <p className="font-bold truncate w-full" style={{ color: bc.text }}>{subjectShortLabel(e)}</p>
-                              <p className="opacity-80 truncate w-full font-bold" style={{ color: '#475569', fontSize: '8.5px' }}>
-                                {facultyInitials(e)} · {roomLabel(e)}
-                                {e.batch_number && <span className="ml-0.5 opacity-100 font-black" style={{color: bc.text}}>(B{e.batch_number})</span>}
-                              </p>
+                              <div className="flex-1 font-bold truncate leading-none" style={{ color: bc.text }}>{subjectShortLabel(e)}</div>
+                              <div className="flex items-center gap-1 font-black opacity-90 leading-none whitespace-nowrap" style={{ color: '#445577', fontSize: '9px' }}>
+                                <span>{facultyInitials(e)}</span>
+                                <span className="opacity-30 text-[8px]">|</span>
+                                <span>{roomLabel(e)}</span>
+                                {e.batch_number && <span className="ml-1 px-1 rounded-sm bg-black/5" style={{color: bc.text}}>B{e.batch_number}</span>}
+                              </div>
                               
-                              <div className="absolute inset-0 hidden group-hover:flex items-center justify-center gap-1 bg-black/60 rounded">
+                              <div className="absolute inset-0 hidden group-hover:flex items-center justify-center gap-1 bg-black/60 rounded z-10">
                                 <button onClick={ev => { ev.stopPropagation(); openEdit(e) }} className="w-4 h-4 rounded flex items-center justify-center" style={{ background: 'var(--brand)', color: 'white' }}><Edit2 className="w-2.5 h-2.5" /></button>
                                 <button onClick={ev => { ev.stopPropagation(); setDeleteId(e.id) }} className="w-4 h-4 rounded flex items-center justify-center bg-red-500 text-white"><Trash2 className="w-2.5 h-2.5" /></button>
                               </div>
@@ -457,22 +460,24 @@ export default function TimetablePage() {
                         {entries.map(e => {
                           const bc = e.batch_number ? getBatchColor(Number(e.batch_number)) : { bg: 'rgba(210,153,34,0.15)', border: 'rgba(210,153,34,0.4)', text: '#d97706' }
                           return (
-                            <div key={e.id} className={`p-0.5 px-1 rounded text-[10px] cursor-pointer group relative flex-1 min-w-[70px] flex flex-col items-center justify-center text-center leading-[1.1] transition-all
+                            <div key={e.id} className={`p-1 px-1.5 rounded text-[10px] cursor-pointer group relative flex-1 min-w-[90px] flex flex-row items-center gap-1.5 transition-all
                                ${draggingId === e.id ? 'opacity-30' : 'opacity-100 hover:scale-[1.02] hover:shadow-lg'}`}
                               draggable="true"
                               onDragStart={(ev) => onDragStart(ev, e)}
                               onContextMenu={(ev) => handleContextMenu(ev, e)}
                               style={{ background: bc.bg, border: `1.5px solid ${bc.border}` }}
                               onClick={() => openEdit(e)}>
-                              <p className="font-bold truncate w-full" style={{ color: bc.text }}>
-                                {e.batch_number && <span className="font-black mr-0.5">B{e.batch_number}</span>}
+                              <div className="flex-1 font-bold truncate leading-none" style={{ color: bc.text }}>
+                                {e.batch_number && <span className="font-black mr-1 text-[8px] opacity-70">B{e.batch_number}</span>}
                                 {subjectShortLabel(e)}
-                              </p>
-                              <p className="opacity-80 truncate w-full mt-0.5 font-bold" style={{ color: '#78350f', fontSize: '8.5px' }}>
-                                <span className="font-black">{facultyInitials(e)}</span> · {roomLabel(e)}
-                              </p>
+                              </div>
+                              <div className="flex items-center gap-1 font-black opacity-90 leading-none whitespace-nowrap" style={{ color: '#78350f', fontSize: '9px' }}>
+                                <span>{facultyInitials(e)}</span>
+                                <span className="opacity-30 text-[8px]">|</span>
+                                <span>{roomLabel(e)}</span>
+                              </div>
                               
-                              <div className="absolute inset-0 hidden group-hover:flex items-center justify-center gap-1 bg-black/60 rounded">
+                              <div className="absolute inset-0 hidden group-hover:flex items-center justify-center gap-1 bg-black/60 rounded z-10">
                                 <button onClick={ev => { ev.stopPropagation(); openEdit(e) }} className="w-4 h-4 rounded flex items-center justify-center" style={{ background: '#d29922', color: 'black' }}><Edit2 className="w-2.5 h-2.5" /></button>
                                 <button onClick={ev => { ev.stopPropagation(); setDeleteId(e.id) }} className="w-4 h-4 rounded flex items-center justify-center bg-red-500 text-white" ><Trash2 className="w-2.5 h-2.5" /></button>
                               </div>
