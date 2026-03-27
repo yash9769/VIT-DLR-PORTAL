@@ -117,6 +117,16 @@ export default function LoginPage() {
                     {showPassword ? <EyeOff size={20} /> : <Eye size={20} />}
                   </button>
                 </div>
+                <div className="flex justify-end mt-1.5">
+                  <button type="button" onClick={async () => {
+                    if (!form.email) { toast.error('Please enter your email first'); return }
+                    const { error } = await supabase.auth.resetPasswordForEmail(form.email, { redirectTo: `${window.location.origin}/reset-password` })
+                    if (error) toast.error(error.message)
+                    else toast.success('Password reset link sent to your email!')
+                  }} className="text-xs font-semibold text-brand-500 hover:text-brand-400 transition-colors">
+                    Forgot Password?
+                  </button>
+                </div>
               </div>
 
               {error && (

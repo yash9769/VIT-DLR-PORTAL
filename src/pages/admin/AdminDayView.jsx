@@ -11,15 +11,32 @@ export default function AdminDayView() {
   const [searchTerm, setSearchTerm] = useState('')
   const [submitModal, setSubmitModal] = useState(null)
   
+  const [students, setStudents] = useState([])
+  const [attendance, setAttendance] = useState({})
+  const [studentsLoading, setStudentsLoading] = useState(false)
+  
   const [form, setForm] = useState({
     actual_start: '',
     actual_end: '',
     topic_covered: '',
-    total_students: 60,
-    present_count: 60,
-    lcs_status: 'covered',
-    remarks: 'Submitted by Admin'
+    total_batch_strength: 60,
+    attendance: 60,
+    lecture_capture_done: false,
+    smart_board_uploaded: false,
+    assignments_last_week: 0,
+    assignments_given: 0,
+    assignments_graded: 0,
+    remarks: 'Submitted by Admin',
+    actual_faculty_id: '',
+    is_substitution: false
   })
+
+  // Sync present count with attendance toggles
+  useEffect(() => {
+    if (students.length === 0) return
+    const presentCount = Object.values(attendance).filter(Boolean).length
+    setForm(f => ({ ...f, attendance: presentCount, total_batch_strength: students.length }))
+  }, [attendance])
 
   useEffect(() => {
     fetchDayData()
@@ -77,17 +94,52 @@ export default function AdminDayView() {
     }
   }
 
-  const handleOpenSubmit = (entry) => {
-    setForm({
+  const handleOpenSubmit = async (entry) => {
+    const defaultData = {
       actual_start: entry.time_slots?.start_time || '09:00',
       actual_end: entry.time_slots?.end_time || '10:00',
       topic_covered: 'Admin Override Submission',
-      total_students: entry.divisions?.strength || 60,
-      present_count: entry.divisions?.strength || 60,
-      lcs_status: 'covered',
-      remarks: 'Submitted by Admin'
-    })
+      total_batch_strength: entry.divisions?.strength || 60,
+      attendance: entry.divisions?.strength || 60,
+      lecture_capture_done: true,
+      smart_board_uploaded: true,
+      assignments_last_week: 0,
+      assignments_given: 0,
+      assignments_graded: 0,
+      remarks: 'Submitted by Admin',
+      actual_faculty_id: entry.faculty_id || '',
+      is_substitution: false
+    }
+    setForm(defaultData)
     setSubmitModal(entry)
+    
+    // Fetch students for this division/batch
+    if (entry.division_id) {
+      setStudentsLoading(true)
+      try {
+        const batchNum = entry.batch_number ?? null
+        let q = supabase
+          .from('students')
+          .select('id, roll_number, full_name, batch_number')
+          .eq('division_id', entry.division_id)
+          .order('roll_number')
+        if (batchNum) q = q.eq('batch_number', batchNum)
+        
+        const { data } = await q
+        const list = data || []
+        setStudents(list)
+        const init = {}
+        list.forEach(s => { init[s.id] = true })
+        setAttendance(init)
+        if (list.length > 0) {
+          setForm(f => ({ ...f, total_batch_strength: list.length, attendance: list.length }))
+        }
+      } catch (err) {
+        console.error('Error fetching students:', err)
+      } finally {
+        setStudentsLoading(false)
+      }
+    }
   }
 
   const handleSubmit = async () => {
@@ -99,27 +151,45 @@ export default function AdminDayView() {
         timetable_id: submitModal.id,
         faculty_id: submitModal.faculty_id,
         division_id: submitModal.division_id,
-        custom_division: submitModal.custom_division,
         subject_id: submitModal.subject_id,
-        custom_subject: submitModal.custom_subject,
         room_id: submitModal.room_id,
-        custom_room: submitModal.custom_room,
-        custom_time_slot: submitModal.custom_time_slot,
-        scheduled_start: submitModal.time_slots?.start_time || null,
-        scheduled_end: submitModal.time_slots?.end_time || null,
-        actual_start: form.actual_start,
+        
+        timetable_from: submitModal.time_slots?.start_time || null,
+        timetable_to: submitModal.time_slots?.end_time || null,
+        actual_from: form.actual_start,
         actual_end: form.actual_end,
+        actual_faculty_id: form.actual_faculty_id || submitModal.faculty_id,
+        
         topic_covered: form.topic_covered,
-        total_students: Number(form.total_students),
-        present_count: Number(form.present_count),
-        absent_count: Number(form.total_students) - Number(form.present_count),
-        lcs_status: form.lcs_status,
+        attendance: Number(form.attendance),
+        total_batch_strength: Number(form.total_batch_strength),
+        
+        lecture_capture_done: form.lecture_capture_done,
+        smart_board_uploaded: form.smart_board_uploaded,
+        
+        assignments_last_week: Number(form.assignments_last_week),
+        assignments_given: Number(form.assignments_given),
+        assignments_graded: Number(form.assignments_graded),
+        
         remarks: form.remarks,
-        approval_status: 'approved', // Auto approve since it's admin
+        is_substitution: form.is_substitution,
+        approval_status: 'approved',
+        submitted_at: new Date().toISOString()
       }
 
-      const { error } = await supabase.from('lecture_records').insert([payload])
+      const { data: record, error } = await supabase.from('lecture_records').insert([payload]).select().single()
       if (error) throw error
+      
+      // NEW: Save student-wise attendance if available
+      if (students.length > 0) {
+        const attendanceData = students.map(s => ({
+          lecture_record_id: record.id,
+          student_id: s.id,
+          is_present: attendance[s.id] !== false
+        }))
+        const { error: attError } = await supabase.from('attendance').insert(attendanceData)
+        if (attError) console.error('Error saving individual attendance:', attError)
+      }
 
       toast.success('DLR Submitted directly by Admin')
       setSubmitModal(null)
@@ -228,10 +298,10 @@ export default function AdminDayView() {
 
       {submitModal && (
         <Modal open={true} onClose={() => setSubmitModal(null)} title="Admin DLR Override Submission">
-          <div className="space-y-4">
+          <div className="space-y-5 max-h-[80vh] overflow-y-auto pr-2 custom-scrollbar">
             <div className="p-3 bg-brand-500/10 border border-brand-500/20 rounded-xl">
               <p className="text-sm font-bold text-brand-300">{submitModal.faculty?.full_name || submitModal.custom_faculty}</p>
-              <p className="text-xs opacity-80">{submitModal.subjects?.subject_name || submitModal.custom_subject}</p>
+              <p className="text-xs opacity-80">{submitModal.subjects?.subject_name || submitModal.custom_subject} · {submitModal.divisions?.division_name}</p>
             </div>
             
             <div className="grid grid-cols-2 gap-4">
@@ -250,27 +320,88 @@ export default function AdminDayView() {
               <input type="text" className="input-field" value={form.topic_covered} onChange={e=>setForm(f=>({...f, topic_covered: e.target.value}))}/>
             </div>
 
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="form-label">Total Students</label>
-                <input type="number" className="input-field" value={form.total_students} onChange={e=>setForm(f=>({...f, total_students: e.target.value}))}/>
+            {/* Attendance Section */}
+            <div className="border-t border-white/5 pt-4">
+              <label className="form-label mb-2 block">Attendance</label>
+              <div className="grid grid-cols-2 gap-4 mb-4">
+                <div className="glass-card p-3">
+                  <p className="text-[10px] font-bold opacity-50 uppercase mb-1">Total</p>
+                  <input type="number" className="bg-transparent border-none w-full font-bold text-lg outline-none" 
+                    value={form.total_batch_strength} onChange={e=>setForm(f=>({...f, total_batch_strength: e.target.value}))} />
+                </div>
+                <div className="glass-card p-3 border-brand-500/30">
+                  <p className="text-[10px] font-bold text-brand-400 uppercase mb-1">Present Count</p>
+                  <input type="number" className="bg-transparent border-none w-full font-bold text-lg outline-none text-brand-400" 
+                    value={form.attendance} onChange={e=>setForm(f=>({...f, attendance: e.target.value}))} />
+                </div>
               </div>
-              <div>
-                <label className="form-label">Present Count</label>
-                <input type="number" className="input-field" value={form.present_count} onChange={e=>setForm(f=>({...f, present_count: e.target.value}))}/>
+
+              {studentsLoading ? (
+                <p className="text-xs opacity-50 text-center py-4">Loading student list...</p>
+              ) : students.length > 0 && (
+                <div className="space-y-2">
+                  <div className="flex gap-2 mb-2">
+                    <button onClick={() => { const next={}; students.forEach(s=>next[s.id]=true); setAttendance(next) }} className="flex-1 py-1.5 rounded-lg text-[9px] font-bold uppercase tracking-wider bg-green-500/10 text-green-400 border border-green-500/20">Check All</button>
+                    <button onClick={() => { const next={}; students.forEach(s=>next[s.id]=false); setAttendance(next) }} className="flex-1 py-1.5 rounded-lg text-[9px] font-bold uppercase tracking-wider bg-red-500/10 text-red-400 border border-red-500/20">Uncheck All</button>
+                  </div>
+                  <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
+                    {students.map(s => {
+                      const present = attendance[s.id] !== false
+                      return (
+                        <button key={s.id} onClick={() => setAttendance(prev=>({...prev, [s.id]: !prev[s.id]}))}
+                          className={`p-2 rounded-lg text-left transition-all text-[10px] border ${present ? 'bg-green-500/10 border-green-500/30 text-green-400' : 'bg-white/5 border-white/10 text-gray-500'}`}>
+                          <p className="font-bold opacity-70 mb-0.5">{s.roll_number}</p>
+                          <p className="font-medium truncate">{s.full_name.split(' ')[0]}</p>
+                        </button>
+                      )
+                    })}
+                  </div>
+                </div>
+              )}
+            </div>
+
+            {/* Systems Section */}
+            <div className="border-t border-white/5 pt-4">
+              <label className="form-label mb-2 block">Classroom & Systems</label>
+              <div className="grid grid-cols-2 gap-3">
+                <div className={`p-3 rounded-xl cursor-pointer border transition-all ${form.lecture_capture_done ? 'bg-green-500/10 border-green-500/30' : 'bg-white/5 border-white/10'}`}
+                  onClick={() => setForm(f=>({...f, lecture_capture_done: !f.lecture_capture_done}))}>
+                  <p className="text-[10px] font-bold uppercase opacity-50 mb-1 text-white">LCS Success</p>
+                  <p className="text-xs font-bold text-white">{form.lecture_capture_done ? 'DONE ✓' : 'NO'}</p>
+                </div>
+                <div className={`p-3 rounded-xl cursor-pointer border transition-all ${form.smart_board_uploaded ? 'bg-green-500/10 border-green-500/30' : 'bg-white/5 border-white/10'}`}
+                  onClick={() => setForm(f=>({...f, smart_board_uploaded: !f.smart_board_uploaded}))}>
+                  <p className="text-[10px] font-bold uppercase opacity-50 mb-1 text-white">VREFER Upload</p>
+                  <p className="text-xs font-bold text-white">{form.smart_board_uploaded ? 'DONE ✓' : 'NO'}</p>
+                </div>
               </div>
             </div>
 
-            <div>
-              <label className="form-label">LCS Status</label>
-              <select className="select-field" value={form.lcs_status} onChange={e=>setForm(f=>({...f, lcs_status: e.target.value}))}>
-                <option value="covered">Covered</option>
-                <option value="partially_covered">Partially Covered</option>
-                <option value="not_covered">Not Covered</option>
-              </select>
+            {/* Assignments Section */}
+            <div className="border-t border-white/5 pt-4 grid grid-cols-3 gap-3">
+              <div className="glass-card p-3">
+                <p className="text-[9px] font-bold text-white/50 uppercase mb-1 leading-tight">Collected (Prev)</p>
+                <input type="number" className="bg-transparent border-none w-full font-bold text-sm outline-none text-white" 
+                  value={form.assignments_last_week} onChange={e=>setForm(f=>({...f, assignments_last_week: e.target.value}))} />
+              </div>
+              <div className="glass-card p-3">
+                <p className="text-[9px] font-bold text-white/50 uppercase mb-1 leading-tight">Given (New)</p>
+                <input type="number" className="bg-transparent border-none w-full font-bold text-sm outline-none text-white" 
+                  value={form.assignments_given} onChange={e=>setForm(f=>({...f, assignments_given: e.target.value}))} />
+              </div>
+              <div className="glass-card p-3">
+                <p className="text-[9px] font-bold text-white/50 uppercase mb-1 leading-tight">Graded</p>
+                <input type="number" className="bg-transparent border-none w-full font-bold text-sm outline-none text-white" 
+                  value={form.assignments_graded} onChange={e=>setForm(f=>({...f, assignments_graded: e.target.value}))} />
+              </div>
             </div>
 
-            <div className="pt-4 border-t border-white/10 flex justify-end gap-3">
+            <div className="border-t border-white/5 pt-4">
+              <label className="form-label">Admin Remarks</label>
+              <textarea className="input-field min-h-[60px] text-sm resize-none" value={form.remarks} onChange={e=>setForm(f=>({...f, remarks: e.target.value}))}/>
+            </div>
+
+            <div className="pt-2 flex justify-end gap-3 sticky bottom-0 bg-[#0a0c10] py-4 border-t border-white/5">
               <button className="btn-secondary" onClick={()=>setSubmitModal(null)}>Cancel</button>
               <button className="btn-primary" onClick={handleSubmit}>Force Submit DLR</button>
             </div>

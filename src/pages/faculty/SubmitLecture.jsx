@@ -46,6 +46,7 @@ export default function SubmitLecture() {
   const [divisions, setDivisions] = useState([])
   const [subjects, setSubjects] = useState([])
   const [rooms, setRooms] = useState([])
+  const [allFaculty, setAllFaculty] = useState([])
   const [students, setStudents] = useState([])        // for roll call
   const [attendance, setAttendance] = useState({})   // { [student_id]: true|false }
   const [studentsLoading, setStudentsLoading] = useState(false)
@@ -58,25 +59,35 @@ export default function SubmitLecture() {
     timetable_id: prefill?.id || '',
     faculty_id: profile?.id || '',
     division_id: prefill?.division_id || '',
-    custom_division: prefill?.custom_division || '',
     subject_id: prefill?.subject_id || '',
-    custom_subject: prefill?.custom_subject || '',
     room_id: prefill?.room_id || '',
-    custom_room: prefill?.custom_room || '',
-    custom_time_slot: prefill?.custom_time_slot || '',
-    scheduled_start: prefill?.time_slots?.start_time || '',
-    scheduled_end: prefill?.time_slots?.end_time || '',
-    actual_start: prefill?.time_slots?.start_time || currentTime,
-    actual_end: prefill?.time_slots?.end_time || currentTime,
-    topic_covered: '',
-    subtopics: '',
-    unit_number: '',
-    total_students: prefill?.divisions?.strength || 60,
-    present_count: location.state?.presentCount !== undefined ? location.state.presentCount : (savedState?.present_count || ''),
-    lcs_status: savedState?.lcs_status || 'covered',
-    smartboard_pdf_uploaded: savedState?.smartboard_pdf_uploaded || false,
-    is_substitution: savedState?.is_substitution || false,
+    
+    // Timetable (Group 1-2)
+    timetable_from: prefill?.time_slots?.start_time || '',
+    timetable_to: prefill?.time_slots?.end_time || '',
+    timetable_faculty: profile?.full_name || '',
+    timetable_division: prefill?.divisions?.division_name || '',
+    timetable_subject: prefill?.subjects?.subject_name || '',
+    total_batch_strength: prefill?.divisions?.strength || 60,
+
+    // Actual (Group 3-4)
+    actual_from: prefill?.time_slots?.start_time || currentTime,
+    actual_to: prefill?.time_slots?.end_time || currentTime,
+    actual_faculty_id: profile?.id || '',
+    actual_faculty_name: profile?.full_name || '',
+    attendance: location.state?.presentCount !== undefined ? location.state.presentCount : (savedState?.attendance || ''),
+    
+    // Classroom + System (Group 4)
+    lecture_capture_done: savedState?.lecture_capture_done || false,
+    smart_board_uploaded: savedState?.smart_board_uploaded || false,
+    
+    // Assignments (Group 5)
+    assignments_last_week: savedState?.assignments_last_week || 0,
+    assignments_given: savedState?.assignments_given || 0,
+    assignments_graded: savedState?.assignments_graded || 0,
+
     remarks: savedState?.remarks || '',
+    is_substitution: savedState?.is_substitution || false,
     attendanceDetails: savedState?.attendanceDetails || location.state?.attendanceDetails || {},
   })
 
@@ -115,8 +126,8 @@ export default function SubmitLecture() {
   useEffect(() => {
     if (students.length === 0) return
     const presentCount = Object.values(attendance).filter(Boolean).length
-    set('present_count', presentCount)
-    set('total_students', students.length)
+    set('attendance', presentCount)
+    set('total_batch_strength', students.length)
   }, [attendance])
 
   const toggleStudent = (id) => {
@@ -139,13 +150,14 @@ export default function SubmitLecture() {
       const dayName = getDayName()
       const t = today()
 
-      const [ttRes, divRes, subRes, rmRes, lrRes, taughtRes] = await Promise.all([
+      const [ttRes, divRes, subRes, rmRes, lrRes, taughtRes, facRes] = await Promise.all([
         supabase.from('timetable').select('*, subjects(*), divisions(*), rooms(*), time_slots(*), custom_room, custom_subject, custom_division, custom_time_slot').eq('faculty_id', profile.id).eq('day_of_week', dayName).eq('is_active', true),
         supabase.from('divisions').select('*').order('division_name'),
         supabase.from('subjects').select('*').order('subject_name'),
         supabase.from('rooms').select('*').order('room_number'),
         supabase.from('lecture_records').select('timetable_id').eq('faculty_id', profile.id).eq('lecture_date', t),
-        supabase.from('timetable').select('subject_id, subjects(*)').eq('faculty_id', profile.id)
+        supabase.from('timetable').select('subject_id, subjects(*)').eq('faculty_id', profile.id),
+        supabase.from('users').select('id, full_name').eq('is_active', true).order('full_name')
       ])
 
       const submittedIds = lrRes.data?.map(r => r.timetable_id) || []
@@ -160,6 +172,7 @@ export default function SubmitLecture() {
       setDivisions(divRes.data || [])
       setSubjects(uniqueSubjects.length > 0 ? uniqueSubjects : (subRes.data || []))
       setRooms(rmRes.data || [])
+      setAllFaculty(facRes.data || [])
 
       try {
         const { data: absentSubs } = await supabase
@@ -192,22 +205,18 @@ export default function SubmitLecture() {
       }
     }
     if (step === 2) {
-      if (!form.actual_start || !form.actual_end) {
-        toast.error('Please enter start and end times')
-        return
-      }
-      if (form.topic_covered.length < 5) {
-        toast.error('Topic covered must be at least 5 characters')
+      if (!form.actual_from || !form.actual_to) {
+        toast.error('Please enter actual start and end times')
         return
       }
     }
     if (step === 3) {
-      if (form.present_count === '') {
+      if (form.attendance === '') {
         toast.error('Please enter attendance count')
         return
       }
-      if (Number(form.present_count) > Number(form.total_students)) {
-        toast.error('Present count cannot exceed total students')
+      if (Number(form.attendance) > Number(form.total_batch_strength)) {
+        toast.error('Attendance cannot exceed batch strength')
         return
       }
     }
@@ -215,85 +224,77 @@ export default function SubmitLecture() {
   }
 
   const handleSelectEntry = (entry) => {
-    set('timetable_id', entry.id)
-    set('division_id', entry.division_id || '')
-    set('custom_division', entry.custom_division || '')
-    set('subject_id', entry.subject_id || '')
-    set('custom_subject', entry.custom_subject || '')
-    set('room_id', entry.room_id || '')
-    set('custom_room', entry.custom_room || '')
-    set('custom_time_slot', entry.custom_time_slot || '')
-    set('scheduled_start', entry.time_slots?.start_time || '')
-    set('scheduled_end', entry.time_slots?.end_time || '')
-    set('actual_start', entry.time_slots?.start_time || currentTime)
-    set('actual_end', entry.time_slots?.end_time || currentTime)
-    set('total_students', entry.divisions?.strength || 60)
+    setForm(f => ({
+      ...f,
+      timetable_id: entry.id,
+      division_id: entry.division_id || '',
+      subject_id: entry.subject_id || '',
+      room_id: entry.room_id || '',
+      timetable_from: entry.time_slots?.start_time || '',
+      timetable_to: entry.time_slots?.end_time || '',
+      timetable_faculty: profile?.full_name || '',
+      timetable_division: entry.divisions?.division_name || '',
+      timetable_subject: entry.subjects?.subject_name || '',
+      total_batch_strength: entry.divisions?.strength || 60,
+      actual_from: entry.time_slots?.start_time || currentTime,
+      actual_to: entry.time_slots?.end_time || currentTime,
+      actual_faculty_id: profile?.id || '',
+      actual_faculty_name: profile?.full_name || '',
+    }))
   }
 
   const handleSubmit = async () => {
     try {
       setSubmitting(true)
-      
-      // 2. Prepare data for Supabase (exclude UI-only fields)
-      const { attendanceDetails, ...dbForm } = form
-      
-      const submissionData = {
+      const data = {
         faculty_id: profile.id,
         lecture_date: form.lecture_date,
         timetable_id: form.timetable_id || null,
         division_id: form.division_id || null,
         subject_id: form.subject_id || null,
         room_id: form.room_id || null,
-        scheduled_start: form.scheduled_start || null,
-        scheduled_end: form.scheduled_end || null,
-        actual_start: form.actual_start || null,
-        actual_end: form.actual_end || null,
-        topic_covered: form.topic_covered,
-        subtopics: form.subtopics || null,
-        unit_number: form.unit_number ? Number(form.unit_number) : null,
-        batch_number: form.batch_number ? Number(form.batch_number) : null,
-        present_count: Number(form.present_count),
-        total_students: Number(form.total_students),
-        absent_count: Number(form.total_students) - Number(form.present_count),
-        lcs_status: form.lcs_status,
-        smartboard_pdf_uploaded: form.smartboard_pdf_uploaded,
-        is_substitution: form.is_substitution,
-        original_faculty_id: form.original_faculty_id || null,
-        original_room_id: form.original_room_id || null,
-        custom_division: form.custom_division || null,
-        custom_subject: form.custom_subject || null,
-        custom_room: form.custom_room || null,
-        custom_time_slot: form.custom_time_slot || null,
+        
+        timetable_from: form.timetable_from || null,
+        timetable_to: form.timetable_to || null,
+        actual_from: form.actual_from || null,
+        actual_to: form.actual_to || null,
+        actual_faculty_id: form.actual_faculty_id || profile.id,
+        
+        attendance: Number(form.attendance),
+        total_batch_strength: Number(form.total_batch_strength),
+        
+        lecture_capture_done: form.lecture_capture_done,
+        smart_board_uploaded: form.smart_board_uploaded,
+        
+        assignments_last_week: Number(form.assignments_last_week),
+        assignments_given: Number(form.assignments_given),
+        assignments_graded: Number(form.assignments_graded),
+        
         remarks: form.remarks || null,
+        is_substitution: form.is_substitution,
         submitted_at: new Date().toISOString()
       }
 
-      const { data: record, error } = await supabase
-        .from('lecture_records')
-        .insert([submissionData])
-        .select()
-        .single()
-
+      const { data: record, error } = await supabase.from('lecture_records').insert([data]).select().single()
       if (error) throw error
 
-      // 4. Save individual attendance records if present
-      if (form.attendanceDetails && Object.keys(form.attendanceDetails).length > 0) {
-        const attendanceRecords = Object.entries(form.attendanceDetails).map(([studentId, isPresent]) => ({
+      // NEW: Save student-wise attendance if available
+      if (students.length > 0) {
+        const attendanceData = students.map(s => ({
           lecture_record_id: record.id,
-          student_id: studentId,
-          is_present: isPresent
+          student_id: s.id,
+          is_present: attendance[s.id] !== false
         }))
-        
-        const { error: attError } = await supabase.from('attendance').insert(attendanceRecords)
+        const { error: attError } = await supabase.from('attendance').insert(attendanceData)
         if (attError) console.error('Error saving individual attendance:', attError)
       }
 
       setNewRecordId(record.id)
       setSubmitted(true)
-      toast.success('Lecture record submitted successfully!')
+      toast.success('DLR submitted successfully!')
     } catch (error) {
-      console.error('Error submitting lecture record:', error)
-      toast.error('Failed to submit lecture record. Please try again.')
+      console.error('Error:', error)
+      toast.error('Failed to submit lecture record.')
     } finally {
       setSubmitting(false)
     }
@@ -429,158 +430,145 @@ export default function SubmitLecture() {
         </div>
       )}
 
-      {/* ── STEP 2: Time & Topic ─────────────────────────────────────────── */}
+      {/* ── STEP 2: Actual Lecture & Systems ──────────────────────────────────── */}
       {step === 2 && (
-        <div className="space-y-4 animate-slide-up">
-          <div className="glass-card p-3 flex items-center gap-3">
-            <BookOpen className="w-4 h-4 text-brand-400" />
+        <div className="space-y-6 animate-slide-up">
+          {/* Section 1: Timetable (Readonly) */}
+          <div className="glass-card p-4 space-y-3 opacity-80 bg-white/5">
+            <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--text-secondary)' }}>Section 1: Timetable (As Per Timetable)</p>
+            <div className="grid grid-cols-2 gap-4 text-sm">
+              <div>
+                <label className="text-[10px] opacity-50 uppercase block mb-1">Timing</label>
+                <div className="font-semibold">{formatTime(form.timetable_from)} – {formatTime(form.timetable_to)}</div>
+              </div>
+              <div>
+                <label className="text-[10px] opacity-50 uppercase block mb-1">Faculty</label>
+                <div className="font-semibold">{form.timetable_faculty}</div>
+              </div>
+              <div>
+                <label className="text-[10px] opacity-50 uppercase block mb-1">Subject</label>
+                <div className="font-semibold">{form.timetable_subject}</div>
+              </div>
+              <div>
+                <label className="text-[10px] opacity-50 uppercase block mb-1">Division</label>
+                <div className="font-semibold">{form.timetable_division}</div>
+              </div>
+            </div>
+          </div>
+
+          {/* Section 2: Actual Lecture (Editable) */}
+          <div className="space-y-4">
+            <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--brand)' }}>Section 2: Actual Lecture</p>
+            <div className="grid grid-cols-2 gap-3">
+              <div>
+                <label className="form-label">Actual From <span className="text-red-400">*</span></label>
+                <input type="time" className="input-field" value={form.actual_from} onChange={e => set('actual_from', e.target.value)} />
+              </div>
+              <div>
+                <label className="form-label">Actual To <span className="text-red-400">*</span></label>
+                <input type="time" className="input-field" value={form.actual_to} onChange={e => set('actual_to', e.target.value)} />
+              </div>
+            </div>
             <div>
-              <p className="font-semibold text-sm">{selectedEntry?.subjects?.subject_name || subjects.find(s=>s.id===form.subject_id)?.subject_name}</p>
-              <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>{selectedEntry?.divisions?.division_name || divisions.find(d=>d.id===form.division_id)?.division_name}</p>
+              <label className="form-label">Professor (Select for Substitution)</label>
+              <select className="select-field" value={form.actual_faculty_id} onChange={e => {
+                const f = allFaculty.find(fac => fac.id === e.target.value);
+                setForm(prev => ({ 
+                  ...prev, 
+                  actual_faculty_id: e.target.value,
+                  actual_faculty_name: f?.full_name || '',
+                  is_substitution: e.target.value !== profile?.id
+                }))
+              }}>
+                {allFaculty.map(f => <option key={f.id} value={f.id}>{f.full_name}</option>)}
+              </select>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-3">
-            <div>
-              <label className="form-label">Actual Start Time</label>
-              <input type="time" className="input-field" value={form.actual_start} onChange={e => set('actual_start', e.target.value)} />
+          {/* Section 4 & 5: Systems */}
+          <div className="grid grid-cols-2 gap-4">
+            <div className="flex items-center gap-3 p-4 rounded-2xl cursor-pointer transition-all h-full" 
+                 style={{ background: form.lecture_capture_done ? 'rgba(63,185,80,0.1)' : 'rgba(255,255,255,0.04)', border: `1px solid ${form.lecture_capture_done ? 'rgba(63,185,80,0.3)' : 'rgba(255,255,255,0.08)'}` }}
+                 onClick={() => set('lecture_capture_done', !form.lecture_capture_done)}>
+              <div className="flex-1">
+                <p className="font-bold text-[11px] uppercase tracking-wider mb-1">Lecture Capture</p>
+                <p className="text-[10px] leading-tight" style={{ color: 'var(--text-secondary)' }}>Done Successfully?</p>
+              </div>
+              <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${form.lecture_capture_done ? 'bg-green-500' : 'bg-white/10'}`}>
+                {form.lecture_capture_done ? <Check className="w-3.5 h-3.5 text-white" /> : <span className="text-[9px] text-white/40">N</span>}
+              </div>
             </div>
-            <div>
-              <label className="form-label">Actual End Time</label>
-              <input type="time" className="input-field" value={form.actual_end} onChange={e => set('actual_end', e.target.value)} />
-            </div>
-          </div>
 
-          {form.scheduled_start && (
-            <div className="flex items-center gap-2 text-xs px-3 py-2 rounded-xl" style={{ background: 'rgba(255,255,255,0.04)', color: 'var(--text-secondary)' }}>
-              <Clock className="w-3.5 h-3.5" />
-              Scheduled: {formatTime(form.scheduled_start)} – {formatTime(form.scheduled_end)}
-            </div>
-          )}
-
-          <div>
-            <label className="form-label">Topic Covered <span className="text-red-400">*</span></label>
-            <textarea 
-              className={`input-field resize-none ${form.topic_covered.length > 0 && form.topic_covered.length < 5 ? 'border-red-500/50 ring-1 ring-red-500/20' : ''}`} 
-              rows={3} 
-              placeholder="e.g. Introduction to AES Encryption, Key expansion algorithm…"
-              value={form.topic_covered} 
-              onChange={e => set('topic_covered', e.target.value)} 
-            />
-            <div className="flex justify-between items-center mt-1">
-              <p className={`text-xs transition-colors ${form.topic_covered.length > 0 && form.topic_covered.length < 5 ? 'text-red-400 font-semibold' : 'text-gray-500'}`}>
-                {form.topic_covered.length < 5 
-                  ? `Min 5 characters required (${5 - form.topic_covered.length} more)` 
-                  : 'Length requirement met ✓'
-                }
-              </p>
-              <p className="text-xs opacity-50">{form.topic_covered.length} chars</p>
-            </div>
-          </div>
-
-          <div>
-            <label className="form-label">Subtopics / References</label>
-            <input type="text" className="input-field" placeholder="Optional" value={form.subtopics} onChange={e => set('subtopics', e.target.value)} />
-          </div>
-
-          <div>
-            <label className="form-label">Unit Number</label>
-            <input type="number" className="input-field" placeholder="e.g. 3" min="1" max="10" value={form.unit_number} onChange={e => set('unit_number', e.target.value)} />
-          </div>
-
-          <div>
-            <label className="form-label">LCS Status <span className="text-red-400">*</span></label>
-            <div className="grid grid-cols-3 gap-2">
-              {LCS_OPTIONS.map(opt => (
-                <button key={opt.value} onClick={() => set('lcs_status', opt.value)}
-                  className={`py-3 px-2 rounded-xl text-xs font-semibold transition-all active:scale-95 text-center`}
-                  style={{
-                    background: form.lcs_status === opt.value ? `${opt.color}22` : 'rgba(255,255,255,0.04)',
-                    border: `1px solid ${form.lcs_status === opt.value ? opt.color : 'rgba(255,255,255,0.08)'}`,
-                    color: form.lcs_status === opt.value ? opt.color : 'var(--text-secondary)',
-                  }}>
-                  {opt.label}
-                </button>
-              ))}
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3 p-4 rounded-2xl cursor-pointer transition-all" style={{ background: form.smartboard_pdf_uploaded ? 'rgba(63,185,80,0.1)' : 'rgba(255,255,255,0.04)', border: `1px solid ${form.smartboard_pdf_uploaded ? 'rgba(63,185,80,0.3)' : 'rgba(255,255,255,0.08)'}` }}
-            onClick={() => set('smartboard_pdf_uploaded', !form.smartboard_pdf_uploaded)}>
-            <Upload className="w-5 h-5" style={{ color: form.smartboard_pdf_uploaded ? '#3fb950' : 'var(--text-secondary)' }} />
-            <div className="flex-1">
-              <p className="font-semibold text-sm">Smartboard PDF Uploaded</p>
-              <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>Toggle if you uploaded the lecture PDF</p>
-            </div>
-            <div className={`w-6 h-6 rounded-full flex items-center justify-center ${form.smartboard_pdf_uploaded ? 'bg-green-500' : 'bg-white/10'}`}>
-              {form.smartboard_pdf_uploaded && <Check className="w-3.5 h-3.5 text-white" />}
-            </div>
-          </div>
-
-          <div className="flex items-center gap-3 p-4 rounded-2xl cursor-pointer" style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
-            onClick={() => set('is_substitution', !form.is_substitution)}>
-            <Users className="w-5 h-5" style={{ color: form.is_substitution ? '#d29922' : 'var(--text-secondary)' }} />
-            <div className="flex-1">
-              <p className="font-semibold text-sm">Substitution Lecture</p>
-              <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>I covered this for another faculty</p>
-            </div>
-            <div className={`w-6 h-6 rounded-full flex items-center justify-center ${form.is_substitution ? '' : 'bg-white/10'}`} style={form.is_substitution ? { background: '#d29922' } : {}}>
-              {form.is_substitution && <Check className="w-3.5 h-3.5 text-white" />}
+            <div className="flex items-center gap-3 p-4 rounded-2xl cursor-pointer transition-all h-full" 
+                 style={{ background: form.smart_board_uploaded ? 'rgba(63,185,80,0.1)' : 'rgba(255,255,255,0.04)', border: `1px solid ${form.smart_board_uploaded ? 'rgba(63,185,80,0.3)' : 'rgba(255,255,255,0.08)'}` }}
+                 onClick={() => set('smart_board_uploaded', !form.smart_board_uploaded)}>
+              <div className="flex-1">
+                <p className="font-bold text-[11px] uppercase tracking-wider mb-1">Smart Board PDF</p>
+                <p className="text-[10px] leading-tight" style={{ color: 'var(--text-secondary)' }}>Uploaded on VREFER?</p>
+              </div>
+              <div className={`w-6 h-6 rounded-full flex items-center justify-center flex-shrink-0 ${form.smart_board_uploaded ? 'bg-green-500' : 'bg-white/10'}`}>
+                {form.smart_board_uploaded ? <Check className="w-3.5 h-3.5 text-white" /> : <span className="text-[9px] text-white/40">N</span>}
+              </div>
             </div>
           </div>
         </div>
       )}
 
-      {/* STEP 3: Roll Call */}
+      {/* STEP 3: Attendance */}
       {step === 3 && (
-        <div className="space-y-4 animate-slide-up">
-          {Number(form.total_students) > 0 && (
+        <div className="space-y-6 animate-slide-up">
+          <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--brand)' }}>Section 3: Attendance</p>
+          
+          <div className="grid grid-cols-2 gap-4">
             <div className="glass-card p-4">
-              <div className="flex justify-between text-sm mb-2">
-                <span style={{ color: 'var(--text-secondary)' }}>Attendance</span>
-                <span className="font-bold text-lg" style={{ color: Number(form.present_count)/Number(form.total_students) >= 0.75 ? '#3fb950' : '#f85149' }}>
-                  {Math.round(Number(form.present_count)/Number(form.total_students)*100)}%
-                </span>
-              </div>
-              <div className="h-3 rounded-full overflow-hidden" style={{ background: 'rgba(255,255,255,0.08)' }}>
-                <div className="h-full rounded-full transition-all duration-500" style={{
-                  width: `${Math.min(100,Math.round(Number(form.present_count)/Number(form.total_students)*100))}%`,
-                  background: Number(form.present_count)/Number(form.total_students) >= 0.75 ? 'linear-gradient(90deg,#3fb950,#2da040)':'linear-gradient(90deg,#f85149,#d73a3a)'
-                }} />
-              </div>
-              <div className="flex justify-between text-xs mt-2">
-                <span className="text-green-400 font-semibold">Present: {form.present_count}</span>
-                <span className="text-red-400 font-semibold">Absent: {Number(form.total_students)-Number(form.present_count)}</span>
-              </div>
+              <label className="text-[10px] font-bold opacity-50 uppercase block mb-2">Total Batch Strength</label>
+              <input type="number" className="text-2xl font-bold bg-transparent border-none w-full outline-none" 
+                     value={form.total_batch_strength} onChange={e => set('total_batch_strength', e.target.value)} />
             </div>
-          )}
+            <div className="glass-card p-4 border-brand-500/30">
+              <label className="text-[10px] font-bold opacity-50 uppercase block mb-2" style={{ color: 'var(--brand)' }}>Present Students *</label>
+              <input type="number" className="text-2xl font-bold bg-transparent border-none w-full outline-none" autoFocus
+                     value={form.attendance} onChange={e => set('attendance', e.target.value)} />
+            </div>
+          </div>
+
+          <div className="p-4 rounded-2xl flex gap-3 border" style={{ background: 'rgba(74,108,247,0.05)', borderColor: 'rgba(74,108,247,0.2)' }}>
+            <div className="w-8 h-8 rounded-lg flex items-center justify-center flex-shrink-0 bg-brand-500/10">
+              <Users className="w-4 h-4 text-brand-400" />
+            </div>
+            <div className="text-xs">
+              <p className="font-bold mb-0.5">Quick Roll Call (Optional)</p>
+              <p style={{ color: 'var(--text-secondary)' }}>You can still use individual student marking below to auto-calculate the count.</p>
+            </div>
+          </div>
+
           {studentsLoading ? (
             <div className="text-center py-8 glass-card">
               <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Loading students…</p>
             </div>
-          ) : students.length > 0 ? (
+          ) : students.length > 0 && (
             <div className="space-y-3">
               <div className="flex gap-2">
-                <button onClick={() => markAll(true)} className="flex-1 py-2.5 rounded-xl text-xs font-bold"
-                  style={{ background:'rgba(63,185,80,0.15)',color:'#3fb950',border:'1px solid rgba(63,185,80,0.3)' }}>✓ All Present</button>
-                <button onClick={() => markAll(false)} className="flex-1 py-2.5 rounded-xl text-xs font-bold"
-                  style={{ background:'rgba(248,81,73,0.1)',color:'#f85149',border:'1px solid rgba(248,81,73,0.25)' }}>✗ All Absent</button>
+                <button onClick={() => markAll(true)} className="flex-1 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all active:scale-95"
+                  style={{ background:'rgba(63,185,80,0.1)',color:'#3fb950',border:'1px solid rgba(63,185,80,0.2)' }}>✓ All Present</button>
+                <button onClick={() => markAll(false)} className="flex-1 py-2.5 rounded-xl text-[10px] font-bold uppercase tracking-wider transition-all active:scale-95"
+                  style={{ background:'rgba(248,81,73,0.08)',color:'#f85149',border:'1px solid rgba(248,81,73,0.15)' }}>✗ All Absent</button>
               </div>
-              <div className="grid grid-cols-2 gap-2">
+              <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                 {students.map(s => {
                   const present = attendance[s.id] !== false
                   return (
                     <button key={s.id} onClick={() => toggleStudent(s.id)}
-                      className="p-3 rounded-xl text-left transition-all active:scale-95"
-                      style={{ background:present?'rgba(63,185,80,0.12)':'rgba(248,81,73,0.08)', border:`1.5px solid ${present?'rgba(63,185,80,0.4)':'rgba(248,81,73,0.3)'}` }}>
+                      className="p-2.5 rounded-xl text-left transition-all active:scale-95"
+                      style={{ background:present?'rgba(63,185,80,0.08)':'rgba(248,81,73,0.05)', border:`1.5px solid ${present?'rgba(63,185,80,0.3)':'rgba(248,81,73,0.2)'}` }}>
                       <div className="flex items-center gap-2">
-                        <div className="w-7 h-7 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0"
-                          style={{ background:present?'rgba(63,185,80,0.25)':'rgba(248,81,73,0.2)',color:present?'#3fb950':'#f85149' }}>
+                        <div className="w-6 h-6 rounded-lg flex items-center justify-center text-xs font-bold flex-shrink-0"
+                          style={{ background:present?'rgba(63,185,80,0.2)':'rgba(248,81,73,0.15)',color:present?'#3fb950':'#f85149' }}>
                           {present?'✓':'✗'}
                         </div>
                         <div className="min-w-0">
-                          <p className="text-[10px] font-bold truncate" style={{ color:present?'#3fb950':'#f85149' }}>{s.roll_number}</p>
-                          <p className="text-[11px] font-semibold truncate leading-tight mt-0.5" style={{ color:'var(--text-primary)' }}>{s.full_name}</p>
+                          <p className="text-[9px] font-bold truncate" style={{ color:present?'#3fb950':'#f85149' }}>{s.roll_number}</p>
+                          <p className="text-[10px] font-semibold truncate leading-tight" style={{ color:'var(--text-primary)' }}>{s.full_name.split(' ')[0]}</p>
                         </div>
                       </div>
                     </button>
@@ -588,60 +576,64 @@ export default function SubmitLecture() {
                 })}
               </div>
             </div>
-          ) : (
-            <div className="space-y-3">
-              <p className="text-xs" style={{ color:'var(--text-secondary)' }}>No student list — enter count manually.</p>
-              <div className="grid grid-cols-2 gap-3">
-                <div>
-                  <label className="form-label">Total Students</label>
-                  <input type="number" className="input-field text-center text-xl font-bold" min="1" max="120"
-                    value={form.total_students} onChange={e => set('total_students', e.target.value)} />
-                </div>
-                <div>
-                  <label className="form-label">Present</label>
-                  <input type="number" className="input-field text-center text-xl font-bold" min="0"
-                    value={form.present_count} onChange={e => set('present_count', e.target.value)} />
-                </div>
-              </div>
-            </div>
           )}
-          <div>
-            <label className="form-label">Remarks (Optional)</label>
-            <textarea className="input-field resize-none" rows={2} placeholder="Any notes, guest lectures, etc."
-              value={form.remarks} onChange={e => set('remarks', e.target.value)} />
-          </div>
         </div>
       )}
 
-      {/* ── STEP 4: Review & Submit ──────────────────────────────────────── */}
+      {/* STEP 4: Assignments & Remarks */}
       {step === 4 && (
-        <div className="space-y-4 animate-slide-up">
-          <div className="glass-card p-4 space-y-3">
-            <p className="font-display font-semibold text-sm mb-1">Review Before Submitting</p>
-            {[
-              ['Subject', selectedEntry?.subjects?.subject_name || subjects.find(s=>s.id===form.subject_id)?.subject_name || '—'],
-              ['Division', selectedEntry?.divisions?.division_name || divisions.find(d=>d.id===form.division_id)?.division_name || '—'],
-              ['Room', selectedEntry?.rooms?.room_number || rooms.find(r=>r.id===form.room_id)?.room_number || '—'],
-              ['Actual Time', `${formatTime(form.actual_start)} – ${formatTime(form.actual_end)}`],
-              ['Topic', form.topic_covered],
-              ['LCS Status', LCS_OPTIONS.find(o=>o.value===form.lcs_status)?.label],
-              ['Smartboard PDF', form.smartboard_pdf_uploaded ? 'Yes' : 'No'],
-              ['Substitution', form.is_substitution ? 'Yes' : 'No'],
-              ['Present / Total', `${form.present_count} / ${form.total_students}`],
-              ['Attendance %', `${Math.round(Number(form.present_count)/Number(form.total_students)*100)}%`],
-            ].map(([key, val]) => (
-              <div key={key} className="flex items-start justify-between gap-4 text-sm py-1 border-b" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
-                <span style={{ color: 'var(--text-secondary)' }}>{key}</span>
-                <span className="font-semibold text-right">{val}</span>
+        <div className="space-y-6 animate-slide-up">
+          <div className="space-y-4">
+            <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--brand)' }}>Section 6: Assignments</p>
+            
+            <div className="space-y-3">
+              <div className="flex items-center justify-between p-4 glass-card">
+                <label className="text-xs font-semibold">Assignments (of Last Week) Collected</label>
+                <input type="number" className="w-16 bg-white/5 border border-white/10 rounded-lg py-2 text-center font-bold"
+                       value={form.assignments_last_week} onChange={e => set('assignments_last_week', e.target.value)} />
               </div>
-            ))}
+              
+              <div className="flex items-center justify-between p-4 glass-card">
+                <label className="text-xs font-semibold">Assignments (for Coming Week) Given</label>
+                <input type="number" className="w-16 bg-white/5 border border-white/10 rounded-lg py-2 text-center font-bold"
+                       value={form.assignments_given} onChange={e => set('assignments_given', e.target.value)} />
+              </div>
+
+              <div className="flex items-center justify-between p-4 glass-card">
+                <label className="text-xs font-semibold">Prev. Week Graded and Distributed</label>
+                <input type="number" className="w-16 bg-white/5 border border-white/10 rounded-lg py-2 text-center font-bold"
+                       value={form.assignments_graded} onChange={e => set('assignments_graded', e.target.value)} />
+              </div>
+            </div>
           </div>
 
-          {form.remarks && (
-            <div className="p-3 rounded-xl text-sm" style={{ background: 'rgba(255,255,255,0.04)', color: 'var(--text-secondary)' }}>
-              <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>Remarks: </span>{form.remarks}
+          <div className="space-y-3">
+            <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--brand)' }}>Section 7: Remarks</p>
+            <textarea className="input-field min-h-[100px] resize-none" placeholder="Any special notes or observations…"
+                      value={form.remarks} onChange={e => set('remarks', e.target.value)} />
+          </div>
+
+          <div className="p-4 rounded-2xl glass-card space-y-3 border-brand-500/20">
+            <p className="text-[10px] font-bold uppercase tracking-widest opacity-50">Summary Review</p>
+            <div className="grid grid-cols-2 gap-x-6 gap-y-2 text-xs">
+              <div className="flex justify-between border-b border-white/5 py-1">
+                <span style={{ color: 'var(--text-secondary)' }}>Actual Time</span>
+                <span className="font-bold">{formatTime(form.actual_from)} – {formatTime(form.actual_to)}</span>
+              </div>
+              <div className="flex justify-between border-b border-white/5 py-1">
+                <span style={{ color: 'var(--text-secondary)' }}>Attendance</span>
+                <span className="font-bold">{form.attendance}/{form.total_batch_strength}</span>
+              </div>
+              <div className="flex justify-between border-b border-white/5 py-1">
+                <span style={{ color: 'var(--text-secondary)' }}>Professor</span>
+                <span className="font-bold">{form.actual_faculty_name}</span>
+              </div>
+              <div className="flex justify-between border-b border-white/5 py-1">
+                <span style={{ color: 'var(--text-secondary)' }}>LCS Status</span>
+                <span className={`font-bold ${form.lecture_capture_done ? 'text-green-400' : 'text-red-400'}`}>{form.lecture_capture_done ? 'Success' : 'N/A'}</span>
+              </div>
             </div>
-          )}
+          </div>
 
           <div className="flex items-start gap-2 p-3 rounded-xl text-xs" style={{ background: 'rgba(74,108,247,0.08)', border: '1px solid rgba(74,108,247,0.2)' }}>
             <AlertCircle className="w-4 h-4 text-brand-400 flex-shrink-0 mt-0.5" />

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react'
-import { Plus, Edit2, Trash2, AlertTriangle, FlaskConical, Building2 } from 'lucide-react'
+import { Plus, Edit2, Trash2, AlertTriangle, FlaskConical, Building2, Copy, Play, Ghost, MousePointer2 } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { detectConflicts } from '../../utils/helpers'
 import { Modal, ConfirmDialog, ConflictWarning, toast } from '../../components/ui'
@@ -35,6 +35,11 @@ export default function TimetablePage() {
   const [useCustomSubject, setUseCustomSubject] = useState(false)
   const [useCustomRoom, setUseCustomRoom] = useState(false)
   const [useCustomTimeSlot, setUseCustomTimeSlot] = useState(false)
+  
+  // UX: Drag & Drop and Context Menu
+  const [contextMenu, setContextMenu] = useState(null) // { x, y, entry }
+  const [clipboard, setClipboard] = useState(null) // copied entry data
+  const [draggingId, setDraggingId] = useState(null)
 
   // Master data
   const [faculties, setFaculties] = useState([])
@@ -272,6 +277,84 @@ export default function TimetablePage() {
     }
   }
 
+  // ── Context Menu & Clipboard Actions ─────────────────────────────────────
+  const handleContextMenu = (e, entry) => {
+    e.preventDefault()
+    setContextMenu({ x: e.clientX, y: e.clientY, entry })
+  }
+
+  const handleDuplicate = async (entry) => {
+    try {
+      const { id, created_at, ...cleanEntry } = entry
+      const { data, error } = await supabase.from('timetable').insert([{ ...cleanEntry, is_active: true }]).select().single()
+      if (error) throw error
+      toast.success('Entry duplicated')
+      fetchTimetable()
+    } catch (err) {
+      toast.error('Duplicate failed')
+    }
+    setContextMenu(null)
+  }
+
+  const handleCopy = (entry) => {
+    setClipboard(entry)
+    toast.success('Entry copied to clipboard')
+    setContextMenu(null)
+  }
+
+  const handlePaste = async (day, slotId) => {
+    if (!clipboard) return
+    try {
+      const { id, created_at, ...cleanEntry } = clipboard
+      const payload = { 
+        ...cleanEntry, 
+        day_of_week: day, 
+        time_slot_id: slotId,
+        is_active: true 
+      }
+      const { error } = await supabase.from('timetable').insert([payload])
+      if (error) throw error
+      toast.success(`Pasted into ${day}`)
+      fetchTimetable()
+    } catch (err) {
+      toast.error('Paste failed')
+    }
+    setContextMenu(null)
+  }
+
+  // ── Drag and Drop Handlers ────────────────────────────────────────────────
+  const onDragStart = (e, entry) => {
+    setDraggingId(entry.id)
+    e.dataTransfer.setData('entryId', entry.id)
+    e.dataTransfer.effectAllowed = 'move'
+  }
+
+  const onDragOver = (e) => {
+    e.preventDefault()
+    e.dataTransfer.dropEffect = 'move'
+  }
+
+  const onDrop = async (e, targetDay, targetSlotId) => {
+    e.preventDefault()
+    const entryId = e.dataTransfer.getData('entryId')
+    if (!entryId) return
+
+    try {
+      const { error } = await supabase
+        .from('timetable')
+        .update({ day_of_week: targetDay, time_slot_id: targetSlotId })
+        .eq('id', entryId)
+      
+      if (error) throw error
+      toast.success(`Moved to ${targetDay}`)
+      fetchTimetable()
+    } catch (err) {
+      toast.error('Move failed')
+    } finally {
+      setDraggingId(null)
+    }
+  }
+
   // Separate regular (1h) and lab (2h) slots
   const regularSlots = timeSlots.filter(s => !s.is_break && !s.slot_label.startsWith('Lab:'))
   const labSlots = timeSlots.filter(s => !s.is_break && s.slot_label.startsWith('Lab:'))
@@ -304,11 +387,19 @@ export default function TimetablePage() {
                   {days.map(day => {
                     const entries = filtered.filter(t => t.day_of_week === day && t.time_slot_id === slot.id).sort((a, b) => (a.batch_number || 0) - (b.batch_number || 0))
                     return (
-                      <td key={day} className="p-1 border-r-2 border-b-2 border-slate-400" style={{ verticalAlign: 'top', minWidth: '100px' }}>
+                      <td key={day} className="p-1 border-r-2 border-b-2 border-slate-400 relative" 
+                        style={{ verticalAlign: 'top', minWidth: '100px', background: draggingId ? 'rgba(74,108,247,0.03)' : '' }}
+                        onDragOver={onDragOver}
+                        onDrop={(e) => onDrop(e, day, slot.id)}
+                        onContextMenu={(e) => handleContextMenu(e, { empty: true, day, slotId: slot.id })}>
                         {entries.map(e => {
                           const bc = e.batch_number ? getBatchColor(Number(e.batch_number)) : { bg: 'rgba(74,108,247,0.15)', border: 'rgba(74,108,247,0.4)', text: '#4a6cf7' }
                           return (
-                            <div key={e.id} className="p-0.5 px-1 rounded text-[10px] cursor-pointer group relative flex flex-col items-center justify-center text-center leading-[1.1] mb-0.5"
+                            <div key={e.id} className={`p-0.5 px-1 rounded text-[10px] cursor-pointer group relative flex flex-col items-center justify-center text-center leading-[1.1] mb-0.5 transition-all
+                              ${draggingId === e.id ? 'opacity-30' : 'opacity-100 hover:scale-[1.02] hover:shadow-lg'}`}
+                              draggable="true"
+                              onDragStart={(ev) => onDragStart(ev, e)}
+                              onContextMenu={(ev) => handleContextMenu(ev, e)}
                               style={{ background: bc.bg, border: `1.5px solid ${bc.border}` }}
                               onClick={() => openEdit(e)}>
                               <p className="font-bold truncate w-full" style={{ color: bc.text }}>{subjectShortLabel(e)}</p>
@@ -348,12 +439,20 @@ export default function TimetablePage() {
                 {days.map(day => {
                   const entries = filtered.filter(t => t.day_of_week === day && t.time_slot_id === slot.id).sort((a, b) => (a.batch_number || 0) - (b.batch_number || 0))
                   return (
-                    <td key={day} className="p-1 border-r-2 border-b-2 border-slate-400" style={{ verticalAlign: 'top', minWidth: '100px' }}>
-                      <div className="flex flex-wrap gap-0.5">
+                    <td key={day} className="p-1 border-r-2 border-b-2 border-slate-400 relative" 
+                      style={{ verticalAlign: 'top', minWidth: '100px', background: draggingId ? 'rgba(210,153,34,0.03)' : '' }}
+                      onDragOver={onDragOver}
+                      onDrop={(e) => onDrop(e, day, slot.id)}
+                      onContextMenu={(e) => handleContextMenu(e, { empty: true, day, slotId: slot.id })}>
+                      <div className="flex flex-wrap gap-0.5 min-h-[30px]">
                         {entries.map(e => {
                           const bc = e.batch_number ? getBatchColor(Number(e.batch_number)) : { bg: 'rgba(210,153,34,0.15)', border: 'rgba(210,153,34,0.4)', text: '#d97706' }
                           return (
-                            <div key={e.id} className="p-0.5 px-1 rounded text-[10px] cursor-pointer group relative flex-1 min-w-[70px] flex flex-col items-center justify-center text-center leading-[1.1]"
+                            <div key={e.id} className={`p-0.5 px-1 rounded text-[10px] cursor-pointer group relative flex-1 min-w-[70px] flex flex-col items-center justify-center text-center leading-[1.1] transition-all
+                               ${draggingId === e.id ? 'opacity-30' : 'opacity-100 hover:scale-[1.02] hover:shadow-lg'}`}
+                              draggable="true"
+                              onDragStart={(ev) => onDragStart(ev, e)}
+                              onContextMenu={(ev) => handleContextMenu(ev, e)}
                               style={{ background: bc.bg, border: `1.5px solid ${bc.border}` }}
                               onClick={() => openEdit(e)}>
                               <p className="font-bold truncate w-full" style={{ color: bc.text }}>
@@ -646,6 +745,49 @@ export default function TimetablePage() {
 
       <ConfirmDialog open={!!deleteId} title="Delete Entry" message="Are you sure you want to delete this timetable entry?"
         onConfirm={() => handleDelete(deleteId)} onCancel={() => setDeleteId(null)} confirmLabel="Delete" danger />
+
+      {/* ── Context Menu (Floating / Global) ────────────────────────────────── */}
+      {contextMenu && (
+        <>
+          <div className="fixed inset-0 z-[100]" onClick={() => setContextMenu(null)} onContextMenu={(e) => { e.preventDefault(); setContextMenu(null) }} />
+          <div className="fixed z-[101] w-48 bg-slate-900 border border-slate-700/50 shadow-2xl rounded-xl overflow-hidden animate-in fade-in zoom-in duration-150 backdrop-blur-xl"
+            style={{ left: Math.min(contextMenu.x, window.innerWidth - 200), top: Math.min(contextMenu.y, window.innerHeight - 200) }}>
+            {!contextMenu.entry.empty ? (
+              <div className="p-1.5 flex flex-col">
+                <p className="px-3 py-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-slate-800 mb-1">Actions</p>
+                <button onClick={() => { openEdit(contextMenu.entry); setContextMenu(null) }} className="w-full flex items-center gap-3 px-3 py-2 text-sm text-slate-200 hover:bg-brand-500/20 hover:text-brand-300 rounded-lg transition-colors group">
+                  <Edit2 className="w-4 h-4 text-slate-500 group-hover:text-brand-400" /> <span>Edit Entry</span>
+                </button>
+                <button onClick={() => handleDuplicate(contextMenu.entry)} className="w-full flex items-center gap-3 px-3 py-2 text-sm text-slate-200 hover:bg-green-500/20 hover:text-green-400 rounded-lg transition-colors group">
+                  <Plus className="w-4 h-4 text-slate-500 group-hover:text-green-400" /> <span>Duplicate</span>
+                </button>
+                <button onClick={() => handleCopy(contextMenu.entry)} className="w-full flex items-center gap-3 px-3 py-2 text-sm text-slate-200 hover:bg-brand-500/20 hover:text-brand-400 rounded-lg transition-colors group">
+                  <Copy className="w-4 h-4 text-slate-500 group-hover:text-brand-400" /> <span>Copy Entry</span>
+                </button>
+                <div className="h-px bg-slate-800 my-1 mx-2" />
+                <button onClick={() => { setDeleteId(contextMenu.entry.id); setContextMenu(null) }} className="w-full flex items-center gap-3 px-3 py-2 text-sm text-red-400 hover:bg-red-500/20 rounded-lg transition-colors group">
+                  <Trash2 className="w-4 h-4 text-red-500/50 group-hover:text-red-400" /> <span>Delete</span>
+                </button>
+              </div>
+            ) : (
+              <div className="p-1.5 flex flex-col">
+                <p className="px-3 py-2 text-[10px] font-bold text-slate-500 uppercase tracking-widest border-b border-slate-800 mb-1">Empty Slot</p>
+                <button onClick={() => { 
+                  setForm({ ...emptyForm, day_of_week: contextMenu.entry.day, time_slot_id: contextMenu.entry.slotId })
+                  setEditEntry(null); setShowModal(true); setContextMenu(null)
+                }} className="w-full flex items-center gap-3 px-3 py-2 text-sm text-slate-200 hover:bg-brand-500/20 hover:text-brand-400 rounded-lg transition-colors">
+                  <Plus className="w-4 h-4 text-slate-500" /> <span>Add Entry Here</span>
+                </button>
+                {clipboard && (
+                  <button onClick={() => handlePaste(contextMenu.entry.day, contextMenu.entry.slotId)} className="w-full flex items-center gap-3 px-3 py-2 text-sm text-slate-200 hover:bg-green-500/20 hover:text-green-400 rounded-lg transition-colors border-t border-slate-800/50 mt-1">
+                    <MousePointer2 className="w-4 h-4 text-slate-500" /> <span>Paste {subjectShortLabel(clipboard)}</span>
+                  </button>
+                )}
+              </div>
+            )}
+          </div>
+        </>
+      )}
     </div>
   )
 }

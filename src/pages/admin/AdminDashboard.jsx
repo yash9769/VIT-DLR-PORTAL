@@ -100,7 +100,7 @@ export default function AdminDashboard() {
       // 3. Fetch Faculty and their today's submission status
       const { data: faculty, error: facError } = await supabase
         .from('users')
-        .select('id, full_name, role')
+        .select('id, full_name, role, initials')
         .eq('role', 'faculty')
         .eq('is_active', true)
 

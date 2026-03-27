@@ -130,36 +130,71 @@ export const exportDLRToExcel = (records, dateStr, department = 'Information Tec
     ...Array(NC-1).fill({ v:'', t:'s', s:{ fill:{fgColor:{rgb:'FFFACD'}} } }),
   ])
 
-  // Row 5: Column headers (exact names from VIT DLR PDF)
+  // NC = 18 total columns
+  // Structure: 3-row header (Rows 5, 6, 7)
+
+  // Row 5: Group Headers (Primary Groups)
   rows.push([
-    hdrC('SEM'),
-    hdrC('DIV'),
-    hdrC('Total\nBatch\nStrength'),
-    hdrC('Sub.\nOwned /\nOffered\nby IT'),
-    hdrC('As Per Timetable\nFrom'),
-    hdrC('To'),
-    hdrC('Prof'),
-    hdrC('Highlight\nRoom No.\nwith\nLecture\nCapture/\nSmart\nBoard'),
-    hdrC('Actual\nTiming\nFrom'),
-    hdrC('To'),
-    hdrC('Prof'),
-    hdrC('Attend-\nance'),
-    hdrC('Lecture\nCapture\ndone\nSuccessfully:\n(Video\nand\nAudio):\nY/N'),
-    hdrC('Smart\nBoard\nPDF\nuploaded\non VREFER\n(Y/N)'),
-    hdrC('Assignments\nNo.\n(of Last\nWeek)\nCollected'),
-    hdrC('Assignments\nNo. (for\nComing\nweek)\nGiven'),
-    hdrC('Assignment\nNo. of\nPrevious\nweek\nwhich is\nGraded and\ndistributed'),
-    hdrC('Remarks'),
+    hdrC('SEM'), hdrC('DIV'), hdrC('Total Batch Strength'), hdrC('Sub. Owned / Offered by IT'), // Col 0-3
+    hdrC('As Per Timetable'), blk(S.DARK), blk(S.DARK), // Col 4-6 (covers 3 cols)
+    hdrC('Highlight Room No. with Lecture Capture/ Smart Board'), // Col 7
+    hdrC('Actual'), blk(S.DARK), blk(S.DARK), blk(S.DARK), blk(S.DARK), blk(S.DARK), blk(S.DARK), blk(S.DARK), blk(S.DARK), // Col 8-16 (covers 9 cols)
+    hdrC('Remarks') // Col 17
   ])
 
-  // ── Merge header region ────────────────────────────────────────────────────
+  // Row 6: Sub-Group Headers (Secondary Groups)
+  rows.push([
+    blk(S.DARK), blk(S.DARK), blk(S.DARK), blk(S.DARK), // Merged from top
+    hdrC('Timing'), blk(S.DARK), hdrC('Prof'), // Under Timetable
+    blk(S.DARK), // Merged from top (Room)
+    hdrC('Timing'), blk(S.DARK), hdrC('Prof'), hdrC('Attendance'), 
+    hdrC('Lecture Capture done Successfully: (Video and Audio) : Y/N'),
+    hdrC('Smart Board PDF uploaded on VREFER (Y/N)'),
+    hdrC('Assignments No. (of Last Week) Collected'),
+    hdrC('Assignments No. (for Coming week) Given'),
+    hdrC('Assignment No. of Previous week which is Graded and distributed'), // Under Actual
+    blk(S.DARK) // Merged from top (Remarks)
+  ])
+
+  // Row 7: Field labels (The smallest components)
+  rows.push([
+    blk(S.DARK), blk(S.DARK), blk(S.DARK), blk(S.DARK), // Merged from top
+    hdrC('From'), hdrC('To'), blk(S.DARK), // Under Timetable -> Timing
+    blk(S.DARK), // Merged from top (Room)
+    hdrC('From'), hdrC('To'), blk(S.DARK), blk(S.DARK), blk(S.DARK), blk(S.DARK), blk(S.DARK), blk(S.DARK), blk(S.DARK), // Under Actual -> Timing/Other
+    blk(S.DARK) // Merged from top (Remarks)
+  ])
+
   const merges = [
     m(0,0,0,NC-1),  // VIT title
     m(1,0,1,NC-1),  // Dept
     m(2,0,2,NC-1),  // Doc title
     m(3,0,3,9), m(3,10,3,NC-1), // Date + Day
     m(4,0,4,NC-1),  // Note
-    // Column headers — no merges needed, each is 1 cell in row 5
+    
+    // VERTICAL MERGES (Rows 5-7)
+    m(5,0,7,0),   // SEM
+    m(5,1,7,1),   // DIV
+    m(5,2,7,2),   // STR
+    m(5,3,7,3),   // SUBJECT
+    m(5,7,7,7),   // Highlight Room
+    m(5,17,7,17), // Remarks
+
+    // GROUP MERGES (Row 5 Horiz)
+    m(5,4,5,6),   // As Per Timetable
+    m(5,8,5,16),  // Actual
+
+    // SUB-GROUP MERGES (Row 6)
+    m(6,4,6,5),   // Timetable -> Timing
+    m(6,6,7,6),   // Timetable -> Prof
+    m(6,8,6,9),   // Actual -> Timing
+    m(6,10,7,10), // Actual -> Prof
+    m(6,11,7,11), // Actual -> Attendance
+    m(6,12,7,12), // Actual -> LCS
+    m(6,13,7,13), // Actual -> SB
+    m(6,14,7,14), // Actual -> Assign Coll
+    m(6,15,7,15), // Actual -> Assign Give
+    m(6,16,7,16), // Actual -> Assign Grad
   ]
 
   // ── Data rows ──────────────────────────────────────────────────────────────
@@ -227,28 +262,35 @@ export const exportDLRToExcel = (records, dateStr, department = 'Information Tec
         border:border(),
       }}
 
+      // Actual field mapping matching the new standard
+      const lcsVal = r.lecture_capture_done === true ? 'Y' : 'N'
+      const sbVal  = r.smart_board_uploaded === true ? 'Y' : 'N'
+      const collected = r.assignments_last_week ?? r.assignments_collected ?? 0
+      const given     = r.assignments_given ?? 0
+      const graded    = r.assignments_graded ?? 0
+
       rows.push([
         semCell,
         divCell,
-        fc(r.total_students ?? 0),
+        fc(r.total_batch_strength ?? r.total_students ?? 60),
         fc(subCode),
-        fc(formatTime(r.scheduled_start)),
-        fc(formatTime(r.scheduled_end)),
+        fc(formatTime(r.timetable_from || r.scheduled_start)),
+        fc(formatTime(r.timetable_to || r.scheduled_end)),
         fc(initials),
         roomCell,
-        fc(formatTime(r.actual_start)),
-        fc(formatTime(r.actual_end)),
+        fc(formatTime(r.actual_from || r.actual_start)),
+        fc(formatTime(r.actual_to || r.actual_end)),
         fc(initials),
         attCell,
-        fc(r.lcs_status === 'covered' || r.lcs_status === 'partially_covered' ? 'Y' : 'N'),
-        fc(r.smartboard_pdf_uploaded ? 'Y' : '-'),
-        fc(r.assignments_collected || '-'),
-        fc(r.assignments_given     || '-'),
-        fc(r.assignments_graded    || '-'),
+        fc(lcsVal),
+        fc(sbVal),
+        fc(collected),
+        fc(given),
+        fc(graded),
         dc(
           isSub
             ? `Substitution — ${facName}`
-            : (r.remarks || '-'),
+            : (r.remarks || r.topic_covered || '-'),
           rowBg, isSub ? S.RED : S.BLACK, isSub, 'left'
         ),
       ])
