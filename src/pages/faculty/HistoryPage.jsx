@@ -94,8 +94,14 @@ export default function HistoryPage() {
       remarks: rec.remarks || '',
       lcs_status: rec.lcs_status,
       smartboard_pdf_uploaded: rec.smartboard_pdf_uploaded,
-      actual_start: rec.actual_start || '',
-      actual_end: rec.actual_end || '',
+      actual_from: rec.actual_from || rec.actual_start || '',
+      actual_to: rec.actual_to || rec.actual_end || '',
+      timetable_from: rec.timetable_from || rec.scheduled_start || '',
+      timetable_to: rec.timetable_to || rec.scheduled_end || '',
+      timetable_faculty: rec.timetable_faculty || profile.full_name,
+      timetable_subject: rec.timetable_subject || rec.subjects?.subject_name || '',
+      timetable_division: rec.timetable_division || rec.divisions?.division_name || '',
+      lecture_date: rec.lecture_date,
       present_count: rec.present_count,
       total_students: rec.total_students,
       attendanceDetails: att,
@@ -117,10 +123,17 @@ export default function HistoryPage() {
       setSaving(true)
       const { attendanceDetails, ...rest } = editForm
       
+      // Sanitize times to prevent empty string errors in Postgres TIME columns
+      const sanitized = { ...rest }
+      if (sanitized.actual_from === '') sanitized.actual_from = null
+      if (sanitized.actual_to === '') sanitized.actual_to = null
+      if (sanitized.timetable_from === '') sanitized.timetable_from = null
+      if (sanitized.timetable_to === '') sanitized.timetable_to = null
+
       const { error } = await supabase
         .from('lecture_records')
         .update({
-          ...rest,
+          ...sanitized,
           present_count: Number(editForm.present_count),
           total_students: Number(editForm.total_students),
           absent_count: Number(editForm.total_students) - Number(editForm.present_count),
@@ -245,15 +258,52 @@ export default function HistoryPage() {
           <div className="h-px" style={{ background: 'rgba(255,255,255,0.06)' }} />
 
           {/* Read-only fields */}
-          {[
-            ['Date', formatDate(r.lecture_date)],
-            ['Scheduled', formatTime(r.scheduled_start) + ' to ' + formatTime(r.scheduled_end)],
-          ].map(([key, val]) => (
-            <div key={key} className="flex justify-between text-sm py-1 border-b" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
-              <span style={{ color: 'var(--text-secondary)' }}>{key}</span>
-              <span className="font-semibold text-right max-w-[60%]">{val}</span>
+          {/* Editable Header Fields */}
+          {editing ? (
+            <div className="space-y-4 pb-2 border-b" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
+              <div className="space-y-1.5">
+                <label className="form-label">Lecture Date</label>
+                <input type="date" className="input-field" value={editForm.lecture_date} onChange={e => ef('lecture_date', e.target.value)} />
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="form-label">Scheduled From</label>
+                  <input type="time" className="input-field" value={editForm.timetable_from} onChange={e => ef('timetable_from', e.target.value)} />
+                </div>
+                <div>
+                  <label className="form-label">Scheduled To</label>
+                  <input type="time" className="input-field" value={editForm.timetable_to} onChange={e => ef('timetable_to', e.target.value)} />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="form-label">Faculty</label>
+                  <input type="text" className="input-field" value={editForm.timetable_faculty} onChange={e => ef('timetable_faculty', e.target.value)} />
+                </div>
+                <div>
+                  <label className="form-label">Subject</label>
+                  <input type="text" className="input-field" value={editForm.timetable_subject} onChange={e => ef('timetable_subject', e.target.value)} />
+                </div>
+              </div>
+              <div>
+                <label className="form-label">Division</label>
+                <input type="text" className="input-field" value={editForm.timetable_division} onChange={e => ef('timetable_division', e.target.value)} />
+              </div>
             </div>
-          ))}
+          ) : (
+            <>
+              {[
+                ['Date', formatDate(r.lecture_date)],
+                ['Scheduled', formatTime(r.timetable_from || r.scheduled_start) + ' to ' + formatTime(r.timetable_to || r.scheduled_end)],
+                ['Faculty', r.timetable_faculty || r.faculty?.full_name || '—'],
+              ].map(([key, val]) => (
+                <div key={key} className="flex justify-between text-sm py-1 border-b" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
+                  <span style={{ color: 'var(--text-secondary)' }}>{key}</span>
+                  <span className="font-semibold text-right max-w-[60%]">{val}</span>
+                </div>
+              ))}
+            </>
+          )}
 
           {/* Editable fields */}
           {editing ? (
@@ -261,11 +311,11 @@ export default function HistoryPage() {
               <div className="grid grid-cols-2 gap-3">
                 <div>
                   <label className="form-label">Actual Start</label>
-                  <input type="time" className="input-field" value={editForm.actual_start} onChange={e => ef('actual_start', e.target.value)} />
+                  <input type="time" className="input-field" value={editForm.actual_from} onChange={e => ef('actual_from', e.target.value)} />
                 </div>
                 <div>
                   <label className="form-label">Actual End</label>
-                  <input type="time" className="input-field" value={editForm.actual_end} onChange={e => ef('actual_end', e.target.value)} />
+                  <input type="time" className="input-field" value={editForm.actual_to} onChange={e => ef('actual_to', e.target.value)} />
                 </div>
               </div>
               <div>
@@ -365,8 +415,8 @@ export default function HistoryPage() {
           ) : (
             <>
               {[
-                ['Actual', formatTime(r.actual_start) + ' to ' + formatTime(r.actual_end)],
-                ['Topic', r.topic_covered],
+                ['Actual', formatTime(r.actual_from || r.actual_start) + ' to ' + formatTime(r.actual_to || r.actual_end)],
+                ['Topic', r.topic_covered || r.remarks || '—'],
                 ['Attendance', r.present_count + '/' + r.total_students + ' (' + attendancePercent(r.present_count, r.total_students) + '%)'],
                 ['LCS', r.lcs_status === 'covered' ? 'Covered' : r.lcs_status === 'partially_covered' ? 'Partial' : 'Not Covered'],
                 ['SB PDF', r.smartboard_pdf_uploaded ? 'Uploaded' : 'Not uploaded'],
@@ -415,19 +465,19 @@ export default function HistoryPage() {
                 <button onClick={() => handleSelect(r)} className="w-full glass-card p-4 text-left transition-all hover:border-brand-300">
                   <div className="flex items-start justify-between mb-2">
                     <div>
-                      <p className="font-display font-semibold text-sm">{r.custom_subject || r.subjects?.subject_name}</p>
-                      <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>{r.custom_division || r.divisions?.division_name} - {formatDate(r.lecture_date)}</p>
+                      <p className="font-display font-semibold text-sm">{r.timetable_subject || r.custom_subject || r.subjects?.subject_name}</p>
+                      <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>{r.timetable_division || r.custom_division || r.divisions?.division_name} - {formatDate(r.lecture_date)}</p>
                     </div>
                     <div className="flex flex-col items-end gap-1">
                       <StatusBadge status={isLocked ? 'locked' : r.approval_status} />
                     </div>
                   </div>
                   
-                  <p className="text-xs mb-3 line-clamp-2" style={{ color: 'var(--text-secondary)' }}>{r.topic_covered}</p>
+                  <p className="text-xs mb-3 line-clamp-2" style={{ color: 'var(--text-secondary)' }}>{r.topic_covered || r.remarks}</p>
                   
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-3 text-[10px] font-medium" style={{ color: 'var(--text-secondary)' }}>
-                      <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{formatTime(r.actual_start)}</span>
+                      <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{formatTime(r.actual_from || r.actual_start)}</span>
                       <span className="flex items-center gap-1"><Users className="w-3 h-3" />{r.present_count}/{r.total_students}</span>
                       <span className="font-bold" style={{ color: attendancePercent(r.present_count, r.total_students) >= 75 ? '#3fb950' : '#f85149' }}>
                         {attendancePercent(r.present_count, r.total_students)}%
