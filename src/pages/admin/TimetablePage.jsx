@@ -57,6 +57,7 @@ export default function TimetablePage() {
     day_of_week: 'Monday', batch_number: ''
   }
   const [form, setForm] = useState(emptyForm)
+  const [modalSem, setModalSem] = useState('')
 
   useEffect(() => {
     fetchMasterData()
@@ -167,6 +168,7 @@ export default function TimetablePage() {
     setEditEntry(null)
     setConflicts([])
     setShowModal(true)
+    setModalSem(filterSem || '')
   }
 
   const openEdit = (entry) => {
@@ -200,6 +202,7 @@ export default function TimetablePage() {
     setEditEntry(entry)
     setConflicts([])
     setShowModal(true)
+    setModalSem(entry.divisions?.semester || '')
   }
 
   const checkConflicts = (f) => {
@@ -565,7 +568,14 @@ export default function TimetablePage() {
               <option value="">All Semesters</option>
               {semesters.map(s => <option key={s} value={s}>Sem {s}</option>)}
             </select>
-            <select className="select-field text-sm flex-1 min-w-[130px]" value={filterDivision} onChange={e => setFilterDivision(e.target.value)}>
+            <select className="select-field text-sm flex-1 min-w-[130px]" value={filterDivision} onChange={e => {
+              const v = e.target.value
+              setFilterDivision(v)
+              if (v) {
+                const d = divisions.find(div => div.id === v)
+                if (d) setFilterSem(String(d.semester))
+              }
+            }}>
               <option value="">All Divisions</option>
               {divisions
                 .filter(d => !filterSem || d.semester == filterSem)
@@ -659,14 +669,16 @@ export default function TimetablePage() {
             <div className="flex flex-col gap-1">
               <label className="form-label mb-0">Sem {(!form.division_id && !useCustomDivision) && <span className="text-red-400">*</span>}</label>
               <select className="select-field" 
-                value={divisions.find(d => d.id === form.division_id)?.semester || ''}
-                onChange={async (e) => {
+                value={modalSem}
+                onChange={(e) => {
                   const s = e.target.value
-                  // We don't store sem on timetable directly, but we use it to filter divisions
+                  setModalSem(s)
                   // If current division doesn't match new sem, clear it
-                  const currentDiv = divisions.find(d => d.id === form.division_id)
-                  if (currentDiv && currentDiv.semester != s) {
-                    setForm(f => ({ ...f, division_id: '' }))
+                  if (form.division_id) {
+                    const currentDiv = divisions.find(d => d.id === form.division_id)
+                    if (currentDiv && currentDiv.semester != s) {
+                      setForm(f => ({ ...f, division_id: '' }))
+                    }
                   }
                 }}>
                 <option value="">Select Sem…</option>
@@ -676,17 +688,20 @@ export default function TimetablePage() {
 
             <FieldToggle label="Division" dropPlaceholder="Select Div…" textPlaceholder="e.g. FY-A, Special Batch…"
               useCustom={useCustomDivision} setUseCustom={setUseCustomDivision}
-              dropdownValue={form.division_id} onChangeDrop={v => { setForm(f => ({ ...f, division_id: v, custom_division: '' })); setConflicts([]) }}
+              dropdownValue={form.division_id} onChangeDrop={v => { 
+                setForm(f => ({ ...f, division_id: v, custom_division: '' })); 
+                if (v) {
+                  const d = divisions.find(div => div.id === v)
+                  if (d) setModalSem(String(d.semester))
+                }
+                setConflicts([]) 
+              }}
               textValue={form.custom_division} onChangeText={v => setForm(f => ({ ...f, custom_division: v, division_id: '' }))}
               options={(() => {
-                const selectedSem = divisions.find(d => d.id === form.division_id)?.semester || document.querySelector('select[value=""]')?.value // This is tricky in React
-                // Actually, let's just use a local state for the modal's sem filter if needed, 
-                // but since we want to be able to pick ANY division if sem is not selected:
-                const semInModal = divisions.find(d => d.id === form.division_id)?.semester
                 return divisions
-                  .filter(d => !semInModal || d.semester == semInModal)
+                  .filter(d => !modalSem || d.semester == modalSem)
                   .map(d => <option key={d.id} value={d.id}>
-                    {semInModal ? formatDivName(d.division_name, semInModal) : `${d.division_name} (Sem ${d.semester})`}
+                    {modalSem ? formatDivName(d.division_name, modalSem) : `${d.division_name} (Sem ${d.semester})`}
                   </option>)
               })()} />
             

@@ -113,7 +113,14 @@ export default function TimetableView() {
             {semesters.map(s => <option key={s} value={s}>Sem {s}</option>)}
           </select>
           <select className="select-field flex-1 text-xs py-2" value={filterDiv}
-            onChange={e => setFilterDiv(e.target.value)}>
+            onChange={e => {
+              const v = e.target.value
+              setFilterDiv(v)
+              if (v) {
+                const d = divisions.find(div => div.id === v)
+                if (d) setFilterSem(String(d.semester))
+              }
+            }}>
             <option value="">All Divs</option>
             {filteredDivisions.map(d => <option key={d.id} value={d.id}>{d.division_name}</option>)}
           </select>
