@@ -14,12 +14,12 @@ ALTER TABLE public.timetable ADD COLUMN IF NOT EXISTS custom_time_slot TEXT;
 
 -- ── STEP 2: Add missing time slots ────────────────────────────
 INSERT INTO public.time_slots (slot_label, start_time, end_time, slot_order) VALUES
-  ('12:15 - 13:15', '12:15', '13:15', 7),
-  ('13:45 - 14:45', '13:45', '14:45', 8),
-  ('14:45 - 15:45', '14:45', '15:45', 9),
-  ('15:45 - 16:45', '15:45', '16:45', 10),
-  ('16:45 - 17:45', '16:45', '17:45', 11)
-ON CONFLICT (start_time, end_time) DO NOTHING;
+  ('09:00 - 11:00', '09:00:00', '11:00:00', 1),
+  ('11:15 - 13:15', '11:15:00', '13:15:00', 2),
+  ('13:15 - 13:45', '13:15:00', '13:45:00', 3),
+  ('13:45 - 15:45', '13:45:00', '15:45:00', 4),
+  ('15:45 - 17:45', '15:45:00', '17:45:00', 5)
+ON CONFLICT (start_time, end_time) DO UPDATE SET slot_label = EXCLUDED.slot_label, slot_order = EXCLUDED.slot_order;
 
 -- ── STEP 3: Add rooms ─────────────────────────────────────────
 INSERT INTO public.rooms (room_number, room_type, has_smartboard) VALUES

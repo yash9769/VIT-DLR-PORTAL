@@ -2,7 +2,7 @@ import { useState, useEffect, useRef } from 'react'
 import { X, Search, CheckCircle, ChevronRight, ChevronLeft, User, Clock, AlertTriangle } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { toast } from '../ui'
-import { today } from '../../utils/helpers'
+import { today, sendNotification, formatDate } from '../../utils/helpers'
 import { DEMO_SUBSTITUTIONS, DEMO_FACULTY_LIST, DEMO_TIMETABLE } from '../../lib/demoData'
 
 const DEMO_MODE = !import.meta.env.VITE_SUPABASE_URL
@@ -95,6 +95,18 @@ export default function ProxyAssignModal({ open, onClose, profile, todaySchedule
 
       const { error } = await supabase.from('substitutions').insert(records)
       if (error) throw error
+
+      // Notify all involved faculty
+      const proxyNotifications = Object.entries(lectureProxies).map(([tid, fac]) => {
+        const entry = todaySchedule.find(e => e.id === tid)
+        return sendNotification(supabase, fac.id, 'New Proxy Assignment', `You have been assigned to cover ${entry?.subjects?.subject_name} for ${profile.full_name} on ${formatDate(todayStr)}.`, 'info')
+      })
+
+      await Promise.all([
+        ...proxyNotifications,
+        sendNotification(supabase, profile.id, 'Proxy Assigned', `You have assigned ${records.length} lecture(s) to proxy faculty on ${formatDate(todayStr)}.`, 'info')
+      ])
+
       toast.success(`Proxy assigned for ${records.length} lecture(s).`)
       onSuccess?.(); onClose()
     } catch (err) {

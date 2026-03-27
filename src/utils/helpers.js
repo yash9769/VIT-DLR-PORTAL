@@ -80,3 +80,20 @@ export const detectConflicts = (newEntry, existingEntries, excludeId = null) => 
   return conflicts
 }
 
+export const sendNotification = async (supabase, userId, title, message, type = 'info') => {
+  if (!userId) return
+  try {
+    const { error } = await supabase
+      .from('notifications')
+      .insert({
+        user_id: userId,
+        title,
+        message,
+        type,
+        is_read: false
+      })
+    if (error) console.error('Error sending notification:', error)
+  } catch (err) {
+    console.error('Catch error sending notification:', err)
+  }
+}

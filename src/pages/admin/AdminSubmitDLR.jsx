@@ -48,6 +48,8 @@ export default function AdminSubmitDLR() {
     remarks: prefillRecord?.remarks || '',
     total_students: prefillRecord?.total_students || 60,
     present_count: prefillRecord?.present_count || '',
+    actual_start: prefillRecord?.actual_start || '',
+    actual_end: prefillRecord?.actual_end || '',
   })
 
   // ── Fetch faculty list on mount ───────────────────────────────────
@@ -134,14 +136,14 @@ export default function AdminSubmitDLR() {
     const payload = {
       faculty_id: selectedFaculty,
       lecture_date: lectureDate,
-      timetable_id: slot?.id || prefillRecord?.timetable_id || null,
-      division_id: slot?.division_id || prefillRecord?.division_id || null,
-      subject_id: slot?.subject_id || prefillRecord?.subject_id || null,
-      room_id: slot?.room_id || prefillRecord?.room_id || null,
-      scheduled_start: slot?.time_slots?.start_time || prefillRecord?.scheduled_start || null,
-      scheduled_end: slot?.time_slots?.end_time || prefillRecord?.scheduled_end || null,
-      actual_start: slot?.time_slots?.start_time || prefillRecord?.actual_start || null,
-      actual_end: slot?.time_slots?.end_time || prefillRecord?.actual_end || null,
+      timetable_id: selectedSlot?.id || prefillRecord?.timetable_id || null,
+      division_id: selectedSlot?.division_id || prefillRecord?.division_id || null,
+      subject_id: selectedSlot?.subject_id || prefillRecord?.subject_id || null,
+      room_id: selectedSlot?.room_id || prefillRecord?.room_id || null,
+      scheduled_start: selectedSlot?.time_slots?.start_time || prefillRecord?.scheduled_start || null,
+      scheduled_end: selectedSlot?.time_slots?.end_time || prefillRecord?.scheduled_end || null,
+      actual_start: form.actual_start || null,
+      actual_end: form.actual_end || null,
       topic_covered: form.topic_covered,
       subtopics: form.subtopics,
       unit_number: form.unit_number ? Number(form.unit_number) : null,
@@ -296,7 +298,14 @@ export default function AdminSubmitDLR() {
                 return (
                   <button
                     key={entry.id}
-                    onClick={() => setSelectedSlot(entry)}
+                    onClick={() => {
+                      setSelectedSlot(entry)
+                      setForm(f => ({ 
+                        ...f, 
+                        actual_start: entry.time_slots?.start_time || '',
+                        actual_end: entry.time_slots?.end_time || ''
+                      }))
+                    }}
                     className="w-full text-left p-4 rounded-2xl border transition-all"
                     style={{
                       background: isSelected ? 'rgba(74,108,247,0.1)' : 'rgba(255,255,255,0.03)',
@@ -349,6 +358,16 @@ export default function AdminSubmitDLR() {
           <div className="space-y-1.5">
             <label className="form-label">Subtopics <span className="opacity-50 text-xs">(optional)</span></label>
             <input className="input-field w-full" placeholder="e.g. Base case, recursive tree" value={form.subtopics} onChange={e => setForm(f => ({ ...f, subtopics: e.target.value }))} />
+          </div>
+          <div className="grid grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="form-label">Actual Start</label>
+              <input type="time" className="input-field w-full" value={form.actual_start} onChange={e => setForm(f => ({ ...f, actual_start: e.target.value }))} />
+            </div>
+            <div className="space-y-1.5">
+              <label className="form-label">Actual End</label>
+              <input type="time" className="input-field w-full" value={form.actual_end} onChange={e => setForm(f => ({ ...f, actual_end: e.target.value }))} />
+            </div>
           </div>
           <div className="grid grid-cols-2 gap-4">
             <div className="space-y-1.5">
@@ -451,7 +470,7 @@ export default function AdminSubmitDLR() {
               ['Date', lectureDate],
               ['Subject', selectedSlot?.subjects?.subject_name || selectedSlot?.custom_subject || prefillRecord?.subjects?.subject_name || '—'],
               ['Division', selectedSlot?.divisions?.division_name || selectedSlot?.custom_division || prefillRecord?.divisions?.division_name || '—'],
-              ['Time', selectedSlot ? `${selectedSlot.time_slots?.start_time?.slice(0,5)} – ${selectedSlot.time_slots?.end_time?.slice(0,5)}` : `${prefillRecord?.actual_start?.slice(0,5)} – ${prefillRecord?.actual_end?.slice(0,5)}`],
+              ['Time', selectedSlot ? `${formatTime(selectedSlot.time_slots?.start_time)} – ${formatTime(selectedSlot.time_slots?.end_time)}` : `${formatTime(prefillRecord?.actual_start)} – ${formatTime(prefillRecord?.actual_end)}`],
               ['Topic', form.topic_covered],
               ['Unit', form.unit_number || '—'],
               ['LCS', form.lcs_status.replace(/_/g, ' ')],

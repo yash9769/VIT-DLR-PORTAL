@@ -406,35 +406,53 @@ export default function HistoryPage() {
         </div>
       ) : (
         <div className="space-y-3">
-          {filteredRecords.map(r => (
-            <button key={r.id} onClick={() => handleSelect(r)} className="w-full glass-card p-4 text-left">
-              <div className="flex items-start justify-between mb-2">
-                <div>
-                  <p className="font-display font-semibold text-sm">{r.custom_subject || r.subjects?.subject_name}</p>
-                  <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>{r.custom_division || r.divisions?.division_name} - {formatDate(r.lecture_date)}</p>
-                </div>
-                <div className="flex flex-col items-end gap-1">
-                  <StatusBadge status={lockedDates.includes(r.lecture_date) ? 'locked' : r.approval_status} />
-                  {!lockedDates.includes(r.lecture_date) && (
-                    <span className="text-[10px] font-bold" style={{ color: r.approval_status === 'approved' ? 'var(--text-secondary)' : '#f85149' }}>Tap to edit</span>
+          {filteredRecords.map(r => {
+            const isLocked = lockedDates.includes(r.lecture_date)
+            const canEdit = !isLocked && (r.approval_status === 'pending' || r.approval_status === 'rejected' || r.approval_status === 'approved')
+            
+            return (
+              <div key={r.id} className="relative group">
+                <button onClick={() => handleSelect(r)} className="w-full glass-card p-4 text-left transition-all hover:border-brand-300">
+                  <div className="flex items-start justify-between mb-2">
+                    <div>
+                      <p className="font-display font-semibold text-sm">{r.custom_subject || r.subjects?.subject_name}</p>
+                      <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>{r.custom_division || r.divisions?.division_name} - {formatDate(r.lecture_date)}</p>
+                    </div>
+                    <div className="flex flex-col items-end gap-1">
+                      <StatusBadge status={isLocked ? 'locked' : r.approval_status} />
+                    </div>
+                  </div>
+                  
+                  <p className="text-xs mb-3 line-clamp-2" style={{ color: 'var(--text-secondary)' }}>{r.topic_covered}</p>
+                  
+                  <div className="flex items-center justify-between">
+                    <div className="flex items-center gap-3 text-[10px] font-medium" style={{ color: 'var(--text-secondary)' }}>
+                      <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{formatTime(r.actual_start)}</span>
+                      <span className="flex items-center gap-1"><Users className="w-3 h-3" />{r.present_count}/{r.total_students}</span>
+                      <span className="font-bold" style={{ color: attendancePercent(r.present_count, r.total_students) >= 75 ? '#3fb950' : '#f85149' }}>
+                        {attendancePercent(r.present_count, r.total_students)}%
+                      </span>
+                    </div>
+                    
+                    {canEdit && (
+                      <button 
+                        onClick={(e) => { e.stopPropagation(); handleSelect(r); startEdit(r); }}
+                        className="flex items-center gap-1 text-[10px] font-bold uppercase tracking-wider text-brand-500 hover:text-brand-600 transition-colors"
+                      >
+                        <Edit2 className="w-3 h-3" /> Edit
+                      </button>
+                    )}
+                  </div>
+
+                  {r.rejection_reason && (
+                    <p className="text-[10px] mt-2 px-2 py-1 rounded-md" style={{ background: 'rgba(248,81,73,0.06)', color: '#f85149', borderLeft: '2px solid #f85149' }}>
+                      ✕ {r.rejection_reason}
+                    </p>
                   )}
-                </div>
+                </button>
               </div>
-              <p className="text-xs mb-2" style={{ color: 'var(--text-secondary)' }}>{r.topic_covered}</p>
-              <div className="flex items-center gap-3 text-xs" style={{ color: 'var(--text-secondary)' }}>
-                <span><Clock className="w-3 h-3 inline mr-1" />{formatTime(r.actual_start)}</span>
-                <span><Users className="w-3 h-3 inline mr-1" />{r.present_count}/{r.total_students}</span>
-                <span style={{ color: attendancePercent(r.present_count, r.total_students) >= 75 ? '#3fb950' : '#f85149' }}>
-                  {attendancePercent(r.present_count, r.total_students)}%
-                </span>
-              </div>
-              {r.rejection_reason && (
-                <p className="text-xs mt-2 px-2 py-1.5 rounded-lg" style={{ background: 'rgba(248,81,73,0.08)', color: '#f85149', borderLeft: '2px solid #f85149' }}>
-                  ✕ {r.rejection_reason}
-                </p>
-              )}
-            </button>
-          ))}
+            )
+          })}
         </div>
       )}
     </div>

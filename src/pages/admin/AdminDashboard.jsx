@@ -3,7 +3,7 @@ import { format } from 'date-fns'
 import { useNavigate } from 'react-router-dom'
 import { FileText, Clock, CheckCircle, TrendingUp, AlertTriangle, Lock, Download, ChevronRight, LifeBuoy } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
-import { attendancePercent, formatDate, formatTime, today } from '../../utils/helpers'
+import { attendancePercent, formatDate, formatTime, today, sendNotification } from '../../utils/helpers'
 import { StatusBadge, toast, Modal } from '../../components/ui'
 import { Eye, CheckCircle as CheckCircleIcon, XCircle as XCircleIcon, Search } from 'lucide-react'
 import { generateDLRPDF } from '../../services/reportService'
@@ -75,7 +75,7 @@ export default function AdminDashboard() {
           subjects:subjects!subject_id (*),
           divisions:divisions!division_id (*),
           rooms:rooms!room_id (*),
-          faculty:users!faculty_id (full_name)
+          faculty:users!faculty_id (id, full_name)
         `)
         .order('created_at', { ascending: false })
 
@@ -163,6 +163,7 @@ export default function AdminDashboard() {
 
   const handleApprove = async (id) => {
     try {
+      const record = allRecords.find(r => r.id === id)
       const { error } = await supabase
         .from('lecture_records')
         .update({ 
@@ -173,6 +174,11 @@ export default function AdminDashboard() {
         .eq('id', id)
       
       if (error) throw error
+      
+      if (record?.faculty_id) {
+        await sendNotification(supabase, record.faculty_id, 'DLR Approved', `Your DLR for ${record.subjects?.subject_name} on ${formatDate(record.lecture_date)} has been approved.`, 'success')
+      }
+
       toast.success('Record approved')
       fetchDashboardData()
     } catch (error) {
@@ -184,6 +190,7 @@ export default function AdminDashboard() {
     const reason = prompt('Reason for rejection:')
     if (!reason) return
     try {
+      const record = allRecords.find(r => r.id === id)
       const { error } = await supabase
         .from('lecture_records')
         .update({ 
@@ -194,6 +201,11 @@ export default function AdminDashboard() {
         .eq('id', id)
       
       if (error) throw error
+
+      if (record?.faculty_id) {
+        await sendNotification(supabase, record.faculty_id, 'DLR Rejected', `Your DLR for ${record.subjects?.subject_name} on ${formatDate(record.lecture_date)} was rejected: ${reason}`, 'error')
+      }
+
       toast.success('Record rejected')
       fetchDashboardData()
     } catch (error) {

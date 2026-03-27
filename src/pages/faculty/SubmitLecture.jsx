@@ -67,7 +67,7 @@ export default function SubmitLecture() {
     scheduled_start: prefill?.time_slots?.start_time || '',
     scheduled_end: prefill?.time_slots?.end_time || '',
     actual_start: prefill?.time_slots?.start_time || currentTime,
-    actual_end: currentTime,
+    actual_end: prefill?.time_slots?.end_time || currentTime,
     topic_covered: '',
     subtopics: '',
     unit_number: '',
@@ -139,34 +139,40 @@ export default function SubmitLecture() {
       const dayName = getDayName()
       const t = today()
 
-      const [ttRes, divRes, subRes, rmRes, lrRes] = await Promise.all([
+      const [ttRes, divRes, subRes, rmRes, lrRes, taughtRes] = await Promise.all([
         supabase.from('timetable').select('*, subjects(*), divisions(*), rooms(*), time_slots(*), custom_room, custom_subject, custom_division, custom_time_slot').eq('faculty_id', profile.id).eq('day_of_week', dayName).eq('is_active', true),
         supabase.from('divisions').select('*').order('division_name'),
         supabase.from('subjects').select('*').order('subject_name'),
         supabase.from('rooms').select('*').order('room_number'),
-        supabase.from('lecture_records').select('timetable_id').eq('faculty_id', profile.id).eq('lecture_date', t)
+        supabase.from('lecture_records').select('timetable_id').eq('faculty_id', profile.id).eq('lecture_date', t),
+        supabase.from('timetable').select('subject_id, subjects(*)').eq('faculty_id', profile.id)
       ])
 
       const submittedIds = lrRes.data?.map(r => r.timetable_id) || []
       const remaining = (ttRes.data || []).filter(tt => !submittedIds.includes(tt.id))
 
-      // Backend check: block DLR if this faculty is marked absent with a sub assigned
+      // Filter subjects: only what this faculty teaches
+      const uniqueSubjects = Array.from(
+        new Map(taughtRes.data?.filter(s => s.subjects).map(s => [s.subjects.id, s.subjects])).values()
+      )
+      
+      setTodaySchedule(remaining)
+      setDivisions(divRes.data || [])
+      setSubjects(uniqueSubjects.length > 0 ? uniqueSubjects : (subRes.data || []))
+      setRooms(rmRes.data || [])
+
       try {
         const { data: absentSubs } = await supabase
           .from('substitutions')
-          .select('timetable_id')
+          .select('timetable_id, substitution_date')
           .eq('absent_faculty_id', profile.id)
           .eq('substitution_date', t)
-        if (absentSubs && absentSubs.length > 0) {
+        
+        if (absentSubs && absentSubs.filter(s => s.substitution_date === t).length > 0) {
           setSubstitutionBlocked(true)
-          setBlockedReason('Substitution already assigned for your slot(s) today. DLR submission not allowed. A substitute faculty has been assigned — contact admin if this is incorrect.')
+          setBlockedReason('A substitution has been assigned for your slot(s) today. DLR submission is not allowed for those slots. Please contact admin if this is incorrect.')
         }
       } catch(_) {}
-
-      setTodaySchedule(remaining)
-      setDivisions(divRes.data || [])
-      setSubjects(subRes.data || [])
-      setRooms(rmRes.data || [])
     } catch (error) {
       console.error('Error fetching form data:', error)
     } finally {
@@ -220,6 +226,7 @@ export default function SubmitLecture() {
     set('scheduled_start', entry.time_slots?.start_time || '')
     set('scheduled_end', entry.time_slots?.end_time || '')
     set('actual_start', entry.time_slots?.start_time || currentTime)
+    set('actual_end', entry.time_slots?.end_time || currentTime)
     set('total_students', entry.divisions?.strength || 60)
   }
 
@@ -231,28 +238,34 @@ export default function SubmitLecture() {
       const { attendanceDetails, ...dbForm } = form
       
       const submissionData = {
-        ...dbForm,
         faculty_id: profile.id,
-        present_count: Number(form.present_count),
-        total_students: Number(form.total_students),
-        absent_count: Number(form.total_students) - Number(form.present_count),
-        submitted_at: new Date().toISOString(),
-        // Convert empty strings to null for time columns to avoid Postgres type errors
-        scheduled_start: form.scheduled_start || null,
-        scheduled_end: form.scheduled_end || null,
-        actual_start: form.actual_start || null,
-        actual_end: form.actual_end || null,
-        // Convert empty strings to null for UUID columns
+        lecture_date: form.lecture_date,
         timetable_id: form.timetable_id || null,
         division_id: form.division_id || null,
         subject_id: form.subject_id || null,
         room_id: form.room_id || null,
+        scheduled_start: form.scheduled_start || null,
+        scheduled_end: form.scheduled_end || null,
+        actual_start: form.actual_start || null,
+        actual_end: form.actual_end || null,
+        topic_covered: form.topic_covered,
+        subtopics: form.subtopics || null,
+        unit_number: form.unit_number ? Number(form.unit_number) : null,
+        batch_number: form.batch_number ? Number(form.batch_number) : null,
+        present_count: Number(form.present_count),
+        total_students: Number(form.total_students),
+        absent_count: Number(form.total_students) - Number(form.present_count),
+        lcs_status: form.lcs_status,
+        smartboard_pdf_uploaded: form.smartboard_pdf_uploaded,
+        is_substitution: form.is_substitution,
         original_faculty_id: form.original_faculty_id || null,
         original_room_id: form.original_room_id || null,
         custom_division: form.custom_division || null,
         custom_subject: form.custom_subject || null,
         custom_room: form.custom_room || null,
         custom_time_slot: form.custom_time_slot || null,
+        remarks: form.remarks || null,
+        submitted_at: new Date().toISOString()
       }
 
       const { data: record, error } = await supabase
@@ -287,23 +300,6 @@ export default function SubmitLecture() {
   }
 
   if (loading) return <div className="p-8 text-center text-sm opacity-50">Loading submission form...</div>
-
-  if (substitutionBlocked) return (
-    <div className="p-6 max-w-lg mx-auto mt-8">
-      <div className="glass-card p-6" style={{border:'2px solid #f85149'}}>
-        <div className="flex items-start gap-4">
-          <div className="w-12 h-12 rounded-xl flex items-center justify-center flex-shrink-0" style={{background:'rgba(248,81,73,0.15)'}}>
-            <AlertCircle className="w-6 h-6" style={{color:'#f85149'}} />
-          </div>
-          <div>
-            <h2 className="font-display font-bold text-base mb-2" style={{color:'#f85149'}}>DLR Submission Blocked</h2>
-            <p className="text-sm" style={{color:'var(--text-secondary)'}}>{blockedReason}</p>
-          </div>
-        </div>
-      </div>
-    </div>
-  )
-
   if (submitted) {
     const subName = selectedEntry?.subjects?.subject_name || subjects.find(s=>s.id===form.subject_id)?.subject_name
     const divName = selectedEntry?.divisions?.division_name || divisions.find(d=>d.id===form.division_id)?.division_name
@@ -347,12 +343,23 @@ export default function SubmitLecture() {
   }
 
   return (
-    <div className="px-4 pt-5 pb-4 animate-fade-in">
+    <div className="px-4 pt-5 pb-4 animate-fade-in max-w-2xl mx-auto">
       {/* Header */}
       <div className="mb-5">
         <h1 className="font-display font-bold text-xl" style={{ color: 'var(--text-primary)' }}>Submit Lecture Record</h1>
         <p className="text-sm mt-1" style={{ color: 'var(--text-secondary)' }}>Complete all steps to submit your DLR</p>
       </div>
+
+      {/* Warning banner if substitution exists */}
+      {substitutionBlocked && (
+        <div className="mb-6 p-4 rounded-2xl flex gap-3 border animate-pulse-slow shadow-lg" style={{ background: 'rgba(210,153,34,0.08)', borderColor: 'rgba(210,153,34,0.3)', color: '#d29922' }}>
+          <AlertCircle className="w-5 h-5 flex-shrink-0" />
+          <div className="text-xs">
+            <p className="font-bold mb-1">DLR Warning / Conflict</p>
+            <p className="opacity-90">{blockedReason}</p>
+          </div>
+        </div>
+      )}
 
       {/* Step indicator */}
       <div className="flex items-center mb-6">

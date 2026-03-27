@@ -1,5 +1,6 @@
 import { useState, useEffect, useMemo } from 'react'
 import { Search, Calendar, MapPin, Users, Filter } from 'lucide-react'
+import { formatTime } from '../../utils/helpers'
 import { supabase } from '../../lib/supabase'
 
 const DAYS = ['Monday','Tuesday','Wednesday','Thursday','Friday','Saturday']
@@ -192,11 +193,11 @@ export default function TimetableView() {
                         }}>
                         <div className="w-12 flex-shrink-0 text-center">
                           <p className="text-xs font-bold leading-tight" style={{ color: TEXT_COLORS[ci] }}>
-                            {e.time_slots?.start_time?.slice(0,5) || '—'}
+                            {formatTime(e.time_slots?.start_time)}
                           </p>
                           <div className="w-px h-3 mx-auto my-0.5 rounded-full opacity-40" style={{ background: TEXT_COLORS[ci] }} />
                           <p className="text-[10px]" style={{ color:'var(--text-secondary)' }}>
-                            {e.time_slots?.end_time?.slice(0,5) || ''}
+                            {formatTime(e.time_slots?.end_time)}
                           </p>
                         </div>
                         <div className="flex-1 min-w-0">

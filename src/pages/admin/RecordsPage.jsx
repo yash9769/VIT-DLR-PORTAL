@@ -1,7 +1,7 @@
 import { useState, useEffect } from 'react'
 import { Search, Filter, CheckCircle, XCircle, Lock, Eye, Download } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
-import { formatDate, formatTime, attendancePercent, today } from '../../utils/helpers'
+import { formatDate, formatTime, attendancePercent, today, sendNotification } from '../../utils/helpers'
 import { StatusBadge, Modal, toast } from '../../components/ui'
 import { generateDLRPDF } from '../../services/reportService'
 import { exportDLRToExcel } from '../../services/excelService'
@@ -58,6 +58,7 @@ export default function RecordsPage() {
 
   const approve = async (id) => {
     try {
+      const record = records.find(r => r.id === id)
       const { error } = await supabase
         .from('lecture_records')
         .update({ 
@@ -67,6 +68,11 @@ export default function RecordsPage() {
         .eq('id', id)
       
       if (error) throw error
+      
+      if (record?.faculty_id) {
+        await sendNotification(supabase, record.faculty_id, 'DLR Approved', `Your DLR for ${record.subjects?.subject_name || record.custom_subject} on ${formatDate(record.lecture_date)} has been approved.`, 'success')
+      }
+
       toast.success('Record approved')
       fetchRecords()
     } catch (error) {
@@ -76,6 +82,7 @@ export default function RecordsPage() {
 
   const reject = async (id, reason) => {
     try {
+      const record = records.find(r => r.id === id)
       const { error } = await supabase
         .from('lecture_records')
         .update({ 
@@ -85,6 +92,11 @@ export default function RecordsPage() {
         .eq('id', id)
       
       if (error) throw error
+
+      if (record?.faculty_id) {
+        await sendNotification(supabase, record.faculty_id, 'DLR Rejected', `Your DLR for ${record.subjects?.subject_name || record.custom_subject} on ${formatDate(record.lecture_date)} was rejected: ${reason}`, 'error')
+      }
+
       toast.success('Record rejected')
       setRejectId(null)
       setRejectReason('')

@@ -52,9 +52,13 @@ export default function FacultyLayout() {
             className="relative w-10 h-10 rounded-xl flex items-center justify-center transition-colors"
             style={{ background: 'var(--border-glass)' }}
           >
-            <Bell className="w-5 h-5" style={{ color: 'var(--text-secondary)' }} />
+            <Bell className="w-5 h-5 transition-transform group-hover:rotate-12" style={{ color: 'var(--text-secondary)' }} />
             {unreadCount > 0 && (
-              <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-xs font-bold text-white" style={{ background: '#4A6CF7' }}>
+              <span className="absolute -top-1 -right-1 w-5 h-5 rounded-full flex items-center justify-center text-[10px] font-bold text-white shadow-lg animate-pulse" 
+                style={{ 
+                  background: 'linear-gradient(135deg, #f85149, #d73a3a)',
+                  boxShadow: '0 0 12px rgba(248,81,73,0.45)'
+                }}>
                 {unreadCount}
               </span>
             )}
@@ -120,22 +124,39 @@ export default function FacultyLayout() {
       </main>
 
       {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 left-0 right-0 z-30 px-2 pb-safe" style={{ background: 'var(--bg-secondary)', backdropFilter: 'blur(20px)', borderTop: '1px solid var(--border-glass)', opacity: 0.97 }}>
-        <div className="flex items-center justify-around py-2">
+      <nav className="fixed bottom-0 left-0 right-0 z-50 px-2" 
+        style={{ 
+          background: 'rgba(255, 255, 255, 0.75)', 
+          backdropFilter: 'blur(16px) saturate(180%)',
+          WebkitBackdropFilter: 'blur(16px) saturate(180%)',
+          borderTop: '1px solid rgba(0, 0, 0, 0.05)',
+          paddingBottom: 'env(safe-area-inset-bottom)'
+        }}>
+        <div className="flex items-center justify-between py-2">
           {NAV_ITEMS.map(item => {
             const active = isActive(item)
             return (
-              <button key={item.path} onClick={() => navigate(item.path)} className={cls('nav-item flex-1', active ? 'active' : '')}>
-                <div className={cls('w-8 h-8 rounded-xl flex items-center justify-center transition-all', active ? 'scale-110 shadow-lg' : '')} style={active ? { background: 'var(--brand)', color: 'white' } : { color: 'var(--text-secondary)' }}>
-                  <item.icon className="w-5 h-5" />
+              <button 
+                key={item.path} 
+                onClick={() => navigate(item.path)} 
+                className="flex flex-col items-center justify-center flex-1 min-w-0 transition-all duration-300 active:scale-90"
+              >
+                <div className={cls('w-8 h-8 rounded-xl flex items-center justify-center transition-all duration-300 mb-1', active ? 'scale-110 shadow-[0_4px_12px_rgba(74,108,247,0.25)]' : 'opacity-40')} 
+                  style={active ? { 
+                    background: 'linear-gradient(135deg, #4A6CF7, #3355e8)', 
+                    color: 'white' 
+                  } : { 
+                    color: 'var(--text-secondary)' 
+                  }}>
+                  <item.icon className={active ? 'w-4 h-4' : 'w-4 h-4'} strokeWidth={2.5} />
                 </div>
-                <span className={cls('text-[10px] font-bold uppercase tracking-wider mt-1 transition-colors', active ? 'text-brand-500' : '')} style={{ color: active ? 'var(--brand)' : 'var(--text-secondary)' }}>{item.label}</span>
+                <span className={cls('text-[9px] font-bold uppercase tracking-tight transition-all duration-300', active ? 'text-brand-600 opacity-100' : 'text-slate-400 opacity-60')}>
+                  {item.label}
+                </span>
               </button>
             )
           })}
         </div>
-        {/* Safe area spacer */}
-        <div className="h-safe-area-inset-bottom" />
       </nav>
 
       {/* Tap to close overlay */}

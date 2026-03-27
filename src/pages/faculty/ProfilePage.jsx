@@ -12,6 +12,7 @@ export default function ProfilePage() {
   const [facultyDetails, setFacultyDetails] = useState(null)
   
   const [passwordForm, setPasswordForm] = useState({
+    currentPassword: '',
     newPassword: '',
     confirmPassword: ''
   })
@@ -52,18 +53,35 @@ export default function ProfilePage() {
       return
     }
 
+    if (!passwordForm.currentPassword) {
+      toast.error('Current password is required')
+      return
+    }
+
     if (passwordForm.newPassword.length < 6) {
-      toast.error('Password must be at least 6 characters')
+      toast.error('New password must be at least 6 characters')
       return
     }
 
     if (passwordForm.newPassword !== passwordForm.confirmPassword) {
-      toast.error('Passwords do not match')
+      toast.error('New passwords do not match')
       return
     }
 
     try {
       setUpdatingPassword(true)
+      
+      // 1. Verify old password by attempting a silent sign-in
+      const { error: loginError } = await supabase.auth.signInWithPassword({
+        email: profile.email,
+        password: passwordForm.currentPassword
+      })
+
+      if (loginError) {
+        throw new Error('Incorrect current password. Please try again.')
+      }
+
+      // 2. Update to new password
       const { error } = await supabase.auth.updateUser({
         password: passwordForm.newPassword
       })
@@ -71,7 +89,7 @@ export default function ProfilePage() {
       if (error) throw error
       
       toast.success('Password updated successfully')
-      setPasswordForm({ newPassword: '', confirmPassword: '' })
+      setPasswordForm({ currentPassword: '', newPassword: '', confirmPassword: '' })
     } catch (error) {
       console.error('Error updating password:', error)
       toast.error(error.message || 'Failed to update password')
@@ -134,40 +152,6 @@ export default function ProfilePage() {
         </div>
       </div>
 
-      {/* Professional Details (Only for Faculty) */}
-      {profile?.role === 'faculty' && (
-        <div className="glass-card p-6 space-y-6">
-          <div className="flex items-center gap-2 mb-2 pb-2 border-b border-white/5">
-            <Award className="w-5 h-5 text-brand-500" />
-            <h2 className="font-bold">Professional Details</h2>
-          </div>
-
-          {fetching ? (
-            <div className="flex justify-center py-4"><Spinner /></div>
-          ) : facultyDetails ? (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="space-y-1">
-                <p className="text-[10px] font-bold uppercase tracking-widest opacity-50">Designation</p>
-                <p className="font-semibold">{facultyDetails.designation || '—'}</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-[10px] font-bold uppercase tracking-widest opacity-50">Qualifications</p>
-                <p className="font-semibold">{facultyDetails.qualification || '—'}</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-[10px] font-bold uppercase tracking-widest opacity-50">Specialization</p>
-                <p className="font-semibold">{facultyDetails.specialization || '—'}</p>
-              </div>
-              <div className="space-y-1">
-                <p className="text-[10px] font-bold uppercase tracking-widest opacity-50">Joining Date</p>
-                <p className="font-semibold">{facultyDetails.joining_date || '—'}</p>
-              </div>
-            </div>
-          ) : (
-            <p className="text-sm opacity-50 italic text-center py-4">Detailed faculty profile data not available</p>
-          )}
-        </div>
-      )}
 
       {/* Security - Password Change */}
       <div className="glass-card p-6 space-y-6">
@@ -180,6 +164,18 @@ export default function ProfilePage() {
           <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>Update your password to keep your account secure.</p>
           
           <div className="space-y-4">
+            <div>
+              <label className="form-label">Current Password</label>
+              <input 
+                type="password"
+                className="input-field mt-2"
+                placeholder="Enter current password"
+                value={passwordForm.currentPassword}
+                onChange={e => setPasswordForm({ ...passwordForm, currentPassword: e.target.value })}
+                disabled={demoMode}
+              />
+            </div>
+
             <div>
               <label className="form-label">New Password</label>
               <div className="relative mt-2">

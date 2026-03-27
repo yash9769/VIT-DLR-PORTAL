@@ -3,7 +3,7 @@ import { Search, CheckCircle, AlertTriangle, ChevronRight, ChevronLeft, Clock } 
 import { Modal, toast } from '../ui'
 import { supabase } from '../../lib/supabase'
 import { useAuth } from '../../context/AuthContext'
-import { getDayName, today } from '../../utils/helpers'
+import { getDayName, today, sendNotification, formatDate } from '../../utils/helpers'
 import { DEMO_FACULTY_LIST, DEMO_TIMETABLE } from '../../lib/demoData'
 
 const DEMO_MODE = !import.meta.env.VITE_SUPABASE_URL
@@ -199,6 +199,12 @@ export default function AdminProxyModal({ open, onClose, onSuccess }) {
 
       const { error } = await supabase.from('substitutions').insert(records)
       if (error) throw error
+
+      // Notify both faculty
+      await Promise.all([
+        sendNotification(supabase, absentFaculty.id, 'Proxy Assigned', `${proxyFaculty.full_name} will cover your ${selectedLectures.length} lecture(s) on ${formatDate(todayStr)}.`, 'info'),
+        sendNotification(supabase, proxyFaculty.id, 'New Proxy Assignment', `You have been assigned to cover ${selectedLectures.length} lecture(s) for ${absentFaculty.full_name} on ${formatDate(todayStr)}.`, 'info')
+      ])
 
       toast.success('Proxy assigned successfully')
       onSuccess?.()
