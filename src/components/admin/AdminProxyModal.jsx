@@ -467,11 +467,11 @@ export default function AdminProxyModal({ open, onClose, onSuccess }) {
       )}
 
       {/* Navigation */}
-      <div className="flex gap-3 mt-6 pt-4 border-t" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
+      <div className="flex gap-3 mt-6 pt-4 border-t" style={{ borderColor: 'rgba(255,255,255,0.08)', paddingBottom: 'env(safe-area-inset-bottom)' }}>
         {step > 0 ? (
           <button
             onClick={() => setStep(s => s - 1)}
-            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all"
+            className="flex items-center gap-2 px-5 py-2.5 rounded-xl text-sm font-semibold transition-all min-h-[48px]"
             style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--text-secondary)' }}
           >
             <ChevronLeft className="w-4 h-4" /> Back
@@ -479,7 +479,7 @@ export default function AdminProxyModal({ open, onClose, onSuccess }) {
         ) : (
           <button
             onClick={onClose}
-            className="px-5 py-2.5 rounded-xl text-sm font-semibold"
+            className="px-5 py-2.5 rounded-xl text-sm font-semibold min-h-[48px]"
             style={{ background: 'rgba(255,255,255,0.06)', color: 'var(--text-secondary)' }}
           >
             Cancel
@@ -490,7 +490,7 @@ export default function AdminProxyModal({ open, onClose, onSuccess }) {
           <button
             onClick={() => setStep(s => s + 1)}
             disabled={!canProceed || (step === 1 && loadingSchedule)}
-            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold btn-primary disabled:opacity-40 disabled:cursor-not-allowed"
+            className="flex-1 flex items-center justify-center gap-2 py-2.5 rounded-xl text-sm font-bold btn-primary disabled:opacity-40 disabled:cursor-not-allowed min-h-[48px]"
           >
             Next <ChevronRight className="w-4 h-4" />
           </button>
@@ -498,7 +498,7 @@ export default function AdminProxyModal({ open, onClose, onSuccess }) {
           <button
             onClick={handleSubmit}
             disabled={submitting}
-            className="flex-1 btn-primary py-2.5 text-sm flex items-center justify-center gap-2 disabled:opacity-60"
+            className="flex-1 btn-primary py-2.5 text-sm flex items-center justify-center gap-2 disabled:opacity-60 min-h-[48px]"
           >
             {submitting ? 'Saving…' : 'Save Proxy Assignment'}
           </button>

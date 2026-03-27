@@ -1,7 +1,6 @@
-import { useState, useEffect, useMemo } from 'react'
-import { Plus, Edit2, Search, Users } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
-import { Modal, toast } from '../../components/ui'
+import { Modal, toast, ConfirmDialog } from '../../components/ui'
+import { formatDivName } from '../../utils/helpers'
 
 export default function StudentsPage() {
   const [students, setStudents] = useState([])
@@ -135,7 +134,11 @@ export default function StudentsPage() {
         <select className="select-field text-sm" value={filterDiv}
           onChange={e => { setFilterDiv(e.target.value); setFilterBatch('') }}>
           <option value="">All Divisions</option>
-          {filteredDivisions.map(d => <option key={d.id} value={d.id}>{d.division_name} (Yr {d.year})</option>)}
+          {filteredDivisions.map(d => (
+            <option key={d.id} value={d.id}>
+              {filterSem ? formatDivName(d.division_name, filterSem) : `${d.division_name} (Sem ${d.semester})`}
+            </option>
+          ))}
         </select>
 
         <select className="select-field text-sm" value={filterBatch}

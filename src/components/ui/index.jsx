@@ -17,7 +17,7 @@ export const Spinner = ({ size = 'md', className = '' }) => {
 
 // ─── Loading Screen ──────────────────────────────────────────────────────────
 export const LoadingScreen = ({ text = 'Loading…' }) => (
-  <div className="fixed inset-0 flex flex-col items-center justify-center gap-4" style={{ background: 'var(--bg-primary)' }}>
+  <div className="fixed inset-0 z-[200] flex flex-col items-center justify-center gap-4" style={{ background: 'var(--bg-primary)' }}>
     <div className="w-24 h-24 flex items-center justify-center mb-4 relative">
       <div className="absolute inset-0 bg-brand-500/10 rounded-full blur-2xl animate-pulse" />
       <img 
@@ -86,7 +86,7 @@ export const ToastProvider = () => {
   }, [])
 
   return (
-    <div className="fixed top-4 right-4 z-50 flex flex-col gap-2">
+    <div className="fixed top-4 right-4 z-[200] flex flex-col gap-2">
       {toasts.map(t => (
         <Toast key={t.id} {...t} onClose={() => setToasts(prev => prev.filter(x => x.id !== t.id))} />
       ))}
@@ -107,7 +107,7 @@ export const Modal = ({ open, onClose, title, children, size = 'md' }) => {
   const sizes = { sm: 'max-w-sm', md: 'max-w-lg', lg: 'max-w-2xl', xl: 'max-w-4xl', full: 'max-w-6xl' }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-[2px]" onClick={(e) => e.target === e.currentTarget && onClose?.()}>
+    <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-[2px]" onClick={(e) => e.target === e.currentTarget && onClose?.()}>
       <div className={cls('glass-card w-full animate-slide-up overflow-hidden bg-white shadow-2xl', sizes[size])}>
         <div className="flex items-center justify-between p-5 border-b border-slate-100">
           <h2 className="font-display font-semibold text-base" style={{ color: 'var(--text-primary)' }}>{title}</h2>

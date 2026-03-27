@@ -96,8 +96,8 @@ export default function AdminLayout() {
       <div className="hidden lg:flex h-full flex-shrink-0"><SidebarContent /></div>
       {mobileOpen && (
         <>
-          <div className="fixed inset-0 z-40 lg:hidden" style={{ background: 'rgba(0,0,0,0.6)' }} onClick={() => setMobileOpen(false)} />
-          <div className="fixed left-0 top-0 bottom-0 z-50 lg:hidden"><SidebarContent mobile /></div>
+          <div className="fixed inset-0 z-[100] lg:hidden" style={{ background: 'rgba(0,0,0,0.6)' }} onClick={() => setMobileOpen(false)} />
+          <div className="fixed left-0 top-0 bottom-0 z-[110] lg:hidden"><SidebarContent mobile /></div>
         </>
       )}
       <div className="flex-1 flex flex-col overflow-hidden">
@@ -133,7 +133,7 @@ export default function AdminLayout() {
 
         {/* Notification panel */}
         {showNotifications && (
-          <div className="fixed top-16 right-6 z-50 w-80 glass-card animate-slide-up shadow-2xl" style={{ maxHeight: '60vh', overflowY: 'auto' }}>
+          <div className="fixed top-16 right-6 z-[120] w-80 glass-card animate-slide-up shadow-2xl" style={{ maxHeight: '60vh', overflowY: 'auto' }}>
             <div className="p-4 border-b flex items-center justify-between" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
               <div>
                 <p className="font-display font-semibold text-sm">Notifications</p>
@@ -182,7 +182,7 @@ export default function AdminLayout() {
         <main className="flex-1 overflow-y-auto relative">
           <Outlet />
           {/* Overlay to close notifications when clicking outside */}
-          {showNotifications && <div className="absolute inset-0 z-40" onClick={() => setShowNotifications(false)} />}
+          {showNotifications && <div className="absolute inset-0 z-[110]" onClick={() => setShowNotifications(false)} />}
         </main>
       </div>
     </div>

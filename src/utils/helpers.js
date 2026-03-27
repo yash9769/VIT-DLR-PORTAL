@@ -80,6 +80,18 @@ export const detectConflicts = (newEntry, existingEntries, excludeId = null) => 
   return conflicts
 }
 
+// Division name formatter: INFT-4-A -> A (if sem is filtered/known)
+export const formatDivName = (name, isSync = false) => {
+  if (!name) return '—'
+  // If sync'd (semester selected), strip the prefix like "INFT-4-"
+  if (isSync) {
+    // Matches patterns like "PREFIX-SEM-DIV" or any string with two dashes
+    const match = name.match(/[^-]+-[^-]+-(.+)$/)
+    return match ? match[1] : name
+  }
+  return name
+}
+
 export const sendNotification = async (supabase, userId, title, message, type = 'info') => {
   if (!userId) return
   try {

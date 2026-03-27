@@ -105,6 +105,16 @@ export default function TimetablePage() {
     return true
   })
 
+  // Synchronize division filter when semester changes
+  useEffect(() => {
+    if (filterSem && filterDivision) {
+      const selectedDiv = divisions.find(d => d.id === filterDivision)
+      if (selectedDiv && selectedDiv.semester != filterSem) {
+        setFilterDivision('')
+      }
+    }
+  }, [filterSem, divisions])
+
   // Label helpers
   const facultyLabel = (t) => t.custom_faculty || t.faculty?.full_name || '—'
   const facultyInitials = (t) => t.faculty?.initials || (t.faculty?.full_name ? t.faculty.full_name.split(' ').map(w => w[0]).join('') : (t.custom_faculty ? t.custom_faculty.slice(0,3).toUpperCase() : '—'))
@@ -123,6 +133,18 @@ export default function TimetablePage() {
   }
   const roomLabel = (t) => t.custom_room || t.rooms?.room_number || '—'
   const timeSlotLabel = (t) => t.custom_time_slot || t.time_slots?.slot_label?.replace('Lab: ', '') || '—'
+
+  // Division Name Cleaner (e.g., INFT-4-A -> A)
+  const formatDivName = (name, semId) => {
+    if (!name) return '—'
+    // If we have a filterSem or a specific division is linked to a sem in the modal
+    if (semId || filterSem) {
+      // Regex to match patterns like "INFT-4-A" or "IT-6-B"
+      const match = name.match(/[^-]+-[^-]+-(.+)$/)
+      return match ? match[1] : name
+    }
+    return name
+  }
 
   const openCreate = () => {
     setForm(emptyForm)
@@ -257,40 +279,42 @@ export default function TimetablePage() {
   const GridView = () => {
     const days = filterDay === 'All' ? DAYS : [filterDay]
     return (
-      <div className="overflow-x-auto border border-white/20 rounded-lg shadow-lg">
-        <table className="w-full text-xs border-collapse" style={{ minWidth: `${Math.max(600, days.length * 90 + 80)}px` }}>
+      <div className="overflow-x-auto border-2 border-slate-400 rounded-lg shadow-2xl" style={{ background: 'var(--bg-primary)' }}>
+        <table className="w-full text-xs border-collapse timetable-grid" style={{ minWidth: `${Math.max(600, days.length * 100 + 100)}px` }}>
           <thead>
             <tr>
-              <th className="p-1 px-2 text-left font-semibold sticky left-0 z-10 border border-white/20" style={{ color: 'var(--text-secondary)', width: '80px', background: 'var(--bg-secondary)' }}>Time Slot</th>
-              {days.map(d => <th key={d} className="p-1 text-center font-semibold border border-white/20" style={{ color: 'var(--text-secondary)' }}>{d.slice(0,3)}</th>)}
+              <th className="p-2 px-3 text-left font-bold sticky left-0 z-20 border-r-2 border-b-2 border-slate-500" style={{ color: '#1e293b', width: '110px', background: '#f8fafc' }}>TIME</th>
+              {days.map(d => <th key={d} className="p-2 text-center font-bold border-r-2 border-b-2 border-slate-500 truncate" style={{ color: '#334155', background: '#f1f5f9' }}>{d.toUpperCase()}</th>)}
             </tr>
           </thead>
           <tbody>
             {/* 1-hour slots */}
-            <tr><td colSpan={days.length + 1} className="px-1 pt-1 opacity-50">
-              <p className="text-[9px] font-bold uppercase tracking-widest">Regular Lectures</p>
-            </td></tr>
+            <tr style={{ background: '#f8fafc' }}>
+              <td colSpan={days.length + 1} className="px-3 py-1.5 border-b-2 border-slate-600/50 border-r-2 border-slate-600/50">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em] text-brand-600">Regular Lectures</p>
+              </td>
+            </tr>
             {regularSlots.map(slot => {
               const hasAny = filtered.some(t => t.time_slot_id === slot.id)
               return (
-                <tr key={slot.id} className="border-t" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
-                  <td className="p-1 px-2 font-mono text-[10px] sticky left-0 z-10 border border-white/20" style={{ color: 'var(--text-secondary)', verticalAlign: 'middle', background: 'var(--bg-secondary)' }}>
+                <tr key={slot.id} className="hover:bg-slate-50 transition-colors">
+                  <td className="p-2 px-3 font-mono text-[10px] font-bold sticky left-0 z-20 border-r-2 border-b-2 border-slate-500" style={{ color: '#475569', verticalAlign: 'middle', background: '#f8fafc' }}>
                     {slot.slot_label.split('(')[0]}
                   </td>
                   {days.map(day => {
                     const entries = filtered.filter(t => t.day_of_week === day && t.time_slot_id === slot.id).sort((a, b) => (a.batch_number || 0) - (b.batch_number || 0))
                     return (
-                      <td key={day} className="p-0.5 border border-white/20" style={{ verticalAlign: 'top', minWidth: '90px' }}>
+                      <td key={day} className="p-1 border-r-2 border-b-2 border-slate-400" style={{ verticalAlign: 'top', minWidth: '100px' }}>
                         {entries.map(e => {
-                          const bc = e.batch_number ? getBatchColor(Number(e.batch_number)) : { bg: 'rgba(74,108,247,0.12)', border: 'rgba(74,108,247,0.25)', text: '#7090ff' }
+                          const bc = e.batch_number ? getBatchColor(Number(e.batch_number)) : { bg: 'rgba(74,108,247,0.15)', border: 'rgba(74,108,247,0.4)', text: '#4a6cf7' }
                           return (
-                            <div key={e.id} className="p-0.5 px-1 rounded text-[10px] cursor-pointer group relative flex flex-col items-center justify-center text-center leading-[1.1]"
-                              style={{ background: bc.bg, border: `1px solid ${bc.border}` }}
+                            <div key={e.id} className="p-0.5 px-1 rounded text-[10px] cursor-pointer group relative flex flex-col items-center justify-center text-center leading-[1.1] mb-0.5"
+                              style={{ background: bc.bg, border: `1.5px solid ${bc.border}` }}
                               onClick={() => openEdit(e)}>
                               <p className="font-bold truncate w-full" style={{ color: bc.text }}>{subjectShortLabel(e)}</p>
-                              <p className="opacity-80 truncate w-full font-medium" style={{ color: 'var(--text-secondary)', fontSize: '8.5px' }}>
+                              <p className="opacity-80 truncate w-full font-bold" style={{ color: '#475569', fontSize: '8.5px' }}>
                                 {facultyInitials(e)} · {roomLabel(e)}
-                                {e.batch_number && <span className="ml-0.5 opacity-100 font-bold" style={{color: bc.text}}>(B{e.batch_number})</span>}
+                                {e.batch_number && <span className="ml-0.5 opacity-100 font-black" style={{color: bc.text}}>(B{e.batch_number})</span>}
                               </p>
                               
                               <div className="absolute inset-0 hidden group-hover:flex items-center justify-center gap-1 bg-black/60 rounded">
@@ -306,36 +330,38 @@ export default function TimetablePage() {
                 </tr>
               )
             })}
-
+ 
             {/* 2-hour lab slots */}
-            <tr><td colSpan={days.length + 1} className="px-1 pt-2 opacity-50">
-              <p className="text-[9px] font-bold uppercase tracking-widest" style={{ color: '#d29922' }}>
-                Lab / Elective Slots
-              </p>
-            </td></tr>
+            <tr style={{ background: '#fffbeb' }}>
+              <td colSpan={days.length + 1} className="px-3 py-1.5 border-b-2 border-slate-600/50 border-t-2 border-t-slate-600/50 border-r-2 border-slate-600/50">
+                <p className="text-[10px] font-black uppercase tracking-[0.2em]" style={{ color: '#d97706' }}>
+                  Lab / Elective Slots
+                </p>
+              </td>
+            </tr>
             {labSlots.map(slot => (
-              <tr key={slot.id} className="border-t" style={{ borderColor: 'rgba(210,153,34,0.15)' }}>
-                <td className="p-1 px-2 font-mono text-[10px] sticky left-0 z-10 border border-white/20" style={{ color: '#d29922', verticalAlign: 'middle', background: 'var(--bg-secondary)' }}>
-                  <FlaskConical className="w-2.5 h-2.5 inline mr-1 opacity-70" />
+              <tr key={slot.id} className="hover:bg-amber-50/30 transition-colors">
+                <td className="p-2 px-3 font-mono text-[10px] font-bold sticky left-0 z-20 border-r-2 border-b-2 border-slate-500" style={{ color: '#d97706', verticalAlign: 'middle', background: '#fffbeb' }}>
+                  <FlaskConical className="w-2.5 h-2.5 inline mr-1 opacity-80" />
                   {slot.slot_label.replace('Lab: ', '').split('(')[0]}
                 </td>
                 {days.map(day => {
                   const entries = filtered.filter(t => t.day_of_week === day && t.time_slot_id === slot.id).sort((a, b) => (a.batch_number || 0) - (b.batch_number || 0))
                   return (
-                    <td key={day} className="p-0.5 border border-white/20" style={{ verticalAlign: 'top', minWidth: '90px' }}>
+                    <td key={day} className="p-1 border-r-2 border-b-2 border-slate-400" style={{ verticalAlign: 'top', minWidth: '100px' }}>
                       <div className="flex flex-wrap gap-0.5">
                         {entries.map(e => {
-                          const bc = e.batch_number ? getBatchColor(Number(e.batch_number)) : { bg: 'rgba(210,153,34,0.12)', border: 'rgba(210,153,34,0.3)', text: '#d29922' }
+                          const bc = e.batch_number ? getBatchColor(Number(e.batch_number)) : { bg: 'rgba(210,153,34,0.15)', border: 'rgba(210,153,34,0.4)', text: '#d97706' }
                           return (
                             <div key={e.id} className="p-0.5 px-1 rounded text-[10px] cursor-pointer group relative flex-1 min-w-[70px] flex flex-col items-center justify-center text-center leading-[1.1]"
-                              style={{ background: bc.bg, border: `1px solid ${bc.border}` }}
+                              style={{ background: bc.bg, border: `1.5px solid ${bc.border}` }}
                               onClick={() => openEdit(e)}>
                               <p className="font-bold truncate w-full" style={{ color: bc.text }}>
                                 {e.batch_number && <span className="font-black mr-0.5">B{e.batch_number}</span>}
                                 {subjectShortLabel(e)}
                               </p>
-                              <p className="opacity-80 truncate w-full mt-0.5" style={{ color: 'var(--text-secondary)', fontSize: '8.5px' }}>
-                                <span className="font-bold">{facultyInitials(e)}</span> · {roomLabel(e)}
+                              <p className="opacity-80 truncate w-full mt-0.5 font-bold" style={{ color: '#78350f', fontSize: '8.5px' }}>
+                                <span className="font-black">{facultyInitials(e)}</span> · {roomLabel(e)}
                               </p>
                               
                               <div className="absolute inset-0 hidden group-hover:flex items-center justify-center gap-1 bg-black/60 rounded">
@@ -355,7 +381,7 @@ export default function TimetablePage() {
             
             {/* Custom Time Slots notice */}
             {filtered.some(t => t.custom_time_slot) && (
-              <tr><td colSpan={days.length + 1} className="px-2 pt-4 pb-2 text-center text-[10px] opacity-50 italic">
+              <tr><td colSpan={days.length + 1} className="px-2 pt-4 pb-2 text-center text-[10px] opacity-50 italic border-l-2 border-r-2 border-b-2 border-slate-500">
                 Entries with Custom Time Slots appear only in List View.
               </td></tr>
             )}
@@ -436,7 +462,13 @@ export default function TimetablePage() {
             </select>
             <select className="select-field text-sm flex-1 min-w-[130px]" value={filterDivision} onChange={e => setFilterDivision(e.target.value)}>
               <option value="">All Divisions</option>
-              {divisions.filter(d => !filterSem || d.semester == filterSem).map(d => <option key={d.id} value={d.id}>{d.division_name}</option>)}
+              {divisions
+                .filter(d => !filterSem || d.semester == filterSem)
+                .map(d => (
+                  <option key={d.id} value={d.id}>
+                    {filterSem ? formatDivName(d.division_name, filterSem) : `${d.division_name} (Sem ${d.semester})`}
+                  </option>
+                ))}
             </select>
             <select className="select-field text-sm flex-1 min-w-[110px]" value={filterBatch} onChange={e => setFilterBatch(e.target.value)}>
               <option value="">All Batches</option>
@@ -519,11 +551,39 @@ export default function TimetablePage() {
             options={faculties.map(f => <option key={f.id} value={f.id}>{f.full_name}</option>)} />
 
           <div className="grid grid-cols-2 gap-4">
+            <div className="flex flex-col gap-1">
+              <label className="form-label mb-0">Sem {(!form.division_id && !useCustomDivision) && <span className="text-red-400">*</span>}</label>
+              <select className="select-field" 
+                value={divisions.find(d => d.id === form.division_id)?.semester || ''}
+                onChange={async (e) => {
+                  const s = e.target.value
+                  // We don't store sem on timetable directly, but we use it to filter divisions
+                  // If current division doesn't match new sem, clear it
+                  const currentDiv = divisions.find(d => d.id === form.division_id)
+                  if (currentDiv && currentDiv.semester != s) {
+                    setForm(f => ({ ...f, division_id: '' }))
+                  }
+                }}>
+                <option value="">Select Sem…</option>
+                {[4, 6, 8].map(s => <option key={s} value={s}>Semester {s}</option>)}
+              </select>
+            </div>
+
             <FieldToggle label="Division" dropPlaceholder="Select Div…" textPlaceholder="e.g. FY-A, Special Batch…"
               useCustom={useCustomDivision} setUseCustom={setUseCustomDivision}
               dropdownValue={form.division_id} onChangeDrop={v => { setForm(f => ({ ...f, division_id: v, custom_division: '' })); setConflicts([]) }}
               textValue={form.custom_division} onChangeText={v => setForm(f => ({ ...f, custom_division: v, division_id: '' }))}
-              options={divisions.map(d => <option key={d.id} value={d.id}>{d.division_name}</option>)} />
+              options={(() => {
+                const selectedSem = divisions.find(d => d.id === form.division_id)?.semester || document.querySelector('select[value=""]')?.value // This is tricky in React
+                // Actually, let's just use a local state for the modal's sem filter if needed, 
+                // but since we want to be able to pick ANY division if sem is not selected:
+                const semInModal = divisions.find(d => d.id === form.division_id)?.semester
+                return divisions
+                  .filter(d => !semInModal || d.semester == semInModal)
+                  .map(d => <option key={d.id} value={d.id}>
+                    {semInModal ? formatDivName(d.division_name, semInModal) : `${d.division_name} (Sem ${d.semester})`}
+                  </option>)
+              })()} />
             
             <div>
               <label className="form-label">Batch <span className="opacity-50 text-xs">(optional)</span></label>

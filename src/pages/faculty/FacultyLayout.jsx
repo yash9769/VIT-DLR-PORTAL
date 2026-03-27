@@ -72,7 +72,7 @@ export default function FacultyLayout() {
 
       {/* Notification panel */}
       {showNotifications && (
-        <div className="fixed top-16 right-4 z-40 w-80 glass-card animate-slide-up shadow-2xl" style={{ maxHeight: '60vh', overflowY: 'auto' }}>
+        <div className="fixed top-16 right-4 z-[110] w-80 glass-card animate-slide-up shadow-2xl" style={{ maxHeight: '60vh', overflowY: 'auto' }}>
           <div className="p-4 border-b flex items-center justify-between" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
             <div>
               <p className="font-display font-semibold text-sm">Notifications</p>
@@ -160,7 +160,7 @@ export default function FacultyLayout() {
       </nav>
 
       {/* Tap to close overlay */}
-      {showNotifications && <div className="fixed inset-0 z-30" onClick={() => setShowNotifications(false)} />}
+      {showNotifications && <div className="fixed inset-0 z-[100]" onClick={() => setShowNotifications(false)} />}
     </div>
   )
 }

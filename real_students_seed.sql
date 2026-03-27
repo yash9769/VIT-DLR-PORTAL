@@ -21,7 +21,10 @@ BEGIN
   ('INFT-4-C', 2, 4, 'INFT', 75),
   ('INFT-6-A', 3, 6, 'INFT', 80),
   ('INFT-6-B', 3, 6, 'INFT', 80),
-  ('INFT-6-C', 3, 6, 'INFT', 75)
+  ('INFT-6-C', 3, 6, 'INFT', 75),
+  ('INFT-8-A', 4, 8, 'INFT', 80),
+  ('INFT-8-B', 4, 8, 'INFT', 80),
+  ('INFT-8-C', 4, 8, 'INFT', 75)
   ON CONFLICT (division_name, department, year) DO UPDATE SET 
     year = EXCLUDED.year,
     semester = EXCLUDED.semester,
@@ -515,6 +518,173 @@ BEGIN
     INSERT INTO public.students (division_id, roll_number, full_name, batch_number, is_active) VALUES (v_div_id, '24101C2007', 'CHIRAG SHARMA', 4, true);
     INSERT INTO public.students (division_id, roll_number, full_name, batch_number, is_active) VALUES (v_div_id, '24101C2008', 'RIYA MISHRA', 4, true);
     INSERT INTO public.students (division_id, roll_number, full_name, batch_number, is_active) VALUES (v_div_id, '24101C2009', 'TANYA JHA', 4, true);
+  END IF;
+
+  -- Division: INFT-8-A
+  SELECT id INTO v_div_id FROM public.divisions WHERE division_name = 'INFT-8-A' LIMIT 1;
+  IF v_div_id IS NOT NULL THEN
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101A0002','Siddhi Shinde', v_div_id, 1);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101A0003','Asmita Jadhav', v_div_id, 1);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101A0004','Amrita De', v_div_id, 1);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101A0005','Vainavi Lad', v_div_id, 1);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101A0006','Mrugank Vichare', v_div_id, 1);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101A0007','Neetish Dhavgaye', v_div_id, 1);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101A0008','Arpit Hande', v_div_id, 1);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101A0009','Renuka Kadam', v_div_id, 1);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101A0010','Insha Khan', v_div_id, 1);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101A0011','Komal  Jadhav', v_div_id, 1);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101A0012','Dipika Dattatray Gadekar', v_div_id, 1);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101A0013','Abhijeet pomane', v_div_id, 1);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101A0014','Ganesh Tukaram Waghmare', v_div_id, 1);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101A0015','Saurav Sanjay mate', v_div_id, 1);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101A0016','Anuj Gill', v_div_id, 1);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101A0018','Yash Vivek Sawant', v_div_id, 1);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101A0022','Yash Rupesh Pagar', v_div_id, 1);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101A0025','Anushka Thacore', v_div_id, 1);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101A0026','Prajakta Nitin Chorge', v_div_id, 1);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101A0027','Sahil Shangloo', v_div_id, 2);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101A0028','Sankalp Rajendra Wani', v_div_id, 2);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101A0029','Pratik Jitendra Sawant', v_div_id, 2);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101A0030','Rasika Jade', v_div_id, 2);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101A0031','Vinay Uttam Pawar', v_div_id, 2);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101A0032','Ruchika Chavan', v_div_id, 2);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101A0033','Tejas Kunde', v_div_id, 2);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101A0034','Tanvi Kharade', v_div_id, 2);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101A0035','Abhijit Vinayak Palve', v_div_id, 2);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101A0036','Harshal sonawane', v_div_id, 2);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101A0037','Sonal Solaskar', v_div_id, 2);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101A0038','Himanshu Narendra Pathak', v_div_id, 2);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101A0039','Rutuja Sargar', v_div_id, 2);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101A0040','Roshan Vilas Khatal', v_div_id, 2);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101A0041','Abhishek Deepak Pawaskar', v_div_id, 2);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101A0042','Rohan Shatrughan Bage', v_div_id, 2);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101A0043','Arya Chavan', v_div_id, 2);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101A0044','Abhinav Upadhyay', v_div_id, 2);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101A0045','Pavankumar Fasale', v_div_id, 2);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101A0046','Divya Poojari', v_div_id, 3);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101A0047','Harsh Rawte', v_div_id, 3);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101A0048','Saiel Lad', v_div_id, 3);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101A0049','Arkan Khan', v_div_id, 3);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101A0050','Aryan kelshikar', v_div_id, 3);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101A0051','Rakshit Naik', v_div_id, 3);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101A0053','Harshada Chaudhari', v_div_id, 3);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101A0054','Yash Newalkar', v_div_id, 3);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101A0055','Sanskruti Kalpesh Mistry', v_div_id, 3);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101A0056','Kalpak Kulkarni', v_div_id, 3);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101A0057','Siddhesh Kadam', v_div_id, 3);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101A0058','Tanmay Thakare', v_div_id, 3);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101A0059','Gargi Kshirsagar', v_div_id, 3);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101A0060','Arpit Gaikwad', v_div_id, 3);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101A0062','Lekhanshu Ganveer', v_div_id, 3);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101A0063','Rugved Mokashi', v_div_id, 3);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101A0064','Parth Kale', v_div_id, 3);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101A0065','Jayant Pravin Dethe', v_div_id, 3);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101A0066','Omkar Mane', v_div_id, 3);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101A0067','Abhishek Pal', v_div_id, 1);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101A0068','Lakhan Subhash Kale', v_div_id, 1);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101A0069','Karan goyal', v_div_id, 1);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101A0070','Rutuja Harish Bangera', v_div_id, 1);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101A0071','Parth gupta', v_div_id, 1);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101A0072','Atharv Mahale', v_div_id, 1);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101A0073','Om Alve', v_div_id, 1);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101A0074','Ajay Ramkisan mali', v_div_id, 1);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101A0075','Bhagyoday bade', v_div_id, 1);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101A0076','Aditi Rao', v_div_id, 1);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101A0077','Riya Singh', v_div_id, 1);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101A0078','Sampurna Prabhu', v_div_id, 1);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101A0079','Sujal Lambour', v_div_id, 1);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('23101A2001','Shlok Banubakode', v_div_id, 1);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('23101A2002','Asmika Panchal', v_div_id, 1);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('23101A2003','Vismay vikas whavle', v_div_id, 1);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('23101A2004','Vaishnavi Rajguru', v_div_id, 1);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('23101A2005','Amey Sandip Gaikwad', v_div_id, 1);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('23101A2006','Mansi Sitaram Burud', v_div_id, 1);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('23101A2007','Kunal Subhash Mundhe', v_div_id, 1);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('23101A2008','Niriksha Nitendra Shivalkar', v_div_id, 1);
+  END IF;
+
+  -- Division: INFT-8-B
+  SELECT id INTO v_div_id FROM public.divisions WHERE division_name = 'INFT-8-B' LIMIT 1;
+  IF v_div_id IS NOT NULL THEN
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('16101B0071','Tushar Kadvatar', v_div_id, 1);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101B0001','Sanjana Kurade', v_div_id, 1);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101B0002','Sasmit Sakpal', v_div_id, 1);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101B0003','Atharva Ajagekar', v_div_id, 1);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101B0004','Shravani Jayprakash Borji', v_div_id, 1);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101B0005','Sarthak Borde', v_div_id, 1);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101B0006','Sahil Sanjay Sakpal', v_div_id, 1);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101B0007','Nilay Pandya', v_div_id, 1);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101B0008','Chinmay Tikole', v_div_id, 1);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101B0009','Arya Pandey', v_div_id, 1);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101B0010','Ayush Bitla', v_div_id, 1);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101B0011','Sneha Brahmane', v_div_id, 1);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101B0012','Atharva Jamdade', v_div_id, 1);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101B0013','Mansi Patil', v_div_id, 1);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101B0014','Tejas Tanaji Shinde', v_div_id, 1);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101B0015','Anish Pimple', v_div_id, 1);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101B0016','Sanika Jade', v_div_id, 1);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101B0017','Ameya Mahajan', v_div_id, 1);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101B0018','Dip Sonu Sawant', v_div_id, 2);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101B0019','Sumit jaywant bhoir', v_div_id, 2);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101B0022','Mohit koli', v_div_id, 2);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101B0023','Sahil Ansari', v_div_id, 2);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101B0025','Mohd Ismail Quadri', v_div_id, 2);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101B0026','Halim Shaikh', v_div_id, 2);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101B0027','Riya Pal', v_div_id, 2);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101B0028','Eshaan Padhye', v_div_id, 2);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101B0029','Siddhesh Sunil Gharat', v_div_id, 2);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101B0030','Aniket Panchal', v_div_id, 2);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101B0031','Pradyumna Kale', v_div_id, 2);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101B0032','Sahil Hemant Thale', v_div_id, 2);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101B0034','Ishwari Raut', v_div_id, 2);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101B0036','Aditya Shahi', v_div_id, 2);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101B0037','Aneesh Angane', v_div_id, 2);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101B0038','Akshay Gabhane', v_div_id, 2);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101B0039','Atharv Patil', v_div_id, 2);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101B0040','Gaurav Khanna', v_div_id, 2);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101B0041','Tanishka Kasliwal', v_div_id, 2);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101B0042','Shubham Shinde', v_div_id, 2);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101B0043','Mayur Parab', v_div_id, 3);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101B0045','Mangeshkumar Shah', v_div_id, 3);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101B0046','Amaan Kasu', v_div_id, 3);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101B0049','Om Ramesh Singh', v_div_id, 3);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101B0050','Pavankumar Singh', v_div_id, 3);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101B0051','Rishil Ramdhumal', v_div_id, 3);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101B0052','Mrunal Sangade', v_div_id, 3);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101B0053','Soham Ghogare', v_div_id, 3);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101B0054','Soham Bagayatkar', v_div_id, 3);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101B0055','Varun Kirkire', v_div_id, 3);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101B0056','Atharva Urankar', v_div_id, 3);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101B0057','Mrunmayee Yadav', v_div_id, 3);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101B0058','Aarya Patil', v_div_id, 3);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101B0059','Bandiwadekar', v_div_id, 3);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101B0060','Srushti jadhav', v_div_id, 3);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101B0061','Sairaj Ambre', v_div_id, 3);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101B0062','Rashmi Sahu', v_div_id, 3);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101B0063','Parth Karande', v_div_id, 3);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101B0064','Aareian Nakhawa', v_div_id, 3);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101B0065','Atharva Dali', v_div_id, 1);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101B0066','Arya Sanjay Sadigale', v_div_id, 1);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101B0067','Ayush Singh', v_div_id, 1);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101B0068','Tejas Dipak Chorage', v_div_id, 1);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101B0069','Saloni Varekar', v_div_id, 1);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101B0070','Ishaan Dhuri', v_div_id, 1);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101B0071','Sahil Naik', v_div_id, 1);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('22101B0072','Ganesh Choudhary', v_div_id, 1);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('23101B2001','Om sunil sagvekar', v_div_id, 1);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('23101B2002','Sanjay Mahabal', v_div_id, 1);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('23101B2003','Aditya Chikane', v_div_id, 1);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('23101B2004','Medha Avhad', v_div_id, 1);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('23101B2006','Chinmayee Avinash Deshmukh', v_div_id, 1);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('23101B2007','Vaishnavi dhanaji karape', v_div_id, 1);
+    INSERT INTO public.students (roll_number, full_name, division_id, batch_number) VALUES ('23101B2008','Aishwarya Prakash Huddar', v_div_id, 1);
+  END IF;
+
+  -- Division: INFT-8-C
+  SELECT id INTO v_div_id FROM public.divisions WHERE division_name = 'INFT-8-C' LIMIT 1;
+  IF v_div_id IS NOT NULL THEN
+    -- Removed mock actors as per user request
+    NULL;
   END IF;
 
 END $$;

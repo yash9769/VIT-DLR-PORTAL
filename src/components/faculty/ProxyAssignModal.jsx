@@ -164,11 +164,17 @@ export default function ProxyAssignModal({ open, onClose, profile, todaySchedule
   )
 
   return (
-    <div className="fixed inset-0 z-50 flex flex-col justify-end"
+    <div className="fixed inset-0 z-[100] flex flex-col justify-end"
       style={{ background: 'rgba(0,0,0,0.65)', backdropFilter: 'blur(4px)' }}
       onClick={e => e.target === e.currentTarget && onClose()}>
       <div ref={sheetRef} className="w-full rounded-t-3xl overflow-hidden flex flex-col animate-slide-up"
-        style={{ maxHeight: '90vh', background: 'var(--bg-secondary)', border: '1px solid rgba(255,255,255,0.08)', borderBottom: 'none' }}>
+        style={{ 
+          maxHeight: '94vh', 
+          background: 'var(--bg-secondary)', 
+          border: '1px solid rgba(255,255,255,0.08)', 
+          borderBottom: 'none',
+          paddingBottom: 'env(safe-area-inset-bottom)'
+        }}>
 
         {/* Drag handle */}
         <div className="flex justify-center pt-3 pb-1 flex-shrink-0">
@@ -367,7 +373,7 @@ export default function ProxyAssignModal({ open, onClose, profile, todaySchedule
         </div>
 
         {/* Navigation footer */}
-        <div className="flex gap-3 px-5 py-4 border-t flex-shrink-0" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
+        <div className="flex gap-3 px-5 py-6 border-t flex-shrink-0" style={{ borderColor: 'rgba(255,255,255,0.08)', marginBottom: 'env(safe-area-inset-bottom)' }}>
           {/* Back / Cancel */}
           {step === 0 || (step === 1 && assigningFor) ? (
             <button onClick={step === 0 ? onClose : () => { setAssigningFor(null); setSearch('') }}
