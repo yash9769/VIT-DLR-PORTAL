@@ -434,26 +434,39 @@ export default function SubmitLecture() {
       {/* ── STEP 2: Actual Lecture & Systems ──────────────────────────────────── */}
       {step === 2 && (
         <div className="space-y-6 animate-slide-up">
-          {/* Section 1: Timetable (Readonly) */}
-          <div className="glass-card p-4 space-y-3 opacity-80 bg-white/5">
+          <div className="glass-card p-4 space-y-4 bg-white/5">
             <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--text-secondary)' }}>Section 1: Timetable (As Per Timetable)</p>
-            <div className="grid grid-cols-2 gap-4 text-sm">
-              <div>
-                <label className="text-[10px] opacity-50 uppercase block mb-1">Timing</label>
-                <div className="font-semibold">{formatTime(form.timetable_from)} – {formatTime(form.timetable_to)}</div>
+            
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label className="text-[9px] font-bold uppercase tracking-wider opacity-60">Scheduled From</label>
+                <input type="time" className="w-full bg-white/5 border border-white/10 rounded-lg py-1.5 px-3 text-xs font-semibold"
+                       value={form.timetable_from} onChange={e => set('timetable_from', e.target.value)} />
               </div>
-              <div>
-                <label className="text-[10px] opacity-50 uppercase block mb-1">Faculty</label>
-                <div className="font-semibold">{form.timetable_faculty}</div>
+              <div className="space-y-1">
+                <label className="text-[9px] font-bold uppercase tracking-wider opacity-60">Scheduled To</label>
+                <input type="time" className="w-full bg-white/5 border border-white/10 rounded-lg py-1.5 px-3 text-xs font-semibold"
+                       value={form.timetable_to} onChange={e => set('timetable_to', e.target.value)} />
               </div>
-              <div>
-                <label className="text-[10px] opacity-50 uppercase block mb-1">Subject</label>
-                <div className="font-semibold">{form.timetable_subject}</div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4">
+              <div className="space-y-1">
+                <label className="text-[9px] font-bold uppercase tracking-wider opacity-60">Faculty</label>
+                <input type="text" className="w-full bg-white/5 border border-white/10 rounded-lg py-1.5 px-3 text-xs font-semibold"
+                       value={form.timetable_faculty} onChange={e => set('timetable_faculty', e.target.value)} />
               </div>
-              <div>
-                <label className="text-[10px] opacity-50 uppercase block mb-1">Division</label>
-                <div className="font-semibold">{form.timetable_division}</div>
+              <div className="space-y-1">
+                <label className="text-[9px] font-bold uppercase tracking-wider opacity-60">Subject</label>
+                <input type="text" className="w-full bg-white/5 border border-white/10 rounded-lg py-1.5 px-3 text-xs font-semibold"
+                       value={form.timetable_subject} onChange={e => set('timetable_subject', e.target.value)} />
               </div>
+            </div>
+
+            <div className="space-y-1">
+              <label className="text-[9px] font-bold uppercase tracking-wider opacity-60">Division</label>
+              <input type="text" className="w-full bg-white/5 border border-white/10 rounded-lg py-1.5 px-3 text-xs font-semibold"
+                     value={form.timetable_division} onChange={e => set('timetable_division', e.target.value)} />
             </div>
           </div>
 
@@ -612,19 +625,19 @@ export default function SubmitLecture() {
             <div className="space-y-3">
               <div className="flex items-center justify-between p-4 glass-card">
                 <label className="text-xs font-semibold">Assignments (of Last Week) Collected</label>
-                <input type="number" className="w-16 bg-white/5 border border-white/10 rounded-lg py-2 text-center font-bold"
+                <input type="number" min="0" className="w-16 bg-white/5 border border-white/10 rounded-lg py-2 text-center font-bold"
                        value={form.assignments_last_week} onChange={e => set('assignments_last_week', e.target.value)} />
               </div>
               
               <div className="flex items-center justify-between p-4 glass-card">
                 <label className="text-xs font-semibold">Assignments (for Coming Week) Given</label>
-                <input type="number" className="w-16 bg-white/5 border border-white/10 rounded-lg py-2 text-center font-bold"
+                <input type="number" min="0" className="w-16 bg-white/5 border border-white/10 rounded-lg py-2 text-center font-bold"
                        value={form.assignments_given} onChange={e => set('assignments_given', e.target.value)} />
               </div>
 
               <div className="flex items-center justify-between p-4 glass-card">
                 <label className="text-xs font-semibold">Prev. Week Graded and Distributed</label>
-                <input type="number" className="w-16 bg-white/5 border border-white/10 rounded-lg py-2 text-center font-bold"
+                <input type="number" min="0" className="w-16 bg-white/5 border border-white/10 rounded-lg py-2 text-center font-bold"
                        value={form.assignments_graded} onChange={e => set('assignments_graded', e.target.value)} />
               </div>
             </div>
