@@ -26,10 +26,10 @@ export default function RecordsPage() {
         .from('lecture_records')
         .select(`
           *,
-          subjects:subjects!subject_id (*),
-          divisions:divisions!division_id (*),
-          rooms:rooms!room_id (*),
-          faculty:users!faculty_id (id, full_name)
+          subjects:subjects!subject_id (id, subject_name, short_name),
+          divisions:divisions!division_id (id, division_name, semester),
+          rooms:rooms!room_id (id, room_number),
+          faculty:users!faculty_id (id, full_name, initials)
         `)
         .order('lecture_date', { ascending: false })
       

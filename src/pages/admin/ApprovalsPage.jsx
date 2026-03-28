@@ -31,11 +31,11 @@ export default function ApprovalsPage() {
         .from('lecture_records')
         .select(`
           *,
-          subjects:subjects!subject_id (*),
-          divisions:divisions!division_id (*),
-          rooms:rooms!room_id (*),
-          faculty:users!faculty_id (full_name),
-          original_faculty:users!original_faculty_id (full_name)
+          subjects:subjects!subject_id (id, subject_name, short_name, subject_code),
+          divisions:divisions!division_id (id, division_name, semester),
+          rooms:rooms!room_id (id, room_number),
+          faculty:users!faculty_id (id, full_name, initials),
+          original_faculty:users!original_faculty_id (id, full_name, initials)
         `)
         .order('lecture_date', { ascending: false })
       
@@ -90,7 +90,7 @@ export default function ApprovalsPage() {
       setLoadingAttendance(true)
       const { data, error } = await supabase
         .from('attendance')
-        .select('*, students(full_name, roll_number)')
+        .select('id, is_present, students(id, full_name, roll_number)')
         .eq('lecture_record_id', record.id)
         .order('students(roll_number)')
       

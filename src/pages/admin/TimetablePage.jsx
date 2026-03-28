@@ -67,11 +67,11 @@ export default function TimetablePage() {
   const fetchMasterData = async () => {
     try {
       const [f, s, d, r, st] = await Promise.all([
-        supabase.from('users').select('id, full_name').eq('role', 'faculty').order('full_name'),
-        supabase.from('subjects').select('*').order('subject_name'),
-        supabase.from('divisions').select('*').order('division_name'),
-        supabase.from('rooms').select('*').order('room_number'),
-        supabase.from('time_slots').select('*').order('slot_order')
+        supabase.from('users').select('id, full_name, initials').eq('role', 'faculty').order('full_name'),
+        supabase.from('subjects').select('id, subject_name, short_name, subject_code, semester').order('subject_name'),
+        supabase.from('divisions').select('id, division_name, semester, strength').order('division_name'),
+        supabase.from('rooms').select('id, room_number').order('room_number'),
+        supabase.from('time_slots').select('id, slot_label, start_time, end_time, slot_order').order('slot_order')
       ])
       setFaculties(f.data || [])
       setSubjects(s.data || [])
@@ -88,7 +88,14 @@ export default function TimetablePage() {
       setLoading(true)
       const { data, error } = await supabase
         .from('timetable')
-        .select(`*, subjects:subjects!subject_id(*), divisions:divisions!division_id(*), rooms:rooms!room_id(*), faculty:users!faculty_id(full_name, initials), time_slots:time_slots!time_slot_id(*)`)
+        .select(`
+          *, 
+          subjects:subjects!subject_id(id, subject_name, short_name, subject_code), 
+          divisions:divisions!division_id(id, division_name, semester), 
+          rooms:rooms!room_id(id, room_number), 
+          faculty:users!faculty_id(id, full_name, initials), 
+          time_slots:time_slots!time_slot_id(id, slot_label, start_time, end_time)
+        `)
       if (error) throw error
       setTimetable(data || [])
     } catch {
@@ -413,14 +420,14 @@ export default function TimetablePage() {
                               style={{ background: bc.bg, border: `1.5px solid ${bc.border}`, minHeight: '32px' }}
                               onClick={() => openEdit(e)}>
                               
-                              <div className="flex items-center gap-1.5 min-w-0">
-                                <span className="font-black whitespace-nowrap" style={{ color: bc.text, fontSize: '11px' }}>{subjectShortLabel(e)}</span>
-                                {e.batch_number && <span className="px-1 text-[8px] rounded-sm bg-black/5 font-black uppercase" style={{color: bc.text}}>B{e.batch_number}</span>}
+                              <div className="flex items-center gap-2 min-w-0">
+                                <span className="font-black whitespace-nowrap" style={{ color: bc.text, fontSize: '12px' }}>{subjectShortLabel(e)}</span>
+                                {e.batch_number && <span className="px-1.5 py-0.5 text-[9px] rounded-md bg-black/10 font-black uppercase border border-black/5" style={{color: bc.text}}>B{e.batch_number}</span>}
                               </div>
 
-                              <div className="flex items-center gap-1 font-black opacity-90 whitespace-nowrap shrink-0" style={{ color: '#1e293b', fontSize: '10px' }}>
-                                <span className="px-1 py-0.5 rounded bg-white/40 border border-black/5 leading-none">{facultyInitials(e)}</span>
-                                <span className="px-1 py-0.5 rounded bg-white/40 border border-black/5 leading-none">{roomLabel(e)}</span>
+                              <div className="flex items-center gap-1 font-black whitespace-nowrap shrink-0">
+                                <span className="px-2 py-1 rounded bg-white/60 border border-black/10 leading-none text-[#1e293b] text-[11px] shadow-sm">{facultyInitials(e)}</span>
+                                <span className="px-2 py-1 rounded bg-white/60 border border-black/10 leading-none text-[#1e293b] text-[11px] shadow-sm">{roomLabel(e)}</span>
                               </div>
                               
                               <div className="absolute inset-0 hidden group-hover:flex items-center justify-center gap-1 bg-black/60 rounded z-10 transition-all">
@@ -471,16 +478,16 @@ export default function TimetablePage() {
                               style={{ background: bc.bg, border: `1.5px solid ${bc.border}`, minHeight: '32px' }}
                               onClick={() => openEdit(e)}>
                               
-                              <div className="flex items-center gap-1.5 min-w-0">
-                                <span className="font-black whitespace-nowrap" style={{ color: bc.text, fontSize: '11px' }}>
+                              <div className="flex items-center gap-2 min-w-0">
+                                <span className="font-black whitespace-nowrap" style={{ color: bc.text, fontSize: '12px' }}>
                                   {subjectShortLabel(e)}
                                 </span>
-                                {e.batch_number && <span className="px-1 text-[8px] rounded-sm bg-black/5 font-black uppercase" style={{color: bc.text}}>B{e.batch_number}</span>}
+                                {e.batch_number && <span className="px-1.5 py-0.5 text-[9px] rounded-md bg-black/10 font-black uppercase border border-black/5" style={{color: bc.text}}>B{e.batch_number}</span>}
                               </div>
 
-                              <div className="flex items-center gap-1 font-black opacity-90 whitespace-nowrap shrink-0" style={{ color: '#1e293b', fontSize: '10px' }}>
-                                <span className="px-1 py-0.5 rounded bg-white/40 border border-black/5 leading-none">{facultyInitials(e)}</span>
-                                <span className="px-1 py-0.5 rounded bg-white/40 border border-black/5 leading-none">{roomLabel(e)}</span>
+                              <div className="flex items-center gap-1 font-black whitespace-nowrap shrink-0">
+                                <span className="px-2 py-1 rounded bg-white/60 border border-black/10 leading-none text-[#1e293b] text-[11px] shadow-sm">{facultyInitials(e)}</span>
+                                <span className="px-2 py-1 rounded bg-white/60 border border-black/10 leading-none text-[#1e293b] text-[11px] shadow-sm">{roomLabel(e)}</span>
                               </div>
                               
                               <div className="absolute inset-0 hidden group-hover:flex items-center justify-center gap-1 bg-black/60 rounded z-10 transition-all">

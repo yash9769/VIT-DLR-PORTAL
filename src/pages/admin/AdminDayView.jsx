@@ -53,11 +53,11 @@ export default function AdminDayView() {
         .from('timetable')
         .select(`
           *,
-          faculty:users!faculty_id(*),
-          divisions:divisions!division_id(*),
-          subjects:subjects!subject_id(*),
-          rooms:rooms!room_id(*),
-          time_slots:time_slots!time_slot_id(*)
+          faculty:users!faculty_id(id, full_name, initials),
+          divisions:divisions!division_id(id, division_name, strength),
+          subjects:subjects!subject_id(id, subject_name, short_name),
+          rooms:rooms!room_id(id, room_number),
+          time_slots:time_slots!time_slot_id(id, slot_label, start_time, end_time)
         `)
         .eq('day_of_week', dayOfWeek)
         .eq('is_active', true)

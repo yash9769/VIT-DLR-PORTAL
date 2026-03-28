@@ -87,7 +87,7 @@ export default function LoginPage() {
 
             <form onSubmit={handleSubmit} className="space-y-6">
               <div>
-                <label className="form-label">Email Address</label>
+                <label className="form-label">Email Address <span className="opacity-50 font-normal text-xs">(name@vit.edu.in)</span></label>
                 <input 
                   type="email"
                   required

@@ -74,7 +74,13 @@ export default function AdminSubmitDLR() {
     const fetchTimetable = async () => {
       const { data } = await supabase
         .from('timetable')
-        .select('*, subjects(*), divisions(*), rooms(*), time_slots(*)')
+        .select(`
+          *,
+          subjects (id, subject_name, short_name),
+          divisions (id, division_name, semester),
+          rooms (id, room_number),
+          time_slots (id, slot_label, start_time, end_time)
+        `)
         .eq('faculty_id', selectedFaculty)
         .eq('day_of_week', dayName)
         .eq('is_active', true)

@@ -43,9 +43,22 @@ export default function ReportsPage() {
     try {
       setLoading(true)
       const [r, t, f] = await Promise.all([
-        supabase.from('lecture_records').select('*, subjects:subjects!subject_id(*), divisions:divisions!division_id(*), rooms:rooms!room_id(*), faculty:users!faculty_id(*)'),
-        supabase.from('timetable').select('*, subjects:subjects!subject_id(*), divisions:divisions!division_id(*), rooms:rooms!room_id(*), faculty:users!faculty_id(*), time_slots:time_slots!time_slot_id(*)'),
-        supabase.from('users').select('*').eq('role', 'faculty')
+        supabase.from('lecture_records').select(`
+          *,
+          subjects:subjects!subject_id(id, subject_name, short_name),
+          divisions:divisions!division_id(id, division_name, semester),
+          rooms:rooms!room_id(id, room_number),
+          faculty:users!faculty_id(id, full_name, initials, email)
+        `),
+        supabase.from('timetable').select(`
+          *,
+          subjects:subjects!subject_id(id, subject_name, short_name),
+          divisions:divisions!division_id(id, division_name, semester),
+          rooms:rooms!room_id(id, room_number),
+          faculty:users!faculty_id(id, full_name, initials, email),
+          time_slots:time_slots!time_slot_id(id, slot_label, start_time, end_time)
+        `),
+        supabase.from('users').select('id, full_name, role, department, initials, email').eq('role', 'faculty')
       ])
       setRecords(r.data || [])
       setTimetable(t.data || [])
