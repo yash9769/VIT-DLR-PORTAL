@@ -260,7 +260,7 @@ export default function StudentsPage() {
           </div>
           <div>
             <label className="form-label">Email</label>
-            <input type="email" className="input-field" placeholder="student@vit.edu.in" value={form.email}
+            <input type="email" className="input-field" placeholder="name@vit.edu.in" value={form.email}
               onChange={e => setForm(f => ({ ...f, email: e.target.value }))} />
           </div>
           <div className="flex gap-2 pt-2">

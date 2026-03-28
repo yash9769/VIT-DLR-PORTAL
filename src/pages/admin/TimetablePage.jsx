@@ -405,24 +405,27 @@ export default function TimetablePage() {
                         {entries.map(e => {
                           const bc = e.batch_number ? getBatchColor(Number(e.batch_number)) : { bg: 'rgba(74,108,247,0.15)', border: 'rgba(74,108,247,0.4)', text: '#4a6cf7' }
                           return (
-                            <div key={e.id} className={`p-1 px-1.5 rounded text-[10px] cursor-pointer group relative flex flex-row items-center gap-1.5 mb-1 transition-all
-                              ${draggingId === e.id ? 'opacity-30' : 'opacity-100 hover:scale-[1.02] hover:shadow-lg'}`}
+                            <div key={e.id} className={`p-1.5 px-2 rounded text-[10.5px] cursor-pointer group relative flex flex-row items-center justify-between gap-1.5 mb-1.5 transition-all
+                              ${draggingId === e.id ? 'opacity-30' : 'opacity-100 hover:scale-[1.03] hover:shadow-xl'}`}
                               draggable="true"
                               onDragStart={(ev) => onDragStart(ev, e)}
                               onContextMenu={(ev) => handleContextMenu(ev, e)}
-                              style={{ background: bc.bg, border: `1.5px solid ${bc.border}` }}
+                              style={{ background: bc.bg, border: `1.5px solid ${bc.border}`, minHeight: '32px' }}
                               onClick={() => openEdit(e)}>
-                              <div className="flex-1 font-bold truncate leading-none" style={{ color: bc.text }}>{subjectShortLabel(e)}</div>
-                              <div className="flex items-center gap-1 font-black opacity-90 leading-none whitespace-nowrap" style={{ color: '#445577', fontSize: '9px' }}>
-                                <span>{facultyInitials(e)}</span>
-                                <span className="opacity-30 text-[8px]">|</span>
-                                <span>{roomLabel(e)}</span>
-                                {e.batch_number && <span className="ml-1 px-1 rounded-sm bg-black/5" style={{color: bc.text}}>B{e.batch_number}</span>}
+                              
+                              <div className="flex items-center gap-1.5 min-w-0">
+                                <span className="font-black whitespace-nowrap" style={{ color: bc.text, fontSize: '11px' }}>{subjectShortLabel(e)}</span>
+                                {e.batch_number && <span className="px-1 text-[8px] rounded-sm bg-black/5 font-black uppercase" style={{color: bc.text}}>B{e.batch_number}</span>}
+                              </div>
+
+                              <div className="flex items-center gap-1 font-black opacity-90 whitespace-nowrap shrink-0" style={{ color: '#1e293b', fontSize: '10px' }}>
+                                <span className="px-1 py-0.5 rounded bg-white/40 border border-black/5 leading-none">{facultyInitials(e)}</span>
+                                <span className="px-1 py-0.5 rounded bg-white/40 border border-black/5 leading-none">{roomLabel(e)}</span>
                               </div>
                               
-                              <div className="absolute inset-0 hidden group-hover:flex items-center justify-center gap-1 bg-black/60 rounded z-10">
-                                <button onClick={ev => { ev.stopPropagation(); openEdit(e) }} className="w-4 h-4 rounded flex items-center justify-center" style={{ background: 'var(--brand)', color: 'white' }}><Edit2 className="w-2.5 h-2.5" /></button>
-                                <button onClick={ev => { ev.stopPropagation(); setDeleteId(e.id) }} className="w-4 h-4 rounded flex items-center justify-center bg-red-500 text-white"><Trash2 className="w-2.5 h-2.5" /></button>
+                              <div className="absolute inset-0 hidden group-hover:flex items-center justify-center gap-1 bg-black/60 rounded z-10 transition-all">
+                                <button onClick={ev => { ev.stopPropagation(); openEdit(e) }} className="w-6 h-6 rounded-lg flex items-center justify-center transition-transform hover:scale-110" style={{ background: 'var(--brand)', color: 'white' }}><Edit2 className="w-3.5 h-3.5" /></button>
+                                <button onClick={ev => { ev.stopPropagation(); setDeleteId(e.id) }} className="w-6 h-6 rounded-lg flex items-center justify-center bg-red-500 text-white transition-transform hover:scale-110"><Trash2 className="w-3.5 h-3.5" /></button>
                               </div>
                             </div>
                           )
@@ -460,26 +463,29 @@ export default function TimetablePage() {
                         {entries.map(e => {
                           const bc = e.batch_number ? getBatchColor(Number(e.batch_number)) : { bg: 'rgba(210,153,34,0.15)', border: 'rgba(210,153,34,0.4)', text: '#d97706' }
                           return (
-                            <div key={e.id} className={`p-1 px-1.5 rounded text-[10px] cursor-pointer group relative flex-1 min-w-[90px] flex flex-row items-center gap-1.5 transition-all
-                               ${draggingId === e.id ? 'opacity-30' : 'opacity-100 hover:scale-[1.02] hover:shadow-lg'}`}
+                            <div key={e.id} className={`p-1.5 px-2 rounded text-[10.5px] cursor-pointer group relative flex-1 min-w-[120px] flex flex-row items-center justify-between gap-1.5 transition-all
+                               ${draggingId === e.id ? 'opacity-30' : 'opacity-100 hover:scale-[1.03] hover:shadow-xl'}`}
                               draggable="true"
                               onDragStart={(ev) => onDragStart(ev, e)}
                               onContextMenu={(ev) => handleContextMenu(ev, e)}
-                              style={{ background: bc.bg, border: `1.5px solid ${bc.border}` }}
+                              style={{ background: bc.bg, border: `1.5px solid ${bc.border}`, minHeight: '32px' }}
                               onClick={() => openEdit(e)}>
-                              <div className="flex-1 font-bold truncate leading-none" style={{ color: bc.text }}>
-                                {e.batch_number && <span className="font-black mr-1 text-[8px] opacity-70">B{e.batch_number}</span>}
-                                {subjectShortLabel(e)}
+                              
+                              <div className="flex items-center gap-1.5 min-w-0">
+                                <span className="font-black whitespace-nowrap" style={{ color: bc.text, fontSize: '11px' }}>
+                                  {subjectShortLabel(e)}
+                                </span>
+                                {e.batch_number && <span className="px-1 text-[8px] rounded-sm bg-black/5 font-black uppercase" style={{color: bc.text}}>B{e.batch_number}</span>}
                               </div>
-                              <div className="flex items-center gap-1 font-black opacity-90 leading-none whitespace-nowrap" style={{ color: '#78350f', fontSize: '9px' }}>
-                                <span>{facultyInitials(e)}</span>
-                                <span className="opacity-30 text-[8px]">|</span>
-                                <span>{roomLabel(e)}</span>
+
+                              <div className="flex items-center gap-1 font-black opacity-90 whitespace-nowrap shrink-0" style={{ color: '#1e293b', fontSize: '10px' }}>
+                                <span className="px-1 py-0.5 rounded bg-white/40 border border-black/5 leading-none">{facultyInitials(e)}</span>
+                                <span className="px-1 py-0.5 rounded bg-white/40 border border-black/5 leading-none">{roomLabel(e)}</span>
                               </div>
                               
-                              <div className="absolute inset-0 hidden group-hover:flex items-center justify-center gap-1 bg-black/60 rounded z-10">
-                                <button onClick={ev => { ev.stopPropagation(); openEdit(e) }} className="w-4 h-4 rounded flex items-center justify-center" style={{ background: '#d29922', color: 'black' }}><Edit2 className="w-2.5 h-2.5" /></button>
-                                <button onClick={ev => { ev.stopPropagation(); setDeleteId(e.id) }} className="w-4 h-4 rounded flex items-center justify-center bg-red-500 text-white" ><Trash2 className="w-2.5 h-2.5" /></button>
+                              <div className="absolute inset-0 hidden group-hover:flex items-center justify-center gap-1 bg-black/60 rounded z-10 transition-all">
+                                <button onClick={ev => { ev.stopPropagation(); openEdit(e) }} className="w-6 h-6 rounded-lg flex items-center justify-center transition-transform hover:scale-110" style={{ background: '#d29922', color: 'black' }}><Edit2 className="w-3.5 h-3.5" /></button>
+                                <button onClick={ev => { ev.stopPropagation(); setDeleteId(e.id) }} className="w-6 h-6 rounded-lg flex items-center justify-center bg-red-500 text-white transition-transform hover:scale-110" ><Trash2 className="w-3.5 h-3.5" /></button>
                               </div>
                             </div>
                           )

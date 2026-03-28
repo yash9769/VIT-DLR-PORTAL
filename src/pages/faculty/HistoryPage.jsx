@@ -130,18 +130,29 @@ export default function HistoryPage() {
       if (sanitized.timetable_from === '') sanitized.timetable_from = null
       if (sanitized.timetable_to === '') sanitized.timetable_to = null
 
+      const updateData = {
+        topic_covered: rest.topic_covered,
+        subtopics: rest.subtopics,
+        unit_number: rest.unit_number,
+        remarks: rest.remarks,
+        lcs_status: rest.lcs_status,
+        smartboard_pdf_uploaded: rest.smartboard_pdf_uploaded,
+        actual_from: sanitized.actual_from,
+        actual_to: sanitized.actual_to,
+        timetable_from: sanitized.timetable_from,
+        timetable_to: sanitized.timetable_to,
+        present_count: Number(editForm.present_count),
+        total_students: Number(editForm.total_students),
+        absent_count: Number(editForm.total_students) - Number(editForm.present_count),
+        approval_status: 'pending', // re-submit for review
+        rejection_reason: null,
+        approved_at: null,
+        updated_at: new Date().toISOString()
+      }
+
       const { error } = await supabase
         .from('lecture_records')
-        .update({
-          ...sanitized,
-          present_count: Number(editForm.present_count),
-          total_students: Number(editForm.total_students),
-          absent_count: Number(editForm.total_students) - Number(editForm.present_count),
-          approval_status: 'pending', // re-submit for review
-          rejection_reason: null,
-          approved_at: null,
-          updated_at: new Date().toISOString()
-        })
+        .update(updateData)
         .eq('id', selected.id)
         .eq('faculty_id', profile.id)
 
