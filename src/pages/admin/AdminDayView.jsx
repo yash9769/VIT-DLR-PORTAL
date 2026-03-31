@@ -306,18 +306,18 @@ export default function AdminDayView() {
         <Modal open={true} onClose={() => setSubmitModal(null)} title="Admin DLR Override Submission" size="lg">
           <div className="space-y-8 max-h-[75vh] overflow-y-auto pr-2 custom-scrollbar p-2">
             {/* Header Info */}
-            <div className="p-5 rounded-2xl border flex flex-col gap-1" style={{ background: 'linear-gradient(135deg, rgba(74,108,247,0.1), rgba(74,108,247,0.02))', borderColor: 'rgba(74,108,247,0.2)' }}>
+            <div className="p-5 rounded-2xl border flex flex-col gap-1" style={{ background: 'linear-gradient(135deg, rgba(74,108,247,0.08), rgba(74,108,247,0.02))', borderColor: 'rgba(74,108,247,0.1)' }}>
               <div className="flex items-center justify-between">
-                <p className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--brand)' }}>Direct Admin Submission</p>
-                <span className="text-[10px] px-2 py-0.5 rounded-full bg-brand-500/10 text-brand-400 border border-brand-500/20 font-bold">OVERRIDE MODE</span>
+                <p className="text-xs font-bold uppercase tracking-widest text-brand-600">Direct Admin Submission</p>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-brand-500/10 text-brand-600 border border-brand-500/20 font-bold">OVERRIDE MODE</span>
               </div>
-              <h2 className="text-xl font-bold mt-1" style={{ color: 'var(--text-primary)' }}>{submitModal.subjects?.subject_name || submitModal.custom_subject}</h2>
-              <p className="text-sm opacity-70" style={{ color: 'var(--text-secondary)' }}>{submitModal.faculty?.full_name || submitModal.custom_faculty} · {submitModal.divisions?.division_name} {submitModal.batch_number ? `(Batch ${submitModal.batch_number})` : ''}</p>
+              <h2 className="text-xl font-bold mt-1 text-slate-900">{submitModal.subjects?.subject_name || submitModal.custom_subject}</h2>
+              <p className="text-sm text-slate-500 font-medium">{submitModal.faculty?.full_name || submitModal.custom_faculty} · {submitModal.divisions?.division_name} {submitModal.batch_number ? `(Batch ${submitModal.batch_number})` : ''}</p>
             </div>
             
             {/* Topic & Time Section */}
             <div className="space-y-4">
-              <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--brand)' }}>Section 1: Academic Details</p>
+              <p className="text-[10px] font-bold uppercase tracking-widest text-brand-600">Section 1: Academic Details</p>
               
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
                 <div>
@@ -359,34 +359,34 @@ export default function AdminDayView() {
               </div>
             </div>
 
-            <div className="space-y-4 pt-4 border-t border-white/5">
+            <div className="space-y-4 pt-4 border-t border-slate-100">
               <div className="flex items-center justify-between">
-                <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--brand)' }}>Section 2: Attendance & Batch</p>
-                <span className="text-[10px] font-semibold opacity-60">Manual Attendance Mode</span>
+                <p className="text-[10px] font-bold uppercase tracking-widest text-brand-600">Section 2: Attendance & Batch</p>
+                <span className="text-[10px] font-semibold text-slate-400">Manual Attendance Mode</span>
               </div>
 
               <div className="grid grid-cols-2 gap-4">
-                <div className="glass-card p-4 border border-white/5 bg-white/[0.02]">
-                  <p className="text-[10px] font-bold opacity-50 uppercase mb-2">Batch Total</p>
-                  <input type="number" className="bg-transparent border-none w-full font-bold text-2xl outline-none" 
+                <div className="p-4 rounded-xl border border-slate-100 bg-slate-50/50">
+                  <p className="text-[10px] font-bold text-slate-400 uppercase mb-2">Batch Total</p>
+                  <input type="number" className="bg-transparent border-none w-full font-bold text-2xl outline-none text-slate-900" 
                     value={form.total_batch_strength} onChange={e=>setForm(f=>({...f, total_batch_strength: e.target.value}))} />
                 </div>
-                <div className="glass-card p-4 border border-brand-500/20 bg-brand-500/5">
-                  <p className="text-[10px] font-bold text-brand-400 uppercase mb-2">Present Count</p>
-                  <input type="number" className="bg-transparent border-none w-full font-bold text-2xl outline-none text-brand-400" 
+                <div className="p-4 rounded-xl border border-brand-100 bg-brand-50/30">
+                  <p className="text-[10px] font-bold text-brand-500 uppercase mb-2">Present Count</p>
+                  <input type="number" className="bg-transparent border-none w-full font-bold text-2xl outline-none text-brand-600" 
                     value={form.attendance} onChange={e=>setForm(f=>({...f, attendance: e.target.value}))} />
                 </div>
               </div>
 
               {studentsLoading ? (
-                <div className="py-8 flex flex-col items-center gap-2 opacity-50">
+                <div className="py-8 flex flex-col items-center gap-2">
                   <div className="w-5 h-5 rounded-full border-2 border-brand-500 border-t-transparent animate-spin" />
-                  <p className="text-[10px] font-bold uppercase tracking-widest">Loading student list...</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Loading student list...</p>
                 </div>
               ) : students.length > 0 && (
-                <div className="space-y-4 p-4 rounded-2xl border bg-white/[0.01]" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
+                <div className="space-y-4 p-4 rounded-2xl border border-slate-100 bg-slate-50/30">
                   <div className="flex items-center justify-between">
-                    <p className="text-[10px] font-bold uppercase tracking-widest opacity-60">Roll Call Quick-Select</p>
+                    <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Roll Call Quick-Select</p>
                     <div className="flex gap-2">
                        <button onClick={() => { const next={}; students.forEach(s=>next[s.id]=true); setAttendance(next) }} 
                                className="px-2 py-1 rounded bg-green-500/10 text-green-400 text-[10px] font-bold uppercase border border-green-500/20 hover:bg-green-500/20 transition-colors">All P</button>
@@ -399,9 +399,9 @@ export default function AdminDayView() {
                       const present = attendance[s.id] !== false
                       return (
                         <button key={s.id} onClick={() => setAttendance(prev=>({...prev, [s.id]: !prev[s.id]}))}
-                          className={`p-2 rounded-lg text-left transition-all text-[10px] border ${present ? 'bg-green-500/10 border-green-500/30 text-green-400' : 'bg-white/5 border-white/10 text-gray-500'}`}>
-                          <p className="font-bold opacity-70 mb-0.5">{s.roll_number}</p>
-                          <p className="font-medium truncate">{s.full_name.split(' ')[0]}</p>
+                          className={`p-2 rounded-lg text-left transition-all text-[10px] border ${present ? 'bg-green-50 border-green-200 text-green-700 font-bold' : 'bg-white border-slate-200 text-slate-400'}`}>
+                          <p className="opacity-70 mb-0.5">{s.roll_number}</p>
+                          <p className="truncate">{s.full_name.split(' ')[0]}</p>
                         </button>
                       )
                     })}
@@ -411,51 +411,51 @@ export default function AdminDayView() {
             </div>
 
             {/* Systems & Assignments Section */}
-            <div className="space-y-6 pt-4 border-t border-white/5">
-              <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--brand)' }}>Section 3: Systems & Reporting</p>
+            <div className="space-y-6 pt-4 border-t border-slate-100">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-brand-600">Section 3: Systems & Reporting</p>
               
               <div className="grid grid-cols-2 gap-4">
-                <div className={`p-4 rounded-2xl cursor-pointer border transition-all flex flex-col gap-1 ${form.lecture_capture_done ? 'bg-green-500/10 border-green-500/30 shadow-[0_0_15px_rgba(63,185,80,0.1)]' : 'bg-white/5 border-white/10 opacity-70 hover:opacity-100'}`}
+                <div className={`p-4 rounded-2xl cursor-pointer border transition-all flex flex-col gap-1 ${form.lecture_capture_done ? 'bg-green-50 border-green-200 shadow-sm' : 'bg-slate-50 border-slate-100 opacity-60 hover:opacity-100'}`}
                   onClick={() => setForm(f=>({...f, lecture_capture_done: !f.lecture_capture_done}))}>
-                  <p className="text-[10px] font-bold uppercase tracking-widest opacity-50">Lecture Capture</p>
-                  <p className={`text-xs font-bold ${form.lecture_capture_done ? 'text-green-400' : 'text-gray-400'}`}>{form.lecture_capture_done ? 'DONE ✓' : 'NOT COVERED'}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">Lecture Capture</p>
+                  <p className={`text-xs font-bold ${form.lecture_capture_done ? 'text-green-600' : 'text-slate-500'}`}>{form.lecture_capture_done ? 'DONE ✓' : 'NOT COVERED'}</p>
                 </div>
-                <div className={`p-4 rounded-2xl cursor-pointer border transition-all flex flex-col gap-1 ${form.smart_board_uploaded ? 'bg-green-500/10 border-green-500/30 shadow-[0_0_15px_rgba(63,185,80,0.1)]' : 'bg-white/5 border-white/10 opacity-70 hover:opacity-100'}`}
+                <div className={`p-4 rounded-2xl cursor-pointer border transition-all flex flex-col gap-1 ${form.smart_board_uploaded ? 'bg-green-50 border-green-200 shadow-sm' : 'bg-slate-50 border-slate-100 opacity-60 hover:opacity-100'}`}
                   onClick={() => setForm(f=>({...f, smart_board_uploaded: !f.smart_board_uploaded}))}>
-                  <p className="text-[10px] font-bold uppercase tracking-widest opacity-50">VREFER Upload</p>
-                  <p className={`text-xs font-bold ${form.smart_board_uploaded ? 'text-green-400' : 'text-gray-400'}`}>{form.smart_board_uploaded ? 'UPLOADED ✓' : 'PENDING'}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400">VREFER Upload</p>
+                  <p className={`text-xs font-bold ${form.smart_board_uploaded ? 'text-green-600' : 'text-slate-500'}`}>{form.smart_board_uploaded ? 'UPLOADED ✓' : 'PENDING'}</p>
                 </div>
               </div>
 
               <div className="grid grid-cols-3 gap-3">
-                <div className="glass-card p-4 border border-white/5 bg-white/[0.02]">
-                  <p className="text-[9px] font-bold opacity-50 uppercase mb-2">Prev Collect</p>
-                  <input type="number" className="bg-transparent border-none w-full font-bold text-xl outline-none" 
+                <div className="p-4 rounded-xl border border-slate-100 bg-slate-50/50">
+                  <p className="text-[9px] font-bold text-slate-400 uppercase mb-2">Prev Collect</p>
+                  <input type="number" className="bg-transparent border-none w-full font-bold text-xl outline-none text-slate-900" 
                     value={form.assignments_last_week} onChange={e=>setForm(f=>({...f, assignments_last_week: e.target.value}))} />
                 </div>
-                <div className="glass-card p-4 border border-white/5 bg-white/[0.02]">
-                  <p className="text-[9px] font-bold opacity-50 uppercase mb-2">New Given</p>
-                  <input type="number" className="bg-transparent border-none w-full font-bold text-xl outline-none" 
+                <div className="p-4 rounded-xl border border-slate-100 bg-slate-50/50">
+                  <p className="text-[9px] font-bold text-slate-400 uppercase mb-2">New Given</p>
+                  <input type="number" className="bg-transparent border-none w-full font-bold text-xl outline-none text-slate-900" 
                     value={form.assignments_given} onChange={e=>setForm(f=>({...f, assignments_given: e.target.value}))} />
                 </div>
-                <div className="glass-card p-4 border border-white/5 bg-white/[0.02]">
-                  <p className="text-[9px] font-bold opacity-50 uppercase mb-2">Graded</p>
-                  <input type="number" className="bg-transparent border-none w-full font-bold text-xl outline-none" 
+                <div className="p-4 rounded-xl border border-slate-100 bg-slate-50/50">
+                  <p className="text-[9px] font-bold text-slate-400 uppercase mb-2">Graded</p>
+                  <input type="number" className="bg-transparent border-none w-full font-bold text-xl outline-none text-slate-900" 
                     value={form.assignments_graded} onChange={e=>setForm(f=>({...f, assignments_graded: e.target.value}))} />
                 </div>
               </div>
             </div>
 
-            <div className="space-y-4 pt-4 border-t border-white/5">
-              <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--brand)' }}>Section 4: Remarks</p>
+            <div className="space-y-4 pt-4 border-t border-slate-100">
+              <p className="text-[10px] font-bold uppercase tracking-widest text-brand-600">Section 4: Remarks</p>
               <textarea className="input-field min-h-[100px] text-sm resize-none" 
                         value={form.remarks} onChange={e=>setForm(f=>({...f, remarks: e.target.value}))}
                         placeholder="State reason for manual admin submission..." />
             </div>
 
-            <div className="pt-6 flex justify-end gap-3 sticky bottom-0 bg-[#0a0c10]/95 backdrop-blur-md pb-2 border-t border-white/5">
+            <div className="pt-6 flex justify-end gap-3 sticky bottom-0 bg-white/95 backdrop-blur-md pb-2 border-t border-slate-100">
               <button className="btn-secondary px-6" onClick={()=>setSubmitModal(null)}>Cancel</button>
-              <button className="btn-primary px-8 shadow-lg shadow-brand-500/20" onClick={handleSubmit}>Force Submit DLR</button>
+              <button className="btn-primary px-8 shadow-lg shadow-brand-500/10" onClick={handleSubmit}>Force Submit DLR</button>
             </div>
           </div>
         </Modal>
