@@ -46,7 +46,7 @@ export const DEMO_ROOMS = [
 ]
 
 export const DEMO_FACULTY_LIST = [
-  { id: 'demo-faculty-001', full_name: 'Dr. Priya Sharma',    department: 'INFT', role: 'faculty' },
+  { id: 'demo-faculty-001', full_name: 'Faculty Name',    department: 'INFT', role: 'faculty' },
   { id: 'demo-faculty-002', full_name: 'Dr. Vivek K.', department: 'INFT', role: 'faculty' },
   { id: 'demo-faculty-003', full_name: 'Dr. Meera Joshi',      department: 'INFT', role: 'faculty' },
   { id: 'demo-faculty-004', full_name: 'Prof. Vikram Desai',   department: 'INFT', role: 'faculty' },
@@ -125,7 +125,7 @@ export const DEMO_SUBSTITUTIONS = [
     created_by: 'demo-faculty-002',
     created_at: new Date().toISOString(),
     absent_faculty: { id: 'demo-faculty-002', full_name: 'Prof. Anand Kulkarni' },
-    proxy_faculty: { id: 'demo-faculty-001', full_name: 'Dr. Priya Sharma' },
+    proxy_faculty: { id: 'demo-faculty-001', full_name: 'Faculty Name' },
     timetable: {
       id: 'tt3',
       faculty_id: 'demo-faculty-002',
@@ -145,7 +145,7 @@ export const DEMO_SUBSTITUTIONS = [
     status: 'active',
     created_by: 'demo-faculty-001',
     created_at: new Date().toISOString(),
-    absent_faculty: { id: 'demo-faculty-001', full_name: 'Dr. Priya Sharma' },
+    absent_faculty: { id: 'demo-faculty-001', full_name: 'Faculty Name' },
     proxy_faculty: { id: 'demo-faculty-003', full_name: 'Dr. Meera Joshi' },
     timetable: {
       id: 'tt6',

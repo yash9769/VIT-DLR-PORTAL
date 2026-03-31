@@ -669,13 +669,13 @@ export default function SubmitLecture() {
                 <span style={{ color: 'var(--text-secondary)' }}>Attendance</span>
                 <span className="font-bold">{form.attendance}/{form.total_batch_strength}</span>
               </div>
-              <div className="flex justify-between border-b border-white/5 py-1">
+               <div className="flex justify-between border-b border-white/5 py-1">
                 <span style={{ color: 'var(--text-secondary)' }}>Professor</span>
-                <span className="font-bold">{form.actual_faculty_name}</span>
+                <span className="font-bold truncate max-w-[120px]">{form.actual_faculty_name || 'Me'}</span>
               </div>
               <div className="flex justify-between border-b border-white/5 py-1">
                 <span style={{ color: 'var(--text-secondary)' }}>LCS Status</span>
-                <span className={`font-bold ${form.lecture_capture_done ? 'text-green-400' : 'text-red-400'}`}>{form.lecture_capture_done ? 'Success' : 'N/A'}</span>
+                <span className={`font-bold ${form.lecture_capture_done ? 'text-green-400' : 'text-red-400'}`}>{form.lecture_capture_done ? 'Covered' : 'Not Covered'}</span>
               </div>
             </div>
           </div>

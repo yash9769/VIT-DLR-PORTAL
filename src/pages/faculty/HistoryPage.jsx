@@ -305,12 +305,12 @@ export default function HistoryPage() {
             <>
               {[
                 ['Date', formatDate(r.lecture_date)],
-                ['Scheduled', formatTime(r.timetable_from || r.scheduled_start) + ' to ' + formatTime(r.timetable_to || r.scheduled_end)],
-                ['Faculty', r.timetable_faculty || r.faculty?.full_name || '—'],
+                ['Scheduled', (r.timetable_from || r.scheduled_start ? formatTime(r.timetable_from || r.scheduled_start) : '—') + ' to ' + (r.timetable_to || r.scheduled_end ? formatTime(r.timetable_to || r.scheduled_end) : '—')],
+                ['Faculty', r.actual_faculty_name || r.timetable_faculty || r.faculty?.full_name || 'Me'],
               ].map(([key, val]) => (
                 <div key={key} className="flex justify-between text-sm py-1 border-b" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
                   <span style={{ color: 'var(--text-secondary)' }}>{key}</span>
-                  <span className="font-semibold text-right max-w-[60%]">{val}</span>
+                  <span className="font-semibold text-right max-w-[60%] truncate">{val}</span>
                 </div>
               ))}
             </>
@@ -425,16 +425,16 @@ export default function HistoryPage() {
             </div>
           ) : (
             <>
-              {[
-                ['Actual', formatTime(r.actual_from || r.actual_start) + ' to ' + formatTime(r.actual_to || r.actual_end)],
-                ['Topic', r.topic_covered || r.remarks || '—'],
-                ['Attendance', r.present_count + '/' + r.total_students + ' (' + attendancePercent(r.present_count, r.total_students) + '%)'],
-                ['LCS', r.lcs_status === 'covered' ? 'Covered' : r.lcs_status === 'partially_covered' ? 'Partial' : 'Not Covered'],
-                ['SB PDF', r.smartboard_pdf_uploaded ? 'Uploaded' : 'Not uploaded'],
+               {[
+                ['Actual', (r.actual_from || r.actual_start ? formatTime(r.actual_from || r.actual_start) : '—') + ' to ' + (r.actual_to || r.actual_end ? formatTime(r.actual_to || r.actual_end) : '—')],
+                ['Topic', r.topic_covered || r.remarks || 'Main Lecture'],
+                ['Attendance', (r.present_count ?? 0) + '/' + (r.total_students ?? 0) + ' (' + attendancePercent(r.present_count, r.total_students) + '%)'],
+                ['LCS', (r.lcs_status || '').toLowerCase() === 'covered' ? 'Covered' : (r.lcs_status || '').toLowerCase() === 'partially_covered' ? 'Partial' : 'Not Covered'],
+                ['SB PDF', r.smartboard_pdf_uploaded || r.smart_board_uploaded ? 'Uploaded' : 'Not uploaded'],
               ].map(([key, val]) => (
                 <div key={key} className="flex justify-between text-sm py-1 border-b" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
                   <span style={{ color: 'var(--text-secondary)' }}>{key}</span>
-                  <span className="font-semibold text-right max-w-[60%]">{val}</span>
+                  <span className="font-semibold text-right max-w-[60%] truncate">{val}</span>
                 </div>
               ))}
             </>
