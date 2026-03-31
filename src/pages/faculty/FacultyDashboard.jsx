@@ -220,6 +220,8 @@ export default function FacultyDashboard() {
       .map(r => r.timetable_id)
   )
 
+  const pendingLectures = todaySchedule.filter(t => !submittedIds.has(t.id))
+
   const yesterdayStr = new Date(Date.now() - 86400000).toISOString().split('T')[0]
   const yesterdayRecords = lectureRecords.filter(r => r.lecture_date === yesterdayStr)
 
@@ -240,8 +242,8 @@ export default function FacultyDashboard() {
         </p>
       </div>
 
-      {/* ── "Are you absent today?" card ── show only if schedule exists and not already absent */}
-      {todaySchedule.length > 0 && !iAmAbsent && (
+      {/* ── "Are you absent today?" card ── show only if pending lectures exist and not already absent */}
+      {pendingLectures.length > 0 && !iAmAbsent && (
         <div
           className="p-4 rounded-2xl border"
           style={{
@@ -460,7 +462,7 @@ export default function FacultyDashboard() {
         open={showProxyModal}
         onClose={() => setShowProxyModal(false)}
         profile={profile}
-        todaySchedule={todaySchedule}
+        todaySchedule={pendingLectures}
         onSuccess={fetchDashboardData}
       />
     </div>
