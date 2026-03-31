@@ -180,7 +180,7 @@ export default function RecordsPage() {
                   <td><span className="badge badge-pending text-xs">{r.custom_division || r.divisions?.division_name}</span></td>
                   <td className="text-sm">{r.custom_subject || r.subjects?.short_name || r.subjects?.subject_name}</td>
                   <td className="text-sm">{formatDate(r.lecture_date)}</td>
-                  <td className="text-xs font-mono">{formatTime(r.actual_start)}–{formatTime(r.actual_end)}</td>
+                  <td className="text-xs font-mono">{formatTime(r.actual_from)}–{formatTime(r.actual_to)}</td>
                   <td className="text-xs max-w-[160px]"><span className="line-clamp-2">{r.topic_covered}</span></td>
                   <td>
                     <span className="text-sm font-semibold" style={{ color: attendancePercent(r.present_count, r.total_students) >= 75 ? '#3fb950' : '#f85149' }}>
@@ -219,12 +219,15 @@ export default function RecordsPage() {
                 ['Division', selected.custom_division || selected.divisions?.division_name],
                 ['Room', selected.custom_room || selected.rooms?.room_number],
                 ['Date', formatDate(selected.lecture_date)],
-                ['Scheduled', formatTime(selected.scheduled_start) + ' to ' + formatTime(selected.scheduled_end)],
-                ['Actual', formatTime(selected.actual_start) + ' to ' + formatTime(selected.actual_end)],
+                ['Scheduled', formatTime(selected.timetable_from) + ' to ' + formatTime(selected.timetable_to)],
+                ['Actual', formatTime(selected.actual_from) + ' to ' + formatTime(selected.actual_to)],
                 ['Present', selected.present_count + '/' + selected.total_students],
                 ['Attendance', attendancePercent(selected.present_count, selected.total_students) + '%'],
                 ['LCS', selected.lcs_status],
                 ['SB PDF', selected.smartboard_pdf_uploaded ? 'Uploaded' : 'No'],
+                ['Unit Number', selected.unit_number || '—'],
+                ['Subtopics', selected.subtopics || '—'],
+                ['Topic Covered', selected.topic_covered || '—'],
                 ['Status', selected.approval_status],
               ].map(([k,v]) => (
                 <div key={k} className="flex justify-between text-sm border-b py-1.5" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>

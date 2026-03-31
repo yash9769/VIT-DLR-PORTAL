@@ -71,7 +71,10 @@ export default function AdminDashboard() {
       const { data: records, error: recError } = await supabase
         .from('lecture_records')
         .select(`
-          *,
+          id, faculty_id, subject_id, division_id, room_id, lecture_date, 
+          unit_number, subtopics, lcs_status, topic_covered, 
+          timetable_from, timetable_to, actual_from, actual_to,
+          present_count, total_students, approval_status, admin_comment, created_at,
           subjects:subjects!subject_id (id, subject_name, short_name),
           divisions:divisions!division_id (id, division_name, semester),
           rooms:rooms!room_id (id, room_number),
@@ -148,7 +151,7 @@ export default function AdminDashboard() {
       setLoadingAttendance(true)
       const { data, error } = await supabase
         .from('attendance')
-        .select('*, students(full_name, roll_number)')
+        .select('id, student_id, is_present, lecture_record_id, students:students!student_id (full_name, roll_number)')
         .eq('lecture_record_id', record.id)
         .order('students(roll_number)')
       
@@ -412,10 +415,11 @@ export default function AdminDashboard() {
                 ['Division', viewing.divisions?.division_name],
                 ['Room', viewing.rooms?.room_number || '—'],
                 ['Date', formatDate(viewing.lecture_date)],
-                ['Actual Time', `${formatTime(viewing.actual_start)} – ${formatTime(viewing.actual_end)}`],
+                ['Scheduled', `${formatTime(viewing.timetable_from)} – ${formatTime(viewing.timetable_to)}`],
+                ['Actual Time', `${formatTime(viewing.actual_from)} – ${formatTime(viewing.actual_to)}`],
                 ['Attendance', `${viewing.present_count} / ${viewing.total_students}`],
                 ['Unit No.', viewing.unit_number || '—'],
-                ['LCS', viewing.lcs_status?.replace(/_/g,' ')],
+                ['Subtopics', viewing.subtopics || '—'],
               ].map(([k, v]) => (
                 <div key={k}>
                   <p className="form-label">{k}</p>

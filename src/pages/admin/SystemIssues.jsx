@@ -29,7 +29,7 @@ export default function SystemIssuesPage() {
       setLoading(true)
       const { data, error } = await supabase
         .from('system_reports')
-        .select('*, users(full_name, email, role)')
+        .select('id, user_id, subject, description, category, priority, status, admin_remarks, created_at, updated_at, users:users!user_id (full_name, email, role)')
         .order('created_at', { ascending: false })
       
       if (error) throw error

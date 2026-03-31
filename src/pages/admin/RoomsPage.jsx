@@ -18,7 +18,7 @@ export default function RoomsPage() {
       setLoading(true)
       const { data, error } = await supabase
         .from('rooms')
-        .select('*')
+        .select('id, room_number, building, floor, capacity, has_smartboard, has_projector')
         .order('room_number')
       if (error) throw error
       setRooms(data || [])

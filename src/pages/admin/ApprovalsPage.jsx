@@ -30,7 +30,12 @@ export default function ApprovalsPage() {
       const { data, error } = await supabase
         .from('lecture_records')
         .select(`
-          *,
+          id, timetable_id, faculty_id, division_id, subject_id, room_id, 
+          lecture_date, actual_from, actual_to, timetable_from, timetable_to,
+          unit_number, subtopics, topic_covered, 
+          present_count, total_students, lcs_status, smartboard_pdf_uploaded, 
+          is_substitution, original_faculty_id, approval_status, submitted_at, 
+          remarks, admin_comment,
           subjects:subjects!subject_id (id, subject_name, short_name, subject_code),
           divisions:divisions!division_id (id, division_name, semester),
           rooms:rooms!room_id (id, room_number),
@@ -271,7 +276,7 @@ export default function ApprovalsPage() {
                     <td><span className="badge" style={{ background: 'rgba(74,108,247,0.12)', color: '#7090ff', border: '1px solid rgba(74,108,247,0.2)' }}>{r.divisions?.division_name}</span></td>
                     <td>
                       <p className="text-sm" style={{ color: 'var(--text-primary)' }}>{formatDate(r.lecture_date)}</p>
-                      <p className="text-xs font-mono" style={{ color: 'var(--text-secondary)' }}>{formatTime(r.actual_start)} – {formatTime(r.actual_end)}</p>
+                      <p className="text-xs font-mono" style={{ color: 'var(--text-secondary)' }}>{formatTime(r.actual_from)} – {formatTime(r.actual_to)}</p>
                     </td>
                     <td>
                       <p className="text-sm max-w-[200px] truncate" style={{ color: 'var(--text-primary)' }}>{r.topic_covered}</p>
@@ -341,8 +346,8 @@ export default function ApprovalsPage() {
                 ['Division', viewing.divisions?.division_name],
                 ['Room', viewing.rooms?.room_number || '—'],
                 ['Date', formatDate(viewing.lecture_date)],
-                ['Scheduled', `${formatTime(viewing.scheduled_start)} – ${formatTime(viewing.scheduled_end)}`],
-                ['Actual Time', `${formatTime(viewing.actual_start)} – ${formatTime(viewing.actual_end)}`],
+                ['Scheduled', `${formatTime(viewing.timetable_from)} – ${formatTime(viewing.timetable_to)}`],
+                ['Actual Time', `${formatTime(viewing.actual_from)} – ${formatTime(viewing.actual_to)}`],
                 ['Attendance Summary', `${viewing.present_count} / ${viewing.total_students} (${attendancePercent(viewing.present_count, viewing.total_students)}%)`],
                 ['LCS Status', viewing.lcs_status?.replace(/_/g,' ')],
                 ['Smartboard PDF', viewing.smartboard_pdf_uploaded ? 'Uploaded ✓' : 'Not Uploaded'],

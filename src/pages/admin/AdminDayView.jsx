@@ -28,7 +28,9 @@ export default function AdminDayView() {
     assignments_graded: 0,
     remarks: 'Submitted by Admin',
     actual_faculty_id: '',
-    is_substitution: false
+    is_substitution: false,
+    unit_number: '',
+    subtopics: ''
   })
 
   // Sync present count with attendance toggles
@@ -67,7 +69,7 @@ export default function AdminDayView() {
       // Fetch existing records for this date
       const { data: recordData, error: recError } = await supabase
         .from('lecture_records')
-        .select('*')
+        .select('id, timetable_id, faculty_id, approval_status, lecture_date')
         .eq('lecture_date', selectedDate)
 
       if (recError) throw recError
@@ -108,7 +110,9 @@ export default function AdminDayView() {
       assignments_graded: 0,
       remarks: 'Submitted by Admin',
       actual_faculty_id: entry.faculty_id || '',
-      is_substitution: false
+      is_substitution: false,
+      unit_number: '',
+      subtopics: ''
     }
     setForm(defaultData)
     setSubmitModal(entry)
@@ -157,10 +161,12 @@ export default function AdminDayView() {
         timetable_from: submitModal.time_slots?.start_time || null,
         timetable_to: submitModal.time_slots?.end_time || null,
         actual_from: form.actual_start,
-        actual_end: form.actual_end,
+        actual_to: form.actual_end,
         actual_faculty_id: form.actual_faculty_id || submitModal.faculty_id,
         
-        topic_covered: form.topic_covered,
+        unit_number: form.unit_number ? Number(form.unit_number) : null,
+        subtopics: form.subtopics || null,
+        topic_covered: form.subtopics || form.topic_covered,
         attendance: Number(form.attendance),
         total_batch_strength: Number(form.total_batch_strength),
         
@@ -297,52 +303,96 @@ export default function AdminDayView() {
       </div>
 
       {submitModal && (
-        <Modal open={true} onClose={() => setSubmitModal(null)} title="Admin DLR Override Submission">
-          <div className="space-y-5 max-h-[80vh] overflow-y-auto pr-2 custom-scrollbar">
-            <div className="p-3 bg-brand-500/10 border border-brand-500/20 rounded-xl">
-              <p className="text-sm font-bold text-brand-300">{submitModal.faculty?.full_name || submitModal.custom_faculty}</p>
-              <p className="text-xs opacity-80">{submitModal.subjects?.subject_name || submitModal.custom_subject} · {submitModal.divisions?.division_name}</p>
+        <Modal open={true} onClose={() => setSubmitModal(null)} title="Admin DLR Override Submission" size="lg">
+          <div className="space-y-8 max-h-[75vh] overflow-y-auto pr-2 custom-scrollbar p-2">
+            {/* Header Info */}
+            <div className="p-5 rounded-2xl border flex flex-col gap-1" style={{ background: 'linear-gradient(135deg, rgba(74,108,247,0.1), rgba(74,108,247,0.02))', borderColor: 'rgba(74,108,247,0.2)' }}>
+              <div className="flex items-center justify-between">
+                <p className="text-xs font-bold uppercase tracking-widest" style={{ color: 'var(--brand)' }}>Direct Admin Submission</p>
+                <span className="text-[10px] px-2 py-0.5 rounded-full bg-brand-500/10 text-brand-400 border border-brand-500/20 font-bold">OVERRIDE MODE</span>
+              </div>
+              <h2 className="text-xl font-bold mt-1" style={{ color: 'var(--text-primary)' }}>{submitModal.subjects?.subject_name || submitModal.custom_subject}</h2>
+              <p className="text-sm opacity-70" style={{ color: 'var(--text-secondary)' }}>{submitModal.faculty?.full_name || submitModal.custom_faculty} · {submitModal.divisions?.division_name} {submitModal.batch_number ? `(Batch ${submitModal.batch_number})` : ''}</p>
             </div>
             
-            <div className="grid grid-cols-2 gap-4">
-              <div>
-                <label className="form-label">Actual Start</label>
-                <input type="time" className="input-field" value={form.actual_start} onChange={e=>setForm(f=>({...f, actual_start: e.target.value}))}/>
+            {/* Topic & Time Section */}
+            <div className="space-y-4">
+              <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--brand)' }}>Section 1: Academic Details</p>
+              
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                <div>
+                  <label className="form-label mb-1.5">Unit Number</label>
+                  <input type="number" className="input-field" placeholder="e.g. 1" 
+                         value={form.unit_number} onChange={e=>setForm(f=>({...f, unit_number: e.target.value}))}/>
+                </div>
+                <div>
+                  <label className="form-label mb-1.5">Subtopics</label>
+                  <input type="text" className="input-field" placeholder="e.g. Hooks, Props"
+                         value={form.subtopics} onChange={e=>setForm(f=>({...f, subtopics: e.target.value}))}/>
+                </div>
               </div>
+
               <div>
-                <label className="form-label">Actual End</label>
-                <input type="time" className="input-field" value={form.actual_end} onChange={e=>setForm(f=>({...f, actual_end: e.target.value}))}/>
+                <label className="form-label mb-1.5">Topic Covered (Main)</label>
+                <input type="text" className="input-field" value={form.topic_covered} 
+                       placeholder="Summary of lecture topic"
+                       onChange={e=>setForm(f=>({...f, topic_covered: e.target.value}))}/>
+              </div>
+
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="form-label mb-1.5">Actual Start Time</label>
+                  <div className="relative">
+                    <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 opacity-50" />
+                    <input type="time" className="input-field pl-10" value={form.actual_start} 
+                           onChange={e=>setForm(f=>({...f, actual_start: e.target.value}))}/>
+                  </div>
+                </div>
+                <div>
+                  <label className="form-label mb-1.5">Actual End Time</label>
+                  <div className="relative">
+                    <Clock className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 opacity-50" />
+                    <input type="time" className="input-field pl-10" value={form.actual_end} 
+                           onChange={e=>setForm(f=>({...f, actual_end: e.target.value}))}/>
+                  </div>
+                </div>
               </div>
             </div>
 
-            <div>
-              <label className="form-label">Topic Covered</label>
-              <input type="text" className="input-field" value={form.topic_covered} onChange={e=>setForm(f=>({...f, topic_covered: e.target.value}))}/>
-            </div>
+            <div className="space-y-4 pt-4 border-t border-white/5">
+              <div className="flex items-center justify-between">
+                <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--brand)' }}>Section 2: Attendance & Batch</p>
+                <span className="text-[10px] font-semibold opacity-60">Manual Attendance Mode</span>
+              </div>
 
-            {/* Attendance Section */}
-            <div className="border-t border-white/5 pt-4">
-              <label className="form-label mb-2 block">Attendance</label>
-              <div className="grid grid-cols-2 gap-4 mb-4">
-                <div className="glass-card p-3">
-                  <p className="text-[10px] font-bold opacity-50 uppercase mb-1">Total</p>
-                  <input type="number" className="bg-transparent border-none w-full font-bold text-lg outline-none" 
+              <div className="grid grid-cols-2 gap-4">
+                <div className="glass-card p-4 border border-white/5 bg-white/[0.02]">
+                  <p className="text-[10px] font-bold opacity-50 uppercase mb-2">Batch Total</p>
+                  <input type="number" className="bg-transparent border-none w-full font-bold text-2xl outline-none" 
                     value={form.total_batch_strength} onChange={e=>setForm(f=>({...f, total_batch_strength: e.target.value}))} />
                 </div>
-                <div className="glass-card p-3 border-brand-500/30">
-                  <p className="text-[10px] font-bold text-brand-400 uppercase mb-1">Present Count</p>
-                  <input type="number" className="bg-transparent border-none w-full font-bold text-lg outline-none text-brand-400" 
+                <div className="glass-card p-4 border border-brand-500/20 bg-brand-500/5">
+                  <p className="text-[10px] font-bold text-brand-400 uppercase mb-2">Present Count</p>
+                  <input type="number" className="bg-transparent border-none w-full font-bold text-2xl outline-none text-brand-400" 
                     value={form.attendance} onChange={e=>setForm(f=>({...f, attendance: e.target.value}))} />
                 </div>
               </div>
 
               {studentsLoading ? (
-                <p className="text-xs opacity-50 text-center py-4">Loading student list...</p>
+                <div className="py-8 flex flex-col items-center gap-2 opacity-50">
+                  <div className="w-5 h-5 rounded-full border-2 border-brand-500 border-t-transparent animate-spin" />
+                  <p className="text-[10px] font-bold uppercase tracking-widest">Loading student list...</p>
+                </div>
               ) : students.length > 0 && (
-                <div className="space-y-2">
-                  <div className="flex gap-2 mb-2">
-                    <button onClick={() => { const next={}; students.forEach(s=>next[s.id]=true); setAttendance(next) }} className="flex-1 py-1.5 rounded-lg text-[9px] font-bold uppercase tracking-wider bg-green-500/10 text-green-400 border border-green-500/20">Check All</button>
-                    <button onClick={() => { const next={}; students.forEach(s=>next[s.id]=false); setAttendance(next) }} className="flex-1 py-1.5 rounded-lg text-[9px] font-bold uppercase tracking-wider bg-red-500/10 text-red-400 border border-red-500/20">Uncheck All</button>
+                <div className="space-y-4 p-4 rounded-2xl border bg-white/[0.01]" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
+                  <div className="flex items-center justify-between">
+                    <p className="text-[10px] font-bold uppercase tracking-widest opacity-60">Roll Call Quick-Select</p>
+                    <div className="flex gap-2">
+                       <button onClick={() => { const next={}; students.forEach(s=>next[s.id]=true); setAttendance(next) }} 
+                               className="px-2 py-1 rounded bg-green-500/10 text-green-400 text-[10px] font-bold uppercase border border-green-500/20 hover:bg-green-500/20 transition-colors">All P</button>
+                       <button onClick={() => { const next={}; students.forEach(s=>next[s.id]=false); setAttendance(next) }} 
+                               className="px-2 py-1 rounded bg-red-500/10 text-red-400 text-[10px] font-bold uppercase border border-red-500/20 hover:bg-red-500/20 transition-colors">All A</button>
+                    </div>
                   </div>
                   <div className="grid grid-cols-2 sm:grid-cols-3 gap-2">
                     {students.map(s => {
@@ -360,50 +410,52 @@ export default function AdminDayView() {
               )}
             </div>
 
-            {/* Systems Section */}
-            <div className="border-t border-white/5 pt-4">
-              <label className="form-label mb-2 block">Classroom & Systems</label>
-              <div className="grid grid-cols-2 gap-3">
-                <div className={`p-3 rounded-xl cursor-pointer border transition-all ${form.lecture_capture_done ? 'bg-green-500/10 border-green-500/30' : 'bg-white/5 border-white/10'}`}
+            {/* Systems & Assignments Section */}
+            <div className="space-y-6 pt-4 border-t border-white/5">
+              <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--brand)' }}>Section 3: Systems & Reporting</p>
+              
+              <div className="grid grid-cols-2 gap-4">
+                <div className={`p-4 rounded-2xl cursor-pointer border transition-all flex flex-col gap-1 ${form.lecture_capture_done ? 'bg-green-500/10 border-green-500/30 shadow-[0_0_15px_rgba(63,185,80,0.1)]' : 'bg-white/5 border-white/10 opacity-70 hover:opacity-100'}`}
                   onClick={() => setForm(f=>({...f, lecture_capture_done: !f.lecture_capture_done}))}>
-                  <p className="text-[10px] font-bold uppercase opacity-50 mb-1 text-white">LCS Success</p>
-                  <p className="text-xs font-bold text-white">{form.lecture_capture_done ? 'DONE ✓' : 'NO'}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest opacity-50">Lecture Capture</p>
+                  <p className={`text-xs font-bold ${form.lecture_capture_done ? 'text-green-400' : 'text-gray-400'}`}>{form.lecture_capture_done ? 'DONE ✓' : 'NOT COVERED'}</p>
                 </div>
-                <div className={`p-3 rounded-xl cursor-pointer border transition-all ${form.smart_board_uploaded ? 'bg-green-500/10 border-green-500/30' : 'bg-white/5 border-white/10'}`}
+                <div className={`p-4 rounded-2xl cursor-pointer border transition-all flex flex-col gap-1 ${form.smart_board_uploaded ? 'bg-green-500/10 border-green-500/30 shadow-[0_0_15px_rgba(63,185,80,0.1)]' : 'bg-white/5 border-white/10 opacity-70 hover:opacity-100'}`}
                   onClick={() => setForm(f=>({...f, smart_board_uploaded: !f.smart_board_uploaded}))}>
-                  <p className="text-[10px] font-bold uppercase opacity-50 mb-1 text-white">VREFER Upload</p>
-                  <p className="text-xs font-bold text-white">{form.smart_board_uploaded ? 'DONE ✓' : 'NO'}</p>
+                  <p className="text-[10px] font-bold uppercase tracking-widest opacity-50">VREFER Upload</p>
+                  <p className={`text-xs font-bold ${form.smart_board_uploaded ? 'text-green-400' : 'text-gray-400'}`}>{form.smart_board_uploaded ? 'UPLOADED ✓' : 'PENDING'}</p>
+                </div>
+              </div>
+
+              <div className="grid grid-cols-3 gap-3">
+                <div className="glass-card p-4 border border-white/5 bg-white/[0.02]">
+                  <p className="text-[9px] font-bold opacity-50 uppercase mb-2">Prev Collect</p>
+                  <input type="number" className="bg-transparent border-none w-full font-bold text-xl outline-none" 
+                    value={form.assignments_last_week} onChange={e=>setForm(f=>({...f, assignments_last_week: e.target.value}))} />
+                </div>
+                <div className="glass-card p-4 border border-white/5 bg-white/[0.02]">
+                  <p className="text-[9px] font-bold opacity-50 uppercase mb-2">New Given</p>
+                  <input type="number" className="bg-transparent border-none w-full font-bold text-xl outline-none" 
+                    value={form.assignments_given} onChange={e=>setForm(f=>({...f, assignments_given: e.target.value}))} />
+                </div>
+                <div className="glass-card p-4 border border-white/5 bg-white/[0.02]">
+                  <p className="text-[9px] font-bold opacity-50 uppercase mb-2">Graded</p>
+                  <input type="number" className="bg-transparent border-none w-full font-bold text-xl outline-none" 
+                    value={form.assignments_graded} onChange={e=>setForm(f=>({...f, assignments_graded: e.target.value}))} />
                 </div>
               </div>
             </div>
 
-            {/* Assignments Section */}
-            <div className="border-t border-white/5 pt-4 grid grid-cols-3 gap-3">
-              <div className="glass-card p-3">
-                <p className="text-[9px] font-bold text-white/50 uppercase mb-1 leading-tight">Collected (Prev)</p>
-                <input type="number" className="bg-transparent border-none w-full font-bold text-sm outline-none text-white" 
-                  value={form.assignments_last_week} onChange={e=>setForm(f=>({...f, assignments_last_week: e.target.value}))} />
-              </div>
-              <div className="glass-card p-3">
-                <p className="text-[9px] font-bold text-white/50 uppercase mb-1 leading-tight">Given (New)</p>
-                <input type="number" className="bg-transparent border-none w-full font-bold text-sm outline-none text-white" 
-                  value={form.assignments_given} onChange={e=>setForm(f=>({...f, assignments_given: e.target.value}))} />
-              </div>
-              <div className="glass-card p-3">
-                <p className="text-[9px] font-bold text-white/50 uppercase mb-1 leading-tight">Graded</p>
-                <input type="number" className="bg-transparent border-none w-full font-bold text-sm outline-none text-white" 
-                  value={form.assignments_graded} onChange={e=>setForm(f=>({...f, assignments_graded: e.target.value}))} />
-              </div>
+            <div className="space-y-4 pt-4 border-t border-white/5">
+              <p className="text-[10px] font-bold uppercase tracking-widest" style={{ color: 'var(--brand)' }}>Section 4: Remarks</p>
+              <textarea className="input-field min-h-[100px] text-sm resize-none" 
+                        value={form.remarks} onChange={e=>setForm(f=>({...f, remarks: e.target.value}))}
+                        placeholder="State reason for manual admin submission..." />
             </div>
 
-            <div className="border-t border-white/5 pt-4">
-              <label className="form-label">Admin Remarks</label>
-              <textarea className="input-field min-h-[60px] text-sm resize-none" value={form.remarks} onChange={e=>setForm(f=>({...f, remarks: e.target.value}))}/>
-            </div>
-
-            <div className="pt-2 flex justify-end gap-3 sticky bottom-0 bg-[#0a0c10] py-4 border-t border-white/5">
-              <button className="btn-secondary" onClick={()=>setSubmitModal(null)}>Cancel</button>
-              <button className="btn-primary" onClick={handleSubmit}>Force Submit DLR</button>
+            <div className="pt-6 flex justify-end gap-3 sticky bottom-0 bg-[#0a0c10]/95 backdrop-blur-md pb-2 border-t border-white/5">
+              <button className="btn-secondary px-6" onClick={()=>setSubmitModal(null)}>Cancel</button>
+              <button className="btn-primary px-8 shadow-lg shadow-brand-500/20" onClick={handleSubmit}>Force Submit DLR</button>
             </div>
           </div>
         </Modal>

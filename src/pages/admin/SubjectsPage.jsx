@@ -19,7 +19,7 @@ export default function SubjectsPage() {
       setLoading(true)
       const { data, error } = await supabase
         .from('subjects')
-        .select('*')
+        .select('id, subject_code, subject_name, short_name, semester, credits')
         .order('semester', { ascending: true })
         .order('subject_code', { ascending: true })
       if (error) throw error

@@ -90,6 +90,8 @@ export default function SubmitLecture() {
     is_substitution: savedState?.is_substitution || false,
     batch_number: prefill?.batch_number || null,
     attendanceDetails: savedState?.attendanceDetails || location.state?.attendanceDetails || {},
+    unit_number: savedState?.unit_number || '',
+    subtopics: savedState?.subtopics || '',
   })
 
   // Fetch students for roll call whenever division or timetable entry batch changes
@@ -266,8 +268,10 @@ export default function SubmitLecture() {
         assignments_last_week: Number(form.assignments_last_week) || 0,
         assignments_given: Number(form.assignments_given) || 0,
         assignments_graded: Number(form.assignments_graded) || 0,
-        topic_covered: form.remarks || 'Main Lecture',
+        topic_covered: form.subtopics || form.remarks || 'Main Lecture',
         remarks: form.remarks || null,
+        unit_number: form.unit_number ? Number(form.unit_number) : null,
+        subtopics: form.subtopics || null,
         is_substitution: Boolean(form.is_substitution),
         approval_status: 'pending',
         submitted_at: new Date().toISOString()
@@ -650,6 +654,19 @@ export default function SubmitLecture() {
                 <input type="number" min="0" className="w-16 bg-white/5 border border-white/10 rounded-lg py-2 text-center font-bold"
                        value={form.assignments_graded} onChange={e => set('assignments_graded', e.target.value)} />
               </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div className="space-y-1.5">
+              <label className="form-label">Unit Number</label>
+              <input type="number" className="input-field" placeholder="e.g. 1"
+                        value={form.unit_number} onChange={e => set('unit_number', e.target.value)} />
+            </div>
+            <div className="space-y-1.5">
+              <label className="form-label">Subtopics / Details</label>
+              <input type="text" className="input-field" placeholder="e.g. Introduction to React"
+                        value={form.subtopics} onChange={e => set('subtopics', e.target.value)} />
             </div>
           </div>
 
