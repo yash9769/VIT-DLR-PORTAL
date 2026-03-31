@@ -243,7 +243,7 @@ export default function FacultyDashboard() {
       </div>
 
       {/* ── "Are you absent today?" card ── show only if pending lectures exist and not already absent */}
-      {pendingLectures.length > 0 && !iAmAbsent && (
+      {stats.todayPending > 0 && !iAmAbsent && (
         <div
           className="p-4 rounded-2xl border"
           style={{

@@ -41,7 +41,7 @@ export const getStatusColor = (status) => ({
 
 export const cls = (...classes) => classes.filter(Boolean).join(' ')
 
-export const today = () => new Date().toISOString().split('T')[0]
+export const today = () => format(new Date(), 'yyyy-MM-dd')
 export const todayDate = () => new Date()
 
 export const generateId = () => Math.random().toString(36).substring(2, 9)
