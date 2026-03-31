@@ -77,8 +77,12 @@ export default function HistoryPage() {
     setEditForm({})
   }
 
-  const startEdit = (rec = selected) => {
+  const startEdit = (recData) => {
+    // If called from onClick directly, recData might be an event object.
+    // Use 'selected' as default if recData is not a valid record.
+    const rec = (recData && typeof recData === 'object' && recData.id) ? recData : selected;
     if (!rec) return
+
     // Initialize attendance from the fetched record
     const att = {}
     if (rec.attendance) {
@@ -99,8 +103,8 @@ export default function HistoryPage() {
       timetable_from: rec.timetable_from || rec.scheduled_start || '',
       timetable_to: rec.timetable_to || rec.scheduled_end || '',
       timetable_faculty: rec.timetable_faculty || rec.faculty?.full_name || '',
-      timetable_subject: rec.timetable_subject || rec.subjects?.subject_name || '',
-      timetable_division: rec.timetable_division || rec.divisions?.division_name || '',
+      timetable_subject: rec.timetable_subject || rec.subjects?.subject_name || rec.custom_subject || '',
+      timetable_division: rec.timetable_division || rec.divisions?.division_name || rec.custom_division || '',
       lecture_date: rec.lecture_date,
       present_count: rec.present_count ?? 0,
       total_students: rec.total_students ?? 0,
@@ -216,7 +220,7 @@ export default function HistoryPage() {
             <ChevronLeft className="w-4 h-4" /> Back to History
           </button>
           {!lockedDates.includes(r.lecture_date) && !editing && (
-            <button onClick={startEdit} className="flex items-center gap-2 text-sm btn-secondary py-1.5 px-3">
+            <button onClick={() => startEdit()} className="flex items-center gap-2 text-sm btn-secondary py-1.5 px-3">
               <Edit2 className="w-3.5 h-3.5" /> {r.approval_status === 'approved' ? 'Edit Record' : 'Edit & Resubmit'}
             </button>
           )}
