@@ -270,7 +270,6 @@ export default function SubmitLecture() {
         topic_covered: form.remarks || 'Main Lecture',
         remarks: form.remarks || null,
         is_substitution: Boolean(form.is_substitution),
-        status: 'active',
         approval_status: 'pending',
         submitted_at: new Date().toISOString()
       }
