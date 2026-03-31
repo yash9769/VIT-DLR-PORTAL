@@ -88,6 +88,7 @@ export default function SubmitLecture() {
 
     remarks: savedState?.remarks || '',
     is_substitution: savedState?.is_substitution || false,
+    batch_number: prefill?.batch_number || null,
     attendanceDetails: savedState?.attendanceDetails || location.state?.attendanceDetails || {},
   })
 
@@ -97,15 +98,12 @@ export default function SubmitLecture() {
     const fetchStudents = async () => {
       setStudentsLoading(true)
       try {
-        // Find the batch for this timetable entry
-        const entry = todaySchedule.find(e => e.id === form.timetable_id)
-        const batchNum = entry?.batch_number ?? null
         let q = supabase
           .from('students')
           .select('id, roll_number, full_name, batch_number')
           .eq('division_id', form.division_id)
           .order('roll_number')
-        if (batchNum) q = q.eq('batch_number', batchNum)
+        if (form.batch_number) q = q.eq('batch_number', form.batch_number)
         const { data } = await q
         const list = data || []
         setStudents(list)
@@ -120,7 +118,7 @@ export default function SubmitLecture() {
       }
     }
     fetchStudents()
-  }, [form.division_id, form.timetable_id])
+  }, [form.division_id, form.batch_number])
 
   // Keep present_count in sync with attendance toggles
   useEffect(() => {
@@ -240,6 +238,7 @@ export default function SubmitLecture() {
       actual_to: entry.time_slots?.end_time || currentTime,
       actual_faculty_id: profile?.id || '',
       actual_faculty_name: profile?.full_name || '',
+      batch_number: entry.batch_number || null,
     }))
   }
 
@@ -426,6 +425,16 @@ export default function SubmitLecture() {
               <select className="select-field" value={form.room_id} onChange={e => set('room_id', e.target.value)}>
                 <option value="">Select room…</option>
                 {rooms.map(r => <option key={r.id} value={r.id}>{r.room_number}</option>)}
+              </select>
+            </div>
+            <div>
+              <label className="form-label">Batch (Optional)</label>
+              <select className="select-field" value={form.batch_number || ''} onChange={e => set('batch_number', e.target.value ? Number(e.target.value) : null)}>
+                <option value="">Full Division</option>
+                <option value="1">Batch 1</option>
+                <option value="2">Batch 2</option>
+                <option value="3">Batch 3</option>
+                <option value="4">Batch 4</option>
               </select>
             </div>
           </div>
