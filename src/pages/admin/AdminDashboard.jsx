@@ -74,11 +74,13 @@ export default function AdminDashboard() {
           id, faculty_id, subject_id, division_id, room_id, lecture_date, 
           unit_number, subtopics, lcs_status, topic_covered, 
           timetable_from, timetable_to, actual_from, actual_to,
-          present_count, total_students, approval_status, admin_comment, created_at,
-          subjects:subjects!subject_id (id, subject_name, short_name),
+          scheduled_start, scheduled_end, actual_start, actual_end,
+          present_count, total_students, attendance, total_batch_strength,
+          approval_status, admin_comment, created_at,
+          subjects:subjects!subject_id (id, subject_name, short_name, subject_code),
           divisions:divisions!division_id (id, division_name, semester),
           rooms:rooms!room_id (id, room_number),
-          faculty:users!faculty_id (id, full_name, initials)
+          faculty:users!faculty_id (id, full_name, initials, role)
         `)
         .order('created_at', { ascending: false })
 
@@ -88,7 +90,7 @@ export default function AdminDashboard() {
       const approved = records.filter(r => r.approval_status === 'approved')
       const total = records.length
       const avg = total > 0
-        ? Math.round(records.reduce((s, r) => s + (r.present_count / r.total_students * 100 || 0), 0) / total)
+        ? Math.round(records.reduce((s, r) => s + attendancePercent(r.present_count ?? r.attendance ?? 0, r.total_students ?? r.total_batch_strength ?? 60), 0) / total)
         : 0
 
       // 2. Fetch Today's Timetable Count
@@ -314,8 +316,8 @@ export default function AdminDashboard() {
                       </p>
                     </div>
                     <div className="text-right">
-                      <p className="font-bold text-sm" style={{ color: (r.present_count / r.total_students) >= 0.75 ? '#3fb950' : '#f85149' }}>
-                        {Math.round(r.present_count / r.total_students * 100)}%
+                      <p className="font-bold text-sm" style={{ color: attendancePercent(r.present_count, r.total_students) >= 75 ? '#3fb950' : '#f85149' }}>
+                        {attendancePercent(r.present_count, r.total_students)}%
                       </p>
                       <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>{r.present_count}/{r.total_students}</p>
                     </div>
@@ -415,9 +417,9 @@ export default function AdminDashboard() {
                 ['Division', viewing.divisions?.division_name],
                 ['Room', viewing.rooms?.room_number || '—'],
                 ['Date', formatDate(viewing.lecture_date)],
-                ['Scheduled', `${formatTime(viewing.timetable_from)} – ${formatTime(viewing.timetable_to)}`],
-                ['Actual Time', `${formatTime(viewing.actual_from)} – ${formatTime(viewing.actual_to)}`],
-                ['Attendance', `${viewing.present_count} / ${viewing.total_students}`],
+                ['Scheduled', `${formatTime(viewing.timetable_from || viewing.scheduled_start)} – ${formatTime(viewing.timetable_to || viewing.scheduled_end)}`],
+                ['Actual Time', `${formatTime(viewing.actual_from || viewing.actual_start)} – ${formatTime(viewing.actual_to || viewing.actual_end)}`],
+                ['Attendance', `${viewing.present_count ?? viewing.attendance ?? 0} / ${viewing.total_students ?? viewing.total_batch_strength ?? 60}`],
                 ['Unit No.', viewing.unit_number || '—'],
                 ['Subtopics', viewing.subtopics || '—'],
               ].map(([k, v]) => (

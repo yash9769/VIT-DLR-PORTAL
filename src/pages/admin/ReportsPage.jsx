@@ -74,7 +74,7 @@ export default function ReportsPage() {
     { label: 'Total Lectures', value: records.length },
     { label: 'Approved', value: records.filter(r=>r.approval_status==='approved').length },
     { label: 'Pending', value: records.filter(r=>r.approval_status==='pending').length },
-    { label: 'Avg Attendance', value: records.length > 0 ? Math.round(records.reduce((s,r)=>s+(r.present_count/r.total_students*100),0)/records.length) + '%' : '—' },
+    { label: 'Avg Attendance', value: records.length > 0 ? Math.round(records.reduce((s,r)=>s+attendancePercent(r.present_count, (r.total_students || 0)),0)/records.length) + '%' : '—' },
     { label: 'LCS Covered', value: records.filter(r=>r.lcs_status==='covered').length + '/' + records.length },
     { label: 'SB PDF Uploaded', value: records.filter(r=>r.smartboard_pdf_uploaded).length + '/' + records.length },
   ]
@@ -171,7 +171,7 @@ export default function ReportsPage() {
                  <tr><td colSpan={7} className="text-center py-10 opacity-50">No faculty records found</td></tr>
               ) : faculty.map(f => {
                 const recs = records.filter(r => r.faculty_id === f.id)
-                const avg = recs.length > 0 ? Math.round(recs.reduce((s,r)=>s+(r.present_count/r.total_students*100),0)/recs.length) : 0
+                const avg = recs.length > 0 ? Math.round(recs.reduce((s,r)=>s+attendancePercent(r.present_count, (r.total_students || 0)),0)/recs.length) : 0
                 return (
                   <tr key={f.id}>
                     <td className="font-medium text-sm">{f.full_name}</td>

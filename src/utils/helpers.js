@@ -28,8 +28,10 @@ export const formatDateTime = (str) => {
 }
 
 export const attendancePercent = (present, total) => {
-  if (!total) return 0
-  return Math.round((present / total) * 100)
+  const p = Number(present) || 0
+  const t = Number(total) || 0
+  if (t <= 0) return 0
+  return Math.round((p / t) * 100)
 }
 
 export const getStatusColor = (status) => ({

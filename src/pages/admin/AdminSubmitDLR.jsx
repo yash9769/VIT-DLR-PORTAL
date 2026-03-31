@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
-import { ArrowLeft, UserCheck, Calendar, BookOpen, Users, Check, AlertCircle } from 'lucide-react'
+import { ArrowLeft, UserCheck, Calendar, BookOpen, Users, Check, AlertCircle, Clock, User } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { toast } from '../../components/ui'
 import { today, getDayName, formatTime } from '../../utils/helpers'
@@ -16,7 +16,7 @@ export default function AdminSubmitDLR() {
   const location = useLocation()
   const prefillRecord = location.state?.editRecord
 
-  // ── Master data ──────────────────────────────────────────────────
+  // Master data
   const [faculties, setFaculties] = useState([])
   const [timetable, setTimetable] = useState([])
   const [students, setStudents] = useState([])
@@ -25,15 +25,10 @@ export default function AdminSubmitDLR() {
   const [loading, setLoading] = useState(true)
   const [submitting, setSubmitting] = useState(false)
 
-  // ── Step control ─────────────────────────────────────────────────
-  // Step 1: Choose faculty + date
-  // Step 2: Choose lecture slot
-  // Step 3: Fill details
-  // Step 4: Roll call
-  // Step 5: Review + submit
+  // Step control (1-5)
   const [step, setStep] = useState(prefillRecord ? 3 : 1)
 
-  // ── Form state ────────────────────────────────────────────────────
+  // Form state
   const [selectedFaculty, setSelectedFaculty] = useState(prefillRecord?.faculty_id || '')
   const [lectureDate, setLectureDate] = useState(prefillRecord?.lecture_date || today())
   const [selectedSlot, setSelectedSlot] = useState(null)
@@ -47,12 +42,12 @@ export default function AdminSubmitDLR() {
     smartboard_pdf_uploaded: prefillRecord?.smartboard_pdf_uploaded || false,
     remarks: prefillRecord?.remarks || '',
     total_students: prefillRecord?.total_students || 60,
-    present_count: prefillRecord?.present_count || '',
-    actual_start: prefillRecord?.actual_start || '',
-    actual_end: prefillRecord?.actual_end || '',
+    present_count: prefillRecord?.present_count ?? prefillRecord?.attendance ?? '',
+    actual_start: prefillRecord?.actual_start || prefillRecord?.actual_from || '',
+    actual_end: prefillRecord?.actual_end || prefillRecord?.actual_to || '',
   })
 
-  // ── Fetch faculty list on mount ───────────────────────────────────
+  // Fetch faculty list
   useEffect(() => {
     const fetchFaculties = async () => {
       const { data } = await supabase
@@ -67,7 +62,7 @@ export default function AdminSubmitDLR() {
     fetchFaculties()
   }, [])
 
-  // ── Fetch timetable for selected faculty + date ───────────────────
+  // Fetch timetable for selected faculty + date
   useEffect(() => {
     if (!selectedFaculty || !lectureDate) { setTimetable([]); return }
     const dayName = new Date(lectureDate + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long' })
@@ -77,7 +72,7 @@ export default function AdminSubmitDLR() {
         .select(`
           *,
           subjects (id, subject_name, short_name),
-          divisions (id, division_name, semester),
+          divisions (id, division_name, semester, strength),
           rooms (id, room_number),
           time_slots (id, slot_label, start_time, end_time)
         `)
@@ -89,56 +84,70 @@ export default function AdminSubmitDLR() {
     fetchTimetable()
   }, [selectedFaculty, lectureDate])
 
-  // ── Fetch students for roll call ──────────────────────────────────
+  // Fetch students for roll call
   useEffect(() => {
     if (!selectedSlot) return
-    const batchNum = selectedSlot.batch_number ?? null
+    
+    // Support both theory and labs
+    const batchNum = selectedSlot.batch_number || selectedSlot.batch_no || null
     const divisionId = selectedSlot.division_id
     if (!divisionId) return
 
     const fetchStudents = async () => {
       setStudentsLoading(true)
-      let q = supabase
-        .from('students')
-        .select('id, roll_number, full_name, batch_number')
-        .eq('division_id', divisionId)
-        .order('roll_number')
-      if (batchNum) q = q.eq('batch_number', batchNum)
-      const { data: list } = await q
-      setStudents(list || [])
+      try {
+        let q = supabase
+          .from('students')
+          .select('id, roll_number, full_name, batch_number')
+          .eq('division_id', divisionId)
+          .order('roll_number')
 
-      // If editing, load existing attendance
-      if (prefillRecord?.id) {
-        const { data: existingAtt } = await supabase
-          .from('attendance')
-          .select('student_id, is_present')
-          .eq('lecture_record_id', prefillRecord.id)
-        if (existingAtt?.length > 0) {
-          const attMap = {}
-          existingAtt.forEach(a => { attMap[a.student_id] = a.is_present })
-          setAttendance(attMap)
-          setStudentsLoading(false)
-          return
+        // Filter by batch ONLY if it's a valid batch number (1, 2, 3...)
+        // Theory classes usually have batch 0 or null
+        if (batchNum && batchNum > 0) {
+          q = q.eq('batch_number', batchNum)
         }
-      }
 
-      const init = {}
-      ;(list || []).forEach(s => { init[s.id] = true })
-      setAttendance(init)
-      setStudentsLoading(false)
+        const { data: list, error } = await q
+        if (error) throw error
+        setStudents(list || [])
+
+        // If editing, load existing attendance
+        const recordId = prefillRecord?.id
+        if (recordId) {
+          const { data: existingAtt } = await supabase
+            .from('attendance')
+            .select('student_id, is_present')
+            .eq('lecture_record_id', recordId)
+          if (existingAtt?.length > 0) {
+            const attMap = {}
+            existingAtt.forEach(a => { attMap[a.student_id] = a.is_present })
+            setAttendance(attMap)
+            return
+          }
+        }
+
+        const init = {}
+        ;(list || []).forEach(s => { init[s.id] = true })
+        setAttendance(init)
+      } catch (err) {
+        console.error('Error fetching students:', err)
+        toast.error('Failed to load students')
+      } finally {
+        setStudentsLoading(false)
+      }
     }
 
     fetchStudents()
-  }, [selectedSlot])
+  }, [selectedSlot, prefillRecord])
 
   const toggleAttendance = (id) => setAttendance(prev => ({ ...prev, [id]: !prev[id] }))
-  const presentCount = Object.values(attendance).filter(Boolean).length
+  const presentCountResult = Object.values(attendance).filter(Boolean).length
 
   const handleSubmit = async () => {
     if (!selectedSlot && !prefillRecord) { toast.error('Please select a lecture slot'); return }
     if (!form.topic_covered.trim()) { toast.error('Topic covered is required'); return }
 
-    const slot = selectedSlot
     const payload = {
       faculty_id: selectedFaculty,
       lecture_date: lectureDate,
@@ -146,18 +155,33 @@ export default function AdminSubmitDLR() {
       division_id: selectedSlot?.division_id || prefillRecord?.division_id || null,
       subject_id: selectedSlot?.subject_id || prefillRecord?.subject_id || null,
       room_id: selectedSlot?.room_id || prefillRecord?.room_id || null,
+      
+      // Column Set 1
       scheduled_start: selectedSlot?.time_slots?.start_time || prefillRecord?.scheduled_start || null,
       scheduled_end: selectedSlot?.time_slots?.end_time || prefillRecord?.scheduled_end || null,
       actual_start: form.actual_start || null,
       actual_end: form.actual_end || null,
+      
+      // Column Set 2 (Redundant columns used by reporting services)
+      timetable_from: selectedSlot?.time_slots?.start_time || prefillRecord?.timetable_from || prefillRecord?.scheduled_start || null,
+      timetable_to: selectedSlot?.time_slots?.end_time || prefillRecord?.timetable_to || prefillRecord?.scheduled_end || null,
+      actual_from: form.actual_start || null,
+      actual_to: form.actual_end || null,
+
       topic_covered: form.topic_covered,
       subtopics: form.subtopics,
       unit_number: form.unit_number ? Number(form.unit_number) : null,
       lcs_status: form.lcs_status,
       smartboard_pdf_uploaded: form.smartboard_pdf_uploaded,
       remarks: form.remarks,
+      
       total_students: students.length > 0 ? students.length : (Number(form.total_students) || 60),
-      present_count: (students.length > 0) ? presentCount : (Number(form.present_count) || Number(form.total_students) || 60),
+      present_count: (students.length > 0) ? presentCountResult : (Number(form.present_count) || 0),
+      
+      // Legacy columns
+      attendance: (students.length > 0) ? presentCountResult : (Number(form.present_count) || 0),
+      total_batch_strength: students.length > 0 ? students.length : (Number(form.total_students) || 60),
+
       approval_status: 'pending',
       submitted_at: new Date().toISOString(),
     }
@@ -174,7 +198,7 @@ export default function AdminSubmitDLR() {
         recordId = data.id
       }
 
-      // Sync attendance
+      // Sync attendance table
       if (students.length > 0 && recordId) {
         await supabase.from('attendance').delete().eq('lecture_record_id', recordId)
         const attRows = students.map(s => ({
@@ -183,63 +207,67 @@ export default function AdminSubmitDLR() {
           is_present: attendance[s.id] ?? true,
         }))
         const { error: attErr } = await supabase.from('attendance').insert(attRows)
-        if (attErr) console.error('Attendance insert error:', attErr)
+        if (attErr) console.error('Attendance sync error:', attErr)
       }
 
-      toast.success(prefillRecord ? 'DLR updated successfully' : 'DLR submitted on behalf of faculty')
+      toast.success(prefillRecord ? 'DLR updated' : 'DLR submitted (Admin Override)')
       navigate('/admin/records')
     } catch (err) {
       console.error(err)
-      toast.error('Failed to submit DLR: ' + (err.message || ''))
+      toast.error('Submission failed: ' + err.message)
     } finally {
       setSubmitting(false)
     }
   }
 
   const facultyObj = faculties.find(f => f.id === selectedFaculty)
-  const STEPS = ['Faculty & Date', 'Lecture Slot', 'Details', 'Roll Call', 'Review']
+  const STEPS = ['Select Faculty', 'Select Slot', 'Details', 'Roll Call', 'Review']
 
   if (loading) return (
-    <div className="flex items-center justify-center h-64">
-      <p className="text-sm opacity-50">Loading faculty list…</p>
+    <div className="flex flex-col items-center justify-center h-64 space-y-4">
+      <div className="w-8 h-8 border-4 border-brand border-t-transparent rounded-full animate-spin" />
+      <p className="text-sm font-medium opacity-60">Initializing admin submission...</p>
     </div>
   )
 
   return (
-    <div className="p-6 max-w-2xl mx-auto space-y-5 animate-fade-in">
+    <div className="p-6 max-w-2xl mx-auto space-y-6 animate-fade-in pb-20">
       {/* Header */}
-      <div className="flex items-center gap-3">
-        <button onClick={() => navigate(-1)} className="w-9 h-9 rounded-xl flex items-center justify-center" style={{ background: 'rgba(255,255,255,0.07)' }}>
-          <ArrowLeft className="w-4 h-4" style={{ color: 'var(--text-secondary)' }} />
+      <div className="flex items-center gap-4">
+        <button onClick={() => navigate(-1)} className="w-10 h-10 rounded-xl flex items-center justify-center transition-all bg-white border border-slate-200 hover:bg-slate-50">
+          <ArrowLeft className="w-5 h-5 text-slate-600" />
         </button>
         <div>
-          <h1 className="font-display font-bold text-xl" style={{ color: 'var(--text-primary)' }}>
-            {prefillRecord ? 'Edit DLR (Admin)' : 'Submit DLR on Behalf of Faculty'}
+          <h1 className="font-display font-bold text-2xl text-slate-900">
+            {prefillRecord ? 'Edit DLR' : 'Admin Override DLR'}
           </h1>
-          <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>
-            Admin override — fills a lecture record for any faculty member
-          </p>
+          <p className="text-sm text-slate-500">Submit lecture record for any faculty member</p>
         </div>
       </div>
 
-      {/* Step progress bar */}
-      <div className="glass-card p-4">
-        <div className="flex items-center gap-1.5">
+      {/* Step Indicator */}
+      <div className="glass-card p-6 bg-white shadow-sm border-slate-100">
+        <div className="flex items-center">
           {STEPS.map((label, i) => {
-            const s = i + 1
-            const done = step > s
-            const active = step === s
+            const num = i + 1
+            const isDone = step > num
+            const isActive = step === num
             return (
-              <div key={label} className="flex items-center gap-1.5 flex-1">
-                <div className="flex flex-col items-center gap-1 flex-shrink-0">
-                  <div className={`w-7 h-7 rounded-full flex items-center justify-center text-xs font-bold transition-all ${done ? 'bg-green-500 text-white' : active ? 'text-white' : ''}`}
-                    style={done ? {} : active ? { background: 'linear-gradient(135deg,#4A6CF7,#3355e8)' } : { background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', color: 'var(--text-secondary)' }}>
-                    {done ? <Check className="w-3.5 h-3.5" /> : s}
+              <div key={label} className="flex items-center flex-1 last:flex-none">
+                <div className="flex flex-col items-center group relative">
+                  <div className={`w-8 h-8 rounded-full flex items-center justify-center text-xs font-bold transition-all relative z-10 ${
+                    isDone ? 'bg-green-500 text-white' : 
+                    isActive ? 'bg-brand text-white shadow-lg ring-4 ring-brand/10' : 
+                    'bg-slate-100 text-slate-400'
+                  }`}>
+                    {isDone ? <Check className="w-4 h-4" /> : num}
                   </div>
-                  <span className="text-[9px] font-semibold uppercase tracking-wider hidden sm:block" style={{ color: active ? 'var(--brand)' : done ? '#3fb950' : 'var(--text-secondary)' }}>{label}</span>
+                  <span className={`text-[10px] absolute mt-10 font-bold uppercase tracking-wider whitespace-nowrap ${isActive ? 'text-brand' : isDone ? 'text-green-500' : 'text-slate-400 opacity-0 sm:opacity-100'}`}>
+                    {label}
+                  </span>
                 </div>
                 {i < STEPS.length - 1 && (
-                  <div className="flex-1 h-0.5 rounded-full transition-all mt-[-14px]" style={{ background: done ? '#3fb950' : 'rgba(255,255,255,0.08)' }} />
+                  <div className={`flex-1 h-[2px] transition-all duration-300 mx-2 ${isDone ? 'bg-green-500' : 'bg-slate-100'}`} />
                 )}
               </div>
             )
@@ -247,261 +275,265 @@ export default function AdminSubmitDLR() {
         </div>
       </div>
 
-      {/* STEP 1: Faculty + Date */}
-      {step === 1 && (
-        <div className="glass-card p-5 space-y-4">
-          <div className="space-y-1.5">
-            <label className="form-label">Faculty Member <span className="text-red-400">*</span></label>
-            <select className="select-field w-full" value={selectedFaculty} onChange={e => setSelectedFaculty(e.target.value)}>
-              <option value="">Choose a faculty member…</option>
-              {faculties.map(f => (
-                <option key={f.id} value={f.id}>{f.full_name} ({f.department})</option>
-              ))}
-            </select>
-          </div>
-          <div className="space-y-1.5">
-            <label className="form-label">Lecture Date <span className="text-red-400">*</span></label>
-            <input type="date" className="input-field w-full" value={lectureDate} onChange={e => setLectureDate(e.target.value)} max={today()} />
-          </div>
-          {selectedFaculty && (
-            <div className="flex items-center gap-3 p-3 rounded-xl" style={{ background: 'rgba(74,108,247,0.08)', border: '1px solid rgba(74,108,247,0.2)' }}>
-              <UserCheck className="w-4 h-4" style={{ color: 'var(--brand)' }} />
-              <p className="text-sm" style={{ color: 'var(--text-primary)' }}>
-                Submitting as admin for <span className="font-bold">{facultyObj?.full_name}</span>
-              </p>
+      <div className="mt-8">
+        {/* STEP 1: Faculty Selection */}
+        {step === 1 && (
+          <div className="glass-card p-6 space-y-6 bg-white animate-slide-up">
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs font-black uppercase text-slate-400 tracking-widest block mb-2">Faculty Member</label>
+                <select className="input-field w-full" value={selectedFaculty} onChange={e => setSelectedFaculty(e.target.value)}>
+                  <option value="">Select Faculty...</option>
+                  {faculties.map(f => (
+                    <option key={f.id} value={f.id}>{f.full_name} ({f.department || 'General'})</option>
+                  ))}
+                </select>
+              </div>
+              <div>
+                <label className="text-xs font-black uppercase text-slate-400 tracking-widest block mb-2">Lecture Date</label>
+                <input type="date" className="input-field w-full" value={lectureDate} onChange={e => setLectureDate(e.target.value)} max={today()} />
+              </div>
             </div>
-          )}
-          <button
-            onClick={() => setStep(2)}
-            disabled={!selectedFaculty || !lectureDate}
-            className="btn-primary w-full disabled:opacity-40"
-          >
-            Next: Select Lecture Slot →
-          </button>
-        </div>
-      )}
+            
+            {selectedFaculty && (
+              <div className="p-4 rounded-xl flex items-center gap-3 border border-brand/20 bg-brand/5">
+                <UserCheck className="w-5 h-5 text-brand" />
+                <div>
+                  <p className="text-sm font-bold text-brand">Admin Override Active</p>
+                  <p className="text-xs text-brand/70 font-medium">Creating record for {facultyObj?.full_name}</p>
+                </div>
+              </div>
+            )}
 
-      {/* STEP 2: Lecture Slot */}
-      {step === 2 && (
-        <div className="glass-card p-5 space-y-4">
-          <div className="flex items-center gap-2 mb-2">
-            <Calendar className="w-4 h-4" style={{ color: 'var(--brand)' }} />
-            <p className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>
-              Schedule for {facultyObj?.full_name} · {lectureDate}
-            </p>
+            <button onClick={() => setStep(2)} disabled={!selectedFaculty} className="btn-primary w-full py-4 text-base shadow-brand/20 shadow-xl">
+              Continue to Slot Selection →
+            </button>
           </div>
+        )}
 
-          {timetable.length === 0 ? (
-            <div className="text-center py-10">
-              <BookOpen className="w-8 h-8 mx-auto mb-3 opacity-30" style={{ color: 'var(--text-secondary)' }} />
-              <p className="text-sm" style={{ color: 'var(--text-secondary)' }}>No timetable entries for this faculty on {new Date(lectureDate + 'T12:00:00').toLocaleDateString('en-US', { weekday: 'long' })}.</p>
-              <p className="text-xs mt-1 opacity-50">Check if the date falls on a working day and the timetable is set up.</p>
+        {/* STEP 2: Slot Selection */}
+        {step === 2 && (
+          <div className="glass-card p-6 space-y-6 bg-white animate-slide-up">
+            <div className="flex items-center justify-between">
+              <div>
+                <h2 className="font-display font-bold text-lg text-slate-800">Select Lecture Slot</h2>
+                <p className="text-xs text-slate-500">{getDayName(new Date(lectureDate))} schedule</p>
+              </div>
+              <span className="text-xs font-bold px-3 py-1 rounded-full bg-slate-100 text-slate-600 border border-slate-200 uppercase tracking-widest">{lectureDate}</span>
             </div>
-          ) : (
-            <div className="space-y-2">
-              {timetable.map(entry => {
-                const isSelected = selectedSlot?.id === entry.id
-                return (
-                  <button
-                    key={entry.id}
-                    onClick={() => {
-                      setSelectedSlot(entry)
-                      setForm(f => ({ 
-                        ...f, 
-                        actual_start: entry.time_slots?.start_time || '',
-                        actual_end: entry.time_slots?.end_time || ''
-                      }))
-                    }}
-                    className="w-full text-left p-4 rounded-2xl border transition-all"
-                    style={{
-                      background: isSelected ? 'rgba(74,108,247,0.1)' : 'rgba(255,255,255,0.03)',
-                      borderColor: isSelected ? 'rgba(74,108,247,0.5)' : 'rgba(255,255,255,0.08)',
-                    }}
-                  >
-                    <div className="flex items-center gap-3">
-                      <div className="w-5 h-5 rounded-full border-2 flex items-center justify-center flex-shrink-0"
-                        style={{ borderColor: isSelected ? 'var(--brand)' : 'rgba(255,255,255,0.3)', background: isSelected ? 'var(--brand)' : 'transparent' }}>
-                        {isSelected && <Check className="w-3 h-3 text-white" />}
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <p className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>
-                          {entry.subjects?.subject_name || entry.custom_subject || 'Unknown Subject'}
-                        </p>
-                        <div className="flex items-center gap-3 mt-1 text-xs" style={{ color: 'var(--text-secondary)' }}>
-                          <span>{entry.time_slots?.start_time?.slice(0, 5)} – {entry.time_slots?.end_time?.slice(0, 5)}</span>
-                          <span>{entry.divisions?.division_name || entry.custom_division}</span>
-                          <span>{entry.rooms?.room_number || entry.custom_room || '—'}</span>
-                          {entry.batch_number && <span className="font-bold" style={{ color: 'var(--brand)' }}>B{entry.batch_number}</span>}
+
+            {timetable.length === 0 ? (
+              <div className="py-12 text-center bg-slate-50 rounded-2xl border-2 border-dashed border-slate-200">
+                <BookOpen className="w-12 h-12 mx-auto mb-4 opacity-10 text-slate-900" />
+                <p className="text-slate-500 font-bold">No schedule found</p>
+                <p className="text-xs text-slate-400 mt-1">Please ensure the timetable exists for this faculty.</p>
+              </div>
+            ) : (
+              <div className="space-y-3">
+                {timetable.map(entry => {
+                  const isSelected = selectedSlot?.id === entry.id
+                  const isLab = !!(entry.batch_number || entry.batch_no)
+                  return (
+                    <button
+                      key={entry.id}
+                      onClick={() => {
+                        setSelectedSlot(entry)
+                        setForm(f => ({ 
+                          ...f, 
+                          actual_start: entry.time_slots?.start_time?.slice(0,5) || '',
+                          actual_end: entry.time_slots?.end_time?.slice(0,5) || '',
+                          total_students: entry.divisions?.strength || 60
+                        }))
+                      }}
+                      className={`w-full group p-4 rounded-2xl border text-left transition-all ${
+                        isSelected ? 'border-brand bg-brand/5' : 'border-slate-100 hover:border-brand/40 bg-white'
+                      }`}
+                    >
+                      <div className="flex items-center gap-4">
+                        <div className={`w-12 h-12 rounded-xl flex flex-col items-center justify-center transition-colors ${isSelected ? 'bg-brand text-white shadow-lg shadow-brand/20' : 'bg-slate-50 text-slate-400'}`}>
+                          <p className="text-[10px] font-black uppercase tracking-tighter leading-none">{entry.time_slots?.slot_label}</p>
+                          <Clock className="w-4 h-4 mt-0.5" />
                         </div>
+                        <div className="flex-1 min-w-0">
+                          <p className={`font-bold transition-colors ${isSelected ? 'text-brand' : 'text-slate-800'}`}>
+                            {entry.subjects?.subject_name || entry.custom_subject || 'Subject'}
+                          </p>
+                          <div className="flex items-center gap-2 mt-1">
+                            <span className="text-[10px] font-bold text-slate-500 bg-slate-100 px-2 py-0.5 rounded uppercase tracking-widest">{entry.divisions?.division_name}</span>
+                            <span className="text-[10px] font-bold text-slate-400 border-l border-slate-200 pl-2 uppercase">{entry.time_slots?.start_time.slice(0,5)} – {entry.time_slots?.end_time.slice(0,5)}</span>
+                            {isLab && <span className="text-[10px] font-black text-brand bg-brand/10 px-1.5 py-0.5 rounded uppercase tracking-tighter">Batch {entry.batch_number || entry.batch_no}</span>}
+                          </div>
+                        </div>
+                        {isSelected && <div className="w-6 h-6 rounded-full bg-brand flex items-center justify-center"><Check className="w-4 h-4 text-white" /></div>}
                       </div>
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-4">
+              <button onClick={() => setStep(1)} className="btn-secondary py-4 font-bold text-slate-600">← Back</button>
+              <button onClick={() => setStep(3)} disabled={!selectedSlot} className="btn-primary py-4 font-bold disabled:opacity-50">Next: Details →</button>
+            </div>
+          </div>
+        )}
+
+        {/* STEP 3: Details */}
+        {step === 3 && (
+          <div className="glass-card p-6 space-y-6 bg-white animate-slide-up">
+            <div className="space-y-4">
+              <div>
+                <label className="text-xs font-black uppercase text-slate-400 tracking-widest block mb-2">Topic Covered *</label>
+                <textarea className="input-field min-h-[100px] resize-none w-full" placeholder="What was covered in this lecture?" value={form.topic_covered} onChange={e => setForm(f => ({ ...f, topic_covered: e.target.value }))} />
+              </div>
+              <div>
+                <label className="text-xs font-black uppercase text-slate-400 tracking-widest block mb-2">Subtopics (Optional)</label>
+                <input className="input-field w-full" placeholder="Recursion, Dynamic Programming..." value={form.subtopics} onChange={e => setForm(f => ({ ...f, subtopics: e.target.value }))} />
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-black uppercase text-brand tracking-widest block mb-2">Actual Start</label>
+                  <input type="time" className="input-field w-full font-bold text-lg" value={form.actual_start} onChange={e => setForm(f => ({ ...f, actual_start: e.target.value }))} />
+                </div>
+                <div>
+                  <label className="text-xs font-black uppercase text-brand tracking-widest block mb-2">Actual End</label>
+                  <input type="time" className="input-field w-full font-bold text-lg" value={form.actual_end} onChange={e => setForm(f => ({ ...f, actual_end: e.target.value }))} />
+                </div>
+              </div>
+              <div className="grid grid-cols-2 gap-4">
+                <div>
+                  <label className="text-xs font-black uppercase text-slate-400 tracking-widest block mb-2">Unit Number</label>
+                  <input type="number" className="input-field w-full" placeholder="Unit 1-6" value={form.unit_number} onChange={e => setForm(f => ({ ...f, unit_number: e.target.value }))} />
+                </div>
+                <div>
+                  <label className="text-xs font-black uppercase text-slate-400 tracking-widest block mb-2">LCS Status</label>
+                  <select className="input-field w-full" value={form.lcs_status} onChange={e => setForm(f => ({ ...f, lcs_status: e.target.value }))}>
+                    {LCS_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
+                  </select>
+                </div>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-4 pt-4">
+              <button onClick={() => setStep(2)} className="btn-secondary py-4 font-bold">Back</button>
+              <button onClick={() => setStep(4)} disabled={!form.topic_covered} className="btn-primary py-4 font-bold disabled:opacity-50">Next: Roll Call →</button>
+            </div>
+          </div>
+        )}
+
+        {/* STEP 4: Roll Call */}
+        {step === 4 && (
+          <div className="glass-card p-6 space-y-6 bg-white animate-slide-up">
+            <div className="flex items-center justify-between sticky top-0 bg-white py-2 z-10 border-b border-slate-100">
+              <div className="flex items-center gap-2">
+                <Users className="w-5 h-5 text-brand" />
+                <h3 className="font-bold text-slate-800">Roll Call Selection</h3>
+              </div>
+              <div className="flex gap-2">
+                <button onClick={() => { const all={}; students.forEach(s=>all[s.id]=true); setAttendance(all) }} className="text-[10px] font-black uppercase px-2 py-1 rounded bg-green-50 text-green-600 border border-green-200 hover:bg-green-100">All Present</button>
+                <button onClick={() => { const all={}; students.forEach(s=>all[s.id]=false); setAttendance(all) }} className="text-[10px] font-black uppercase px-2 py-1 rounded bg-red-50 text-red-600 border border-red-200 hover:bg-red-100">All Absent</button>
+              </div>
+            </div>
+
+            {studentsLoading ? (
+              <div className="text-center py-12 animate-pulse">
+                <Users className="w-10 h-10 mx-auto text-slate-200 mb-3" />
+                <p className="text-sm font-medium text-slate-400">Fetching student registry...</p>
+              </div>
+            ) : students.length === 0 ? (
+              <div className="p-8 text-center bg-amber-50 rounded-2xl border border-amber-100">
+                <AlertCircle className="w-10 h-10 mx-auto text-amber-500 mb-3" />
+                <p className="text-sm text-amber-800 font-bold">No Students Synced</p>
+                <p className="text-xs text-amber-600 mb-6">Students may not be mapped to this division/batch.</p>
+                
+                <div className="space-y-4 max-w-xs mx-auto text-left">
+                  <div>
+                    <label className="text-[10px] font-black uppercase text-amber-700 tracking-widest block mb-2">Manual Present Count</label>
+                    <input type="number" className="input-field w-full text-center font-bold text-xl bg-white border-amber-200 focus:border-amber-500" value={form.present_count} onChange={e=>setForm(f=>({...f, present_count: e.target.value}))} />
+                  </div>
+                  <div>
+                    <label className="text-[10px] font-black uppercase text-amber-700 tracking-widest block mb-2">Manual Total Count</label>
+                    <input type="number" className="input-field w-full text-center font-bold text-xl bg-white border-amber-200 focus:border-amber-500" value={form.total_students} onChange={e=>setForm(f=>({...f, total_students: e.target.value}))} />
+                  </div>
+                </div>
+              </div>
+            ) : (
+              <div className="grid grid-cols-2 gap-2 max-h-[400px] overflow-y-auto pr-2 custom-scrollbar">
+                {students.map(s => {
+                  const isPresent = attendance[s.id] ?? true
+                  return (
+                    <button key={s.id} onClick={() => toggleAttendance(s.id)}
+                      className={`flex items-center gap-3 p-3 rounded-2xl text-left border transition-all ${
+                        isPresent ? 'border-green-100 bg-green-50/20 hover:border-green-300' : 'border-slate-100 bg-white hover:border-red-300'
+                      }`}
+                    >
+                      <div className={`w-6 h-6 rounded-lg flex items-center justify-center flex-shrink-0 text-[10px] font-black shadow-sm transition-all ${
+                        isPresent ? 'bg-green-500 text-white translate-x-0' : 'bg-slate-100 text-slate-400'
+                      }`}>
+                        {isPresent ? 'P' : 'A'}
+                      </div>
+                      <div className="min-w-0">
+                        <p className="text-[10px] font-mono font-bold text-slate-400 leading-none mb-1 uppercase tracking-tighter">{s.roll_number}</p>
+                        <p className="text-xs font-bold text-slate-700 truncate leading-none">{s.full_name}</p>
+                      </div>
+                    </button>
+                  )
+                })}
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-4 pt-4 border-t border-slate-100">
+              <button onClick={() => setStep(3)} className="btn-secondary py-4 font-bold">Back</button>
+              <button onClick={() => setStep(5)} className="btn-primary py-4 font-bold">Review & Finish →</button>
+            </div>
+          </div>
+        )}
+
+        {/* STEP 5: Final Review */}
+        {step === 5 && (
+          <div className="glass-card p-6 space-y-6 bg-white animate-slide-up">
+            <h3 className="font-display font-bold text-xl text-slate-900">Final Confirmation</h3>
+            
+            <div className="rounded-2xl bg-slate-50 border border-slate-200 overflow-hidden shadow-inner">
+              {[
+                { l: 'Faculty', v: facultyObj?.full_name, icon: User },
+                { l: 'Date', v: lectureDate, icon: Calendar },
+                { l: 'Subject', v: selectedSlot?.subjects?.subject_name || selectedSlot?.custom_subject || prefillRecord?.subjects?.subject_name, icon: BookOpen },
+                { l: 'Division', v: selectedSlot?.divisions?.division_name || prefillRecord?.divisions?.division_name, icon: Users },
+                { l: 'Time', v: `${form.actual_start} to ${form.actual_end}`, icon: Clock },
+                { l: 'Attendance', v: `${students.length > 0 ? presentCountResult : form.present_count} / ${students.length > 0 ? students.length : form.total_students} students`, icon: Check },
+              ].map(item => (
+                <div key={item.l} className="flex items-center justify-between p-4 border-b border-slate-200 last:border-0 hover:bg-white group transition-colors">
+                  <div className="flex items-center gap-3">
+                    <div className="w-8 h-8 rounded-lg bg-white border border-slate-200 flex items-center justify-center text-slate-400 group-hover:text-brand transition-colors">
+                      <item.icon className="w-4 h-4" />
                     </div>
-                  </button>
-                )
-              })}
+                    <span className="text-[10px] font-black text-slate-400 uppercase tracking-widest">{item.l}</span>
+                  </div>
+                  <span className="text-sm font-bold text-slate-700">{item.v || '—'}</span>
+                </div>
+              ))}
             </div>
-          )}
 
-          <div className="flex gap-3 pt-2">
-            <button onClick={() => setStep(1)} className="btn-secondary flex-1">← Back</button>
-            <button
-              onClick={() => { setStep(3); setForm(f => ({ ...f, total_students: selectedSlot?.divisions?.strength || 60 })) }}
-              disabled={!selectedSlot}
-              className="btn-primary flex-1 disabled:opacity-40"
-            >
-              Next: Fill Details →
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* STEP 3: Lecture Details */}
-      {step === 3 && (
-        <div className="glass-card p-5 space-y-4">
-          <div className="space-y-1.5">
-            <label className="form-label">Topic Covered <span className="text-red-400">*</span></label>
-            <input className="input-field w-full" placeholder="e.g. Introduction to Recursion" value={form.topic_covered} onChange={e => setForm(f => ({ ...f, topic_covered: e.target.value }))} />
-          </div>
-          <div className="space-y-1.5">
-            <label className="form-label">Subtopics <span className="opacity-50 text-xs">(optional)</span></label>
-            <input className="input-field w-full" placeholder="e.g. Base case, recursive tree" value={form.subtopics} onChange={e => setForm(f => ({ ...f, subtopics: e.target.value }))} />
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label className="form-label">Actual Start</label>
-              <input type="time" className="input-field w-full" value={form.actual_start} onChange={e => setForm(f => ({ ...f, actual_start: e.target.value }))} />
-            </div>
-            <div className="space-y-1.5">
-              <label className="form-label">Actual End</label>
-              <input type="time" className="input-field w-full" value={form.actual_end} onChange={e => setForm(f => ({ ...f, actual_end: e.target.value }))} />
-            </div>
-          </div>
-          <div className="grid grid-cols-2 gap-4">
-            <div className="space-y-1.5">
-              <label className="form-label">Unit Number</label>
-              <input type="number" min="1" max="10" className="input-field w-full" placeholder="e.g. 3" value={form.unit_number} onChange={e => setForm(f => ({ ...f, unit_number: e.target.value }))} />
-            </div>
-            <div className="space-y-1.5">
-              <label className="form-label">LCS Coverage</label>
-              <select className="select-field w-full" value={form.lcs_status} onChange={e => setForm(f => ({ ...f, lcs_status: e.target.value }))}>
-                {LCS_OPTIONS.map(o => <option key={o.value} value={o.value}>{o.label}</option>)}
-              </select>
-            </div>
-          </div>
-          <div className="flex items-center justify-between p-3 rounded-xl border" style={{ background: form.smartboard_pdf_uploaded ? 'rgba(63,185,80,0.08)' : 'rgba(255,255,255,0.03)', borderColor: form.smartboard_pdf_uploaded ? 'rgba(63,185,80,0.3)' : 'rgba(255,255,255,0.08)' }}>
-            <p className="text-sm font-semibold" style={{ color: 'var(--text-primary)' }}>Smartboard PDF Uploaded</p>
-            <button type="button"
-              onClick={() => setForm(f => ({ ...f, smartboard_pdf_uploaded: !f.smartboard_pdf_uploaded }))}
-              className={`toggle-track ${form.smartboard_pdf_uploaded ? 'active' : ''}`}
-              style={form.smartboard_pdf_uploaded ? { background: '#3fb950 !important' } : {}}
-            >
-              <div className="toggle-knob" />
-            </button>
-          </div>
-          <div className="space-y-1.5">
-            <label className="form-label">Remarks <span className="opacity-50 text-xs">(optional)</span></label>
-            <textarea className="input-field w-full min-h-[70px] resize-none" placeholder="Any additional notes…" value={form.remarks} onChange={e => setForm(f => ({ ...f, remarks: e.target.value }))} />
-          </div>
-          <div className="flex gap-3 pt-2">
-            <button onClick={() => setStep(prefillRecord ? 1 : 2)} className="btn-secondary flex-1">← Back</button>
-            <button onClick={() => setStep(4)} disabled={!form.topic_covered.trim()} className="btn-primary flex-1 disabled:opacity-40">
-              Next: Roll Call →
-            </button>
-          </div>
-        </div>
-      )}
-
-      {/* STEP 4: Roll Call */}
-      {step === 4 && (
-        <div className="glass-card p-5 space-y-4">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <Users className="w-4 h-4" style={{ color: 'var(--brand)' }} />
-              <p className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>
-                Roll Call · {presentCount}/{students.length} Present
+            <div className="p-4 rounded-2xl flex items-start gap-4 border border-amber-200 bg-amber-50">
+              <div className="w-8 h-8 rounded-full bg-amber-100 flex items-center justify-center flex-shrink-0 animate-pulse">
+                <AlertCircle className="w-5 h-5 text-amber-600" />
+              </div>
+              <p className="text-xs text-amber-800 font-bold leading-relaxed">
+                ADMIN PRIVILEGE: <span className="font-medium text-amber-700">This submission bypasses faculty locks and will be recorded as a direct administrative entry.</span>
               </p>
             </div>
-            <div className="flex gap-2">
-              <button onClick={() => { const all = {}; students.forEach(s => { all[s.id] = true }); setAttendance(all) }} className="text-xs px-2 py-1 rounded-lg font-semibold" style={{ background: 'rgba(63,185,80,0.15)', color: '#3fb950' }}>All P</button>
-              <button onClick={() => { const all = {}; students.forEach(s => { all[s.id] = false }); setAttendance(all) }} className="text-xs px-2 py-1 rounded-lg font-semibold" style={{ background: 'rgba(248,81,73,0.12)', color: '#f85149' }}>All A</button>
+
+            <div className="grid grid-cols-2 gap-4">
+              <button onClick={() => setStep(4)} className="btn-secondary py-4 font-bold">Back</button>
+              <button onClick={handleSubmit} disabled={submitting} className="btn-success py-4 text-base font-black shadow-xl shadow-green-500/20 active:scale-95 disabled:opacity-50">
+                {submitting ? 'PROCESSING...' : 'CONFIRM & SUBMIT ✓'}
+              </button>
             </div>
           </div>
-
-          {studentsLoading ? (
-            <p className="text-center py-8 text-sm opacity-50">Loading students…</p>
-          ) : students.length === 0 ? (
-            <div className="py-8 text-center">
-              <p className="text-sm opacity-50">No students found for this division/batch.</p>
-              <p className="text-xs mt-1 opacity-30">You can still submit with a manual count.</p>
-              <div className="mt-4 space-y-1.5">
-                <label className="form-label">Manual Present Count</label>
-                <input type="number" className="input-field w-full" placeholder="e.g. 60" value={form.present_count} onChange={e => setForm(f => ({ ...f, present_count: e.target.value }))} />
-              </div>
-            </div>
-          ) : (
-            <div className="grid grid-cols-2 gap-2 max-h-80 overflow-y-auto pr-1">
-              {students.map(s => {
-                const present = attendance[s.id] ?? true
-                return (
-                  <button key={s.id} onClick={() => toggleAttendance(s.id)}
-                    className="flex items-center gap-2 p-2.5 rounded-xl text-left border transition-all"
-                    style={{ background: present ? 'rgba(63,185,80,0.08)' : 'rgba(248,81,73,0.06)', borderColor: present ? 'rgba(63,185,80,0.25)' : 'rgba(248,81,73,0.2)' }}>
-                    <div className="w-5 h-5 rounded-full flex items-center justify-center flex-shrink-0 text-xs font-bold text-white"
-                      style={{ background: present ? '#3fb950' : '#f85149' }}>
-                      {present ? 'P' : 'A'}
-                    </div>
-                    <div className="min-w-0">
-                      <p className="text-[11px] font-mono truncate" style={{ color: 'var(--text-secondary)' }}>{s.roll_number}</p>
-                      <p className="text-xs font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{s.full_name}</p>
-                    </div>
-                  </button>
-                )
-              })}
-            </div>
-          )}
-
-          <div className="flex gap-3 pt-2">
-            <button onClick={() => setStep(3)} className="btn-secondary flex-1">← Back</button>
-            <button onClick={() => setStep(5)} className="btn-primary flex-1">Review & Submit →</button>
-          </div>
-        </div>
-      )}
-
-      {/* STEP 5: Review */}
-      {step === 5 && (
-        <div className="glass-card p-5 space-y-4">
-          <div className="p-4 rounded-2xl border space-y-3" style={{ background: 'rgba(74,108,247,0.06)', borderColor: 'rgba(74,108,247,0.2)' }}>
-            <p className="font-display font-bold text-sm" style={{ color: 'var(--brand)' }}>Submission Summary</p>
-            {[
-              ['Faculty', facultyObj?.full_name],
-              ['Date', lectureDate],
-              ['Subject', selectedSlot?.subjects?.subject_name || selectedSlot?.custom_subject || prefillRecord?.subjects?.subject_name || '—'],
-              ['Division', selectedSlot?.divisions?.division_name || selectedSlot?.custom_division || prefillRecord?.divisions?.division_name || '—'],
-              ['Time', selectedSlot ? `${formatTime(selectedSlot.time_slots?.start_time)} – ${formatTime(selectedSlot.time_slots?.end_time)}` : `${formatTime(prefillRecord?.actual_start)} – ${formatTime(prefillRecord?.actual_end)}`],
-              ['Topic', form.topic_covered],
-              ['Unit', form.unit_number || '—'],
-              ['LCS', form.lcs_status.replace(/_/g, ' ')],
-              ['Attendance', `${students.length > 0 ? presentCount : form.present_count} / ${students.length > 0 ? students.length : form.total_students}`],
-            ].map(([k, v]) => (
-              <div key={k} className="flex justify-between text-sm border-b py-1.5" style={{ borderColor: 'rgba(255,255,255,0.06)' }}>
-                <span style={{ color: 'var(--text-secondary)' }}>{k}</span>
-                <span className="font-semibold" style={{ color: 'var(--text-primary)' }}>{v}</span>
-              </div>
-            ))}
-          </div>
-
-          <div className="flex items-start gap-2 p-3 rounded-xl text-xs" style={{ background: 'rgba(245,158,11,0.08)', border: '1px solid rgba(245,158,11,0.2)' }}>
-            <AlertCircle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" style={{ color: '#d97706' }} />
-            <p style={{ color: '#d97706' }}>This record will be submitted on behalf of the faculty and will show as <strong>Pending</strong> for admin approval.</p>
-          </div>
-
-          <div className="flex gap-3">
-            <button onClick={() => setStep(4)} className="btn-secondary flex-1">← Back</button>
-            <button onClick={handleSubmit} disabled={submitting} className="btn-primary flex-1 disabled:opacity-60">
-              {submitting ? 'Submitting…' : '✓ Submit DLR'}
-            </button>
-          </div>
-        </div>
-      )}
+        )}
+      </div>
     </div>
   )
 }
