@@ -225,9 +225,8 @@ export const exportDLRToExcel = (records, dateStr, department = 'Information Tec
       // Row bg: substitution = red tint, LCS = yellow, else white
       const rowBg = isSub ? S.RED_BG : isLCS ? S.YELLOW : S.WHITE
 
-      // Faculty initials
-      const facName  = r.faculty_name || r.users?.full_name || r.faculty?.full_name || ''
-      const initials = facName.split(' ').filter(Boolean).map(w=>w[0]).join('') || '—'
+      // Faculty initials - try database 'initials' field first, fallback to name-based only if missing
+      const initials = r.faculty?.initials || r.faculty_initials || (r.faculty_name || r.users?.full_name || r.faculty?.full_name || '').split(' ').filter(Boolean).map(w=>w[0]).join('') || '—'
 
       // Subject code
       const subCode = r.subjects?.subject_code || r.subjects?.short_name || r.subjects?.subject_name || '—'
@@ -366,9 +365,9 @@ export const exportDLRToExcel = (records, dateStr, department = 'Information Tec
         dc(formatTime(r.actual_start)),
         dc(formatTime(r.actual_end)),
         dc(r.divisions?.division_name || r.custom_division || '—'),
-        dc(r.divisions?.year || '2025'),
+        dc(r.divisions?.year || '—'),
         dc(r.subjects?.short_name || r.subjects?.subject_code || '—'),
-        dc(initials),
+        dc(r.faculty?.initials || initials),
         dc('Yes'),
         dc('-'),
       ]

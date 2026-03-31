@@ -78,7 +78,7 @@ export default function AdminDashboard() {
           present_count, total_students, attendance, total_batch_strength,
           approval_status, admin_comment, created_at,
           subjects:subjects!subject_id (id, subject_name, short_name, subject_code),
-          divisions:divisions!division_id (id, division_name, semester),
+          divisions:divisions!division_id (id, division_name, semester, year),
           rooms:rooms!room_id (id, room_number),
           faculty:users!faculty_id (id, full_name, initials, role)
         `)

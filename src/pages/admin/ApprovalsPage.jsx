@@ -39,7 +39,7 @@ export default function ApprovalsPage() {
           is_substitution, original_faculty_id, approval_status, submitted_at, 
           remarks, admin_comment,
           subjects:subjects!subject_id (id, subject_name, short_name, subject_code),
-          divisions:divisions!division_id (id, division_name, semester),
+          divisions:divisions!division_id (id, division_name, semester, year),
           rooms:rooms!room_id (id, room_number),
           faculty:users!faculty_id (id, full_name, initials),
           original_faculty:users!original_faculty_id (id, full_name, initials)

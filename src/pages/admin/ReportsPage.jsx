@@ -45,15 +45,15 @@ export default function ReportsPage() {
       const [r, t, f] = await Promise.all([
         supabase.from('lecture_records').select(`
           *,
-          subjects:subjects!subject_id(id, subject_name, short_name),
-          divisions:divisions!division_id(id, division_name, semester),
+          subjects:subjects!subject_id(id, subject_name, short_name, subject_code),
+          divisions:divisions!division_id(id, division_name, semester, year),
           rooms:rooms!room_id(id, room_number),
           faculty:users!faculty_id(id, full_name, initials, email)
         `),
         supabase.from('timetable').select(`
           *,
-          subjects:subjects!subject_id(id, subject_name, short_name),
-          divisions:divisions!division_id(id, division_name, semester),
+          subjects:subjects!subject_id(id, subject_name, short_name, subject_code),
+          divisions:divisions!division_id(id, division_name, semester, year),
           rooms:rooms!room_id(id, room_number),
           faculty:users!faculty_id(id, full_name, initials, email),
           time_slots:time_slots!time_slot_id(id, slot_label, start_time, end_time)
