@@ -285,7 +285,7 @@ export default function FacultyPage() {
           <div className="grid grid-cols-2 gap-4">
             <div>
               <label className="form-label">Full Name <span className="text-red-400">*</span></label>
-              <input className="input-field" placeholder="Dr. Priya Sharma" value={form.full_name} onChange={e => setForm(f => ({ ...f, full_name: e.target.value }))} />
+              <input className="input-field" placeholder="Full Name" value={form.full_name} onChange={e => setForm(f => ({ ...f, full_name: e.target.value }))} />
             </div>
             <div>
               <label className="form-label">Initials</label>

@@ -54,7 +54,7 @@ export default function HistoryPage() {
 
       const { data, error } = await supabase
         .from('lecture_records')
-        .select('*, subjects(*), divisions(*), rooms:room_id(*), attendance(student_id, is_present, students(full_name, roll_number))')
+        .select('*, faculty:faculty_id(full_name), subjects(*), divisions(*), rooms:room_id(*), attendance(student_id, is_present, students(full_name, roll_number))')
         .eq('faculty_id', profile.id)
         .order('lecture_date', { ascending: false })
       

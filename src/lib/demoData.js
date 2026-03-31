@@ -2,7 +2,7 @@
 export const DEMO_USER_FACULTY = {
   id: 'demo-faculty-001',
   email: 'faculty@vit.edu.in',
-  full_name: 'Dr. Priya Sharma',
+  full_name: 'Faculty Name',
   role: 'faculty',
   department: 'Information Technology',
 }
@@ -10,7 +10,7 @@ export const DEMO_USER_FACULTY = {
 export const DEMO_USER_ADMIN = {
   id: 'demo-admin-001',
   email: 'admin@vit.edu.in',
-  full_name: 'Prof. Rajesh Patil',
+  full_name: 'Admin User',
   role: 'admin',
   department: 'Information Technology',
 }
@@ -47,7 +47,7 @@ export const DEMO_ROOMS = [
 
 export const DEMO_FACULTY_LIST = [
   { id: 'demo-faculty-001', full_name: 'Dr. Priya Sharma',    department: 'INFT', role: 'faculty' },
-  { id: 'demo-faculty-002', full_name: 'Prof. Anand Kulkarni', department: 'INFT', role: 'faculty' },
+  { id: 'demo-faculty-002', full_name: 'Dr. Vivek K.', department: 'INFT', role: 'faculty' },
   { id: 'demo-faculty-003', full_name: 'Dr. Meera Joshi',      department: 'INFT', role: 'faculty' },
   { id: 'demo-faculty-004', full_name: 'Prof. Vikram Desai',   department: 'INFT', role: 'faculty' },
 ]

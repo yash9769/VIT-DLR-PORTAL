@@ -263,16 +263,29 @@ export default function SubmitLecture() {
         attendance: Number(form.attendance),
         total_batch_strength: Number(form.total_batch_strength),
         
+        // Fix for History page: Map to correct columns
+        present_count: Number(form.attendance),
+        total_students: Number(form.total_batch_strength),
+        
         lecture_capture_done: form.lecture_capture_done,
         smart_board_uploaded: form.smart_board_uploaded,
+        
+        // LCS Status map (enum: covered, not_covered, partially_covered)
+        lcs_status: form.lecture_capture_done ? 'covered' : 'not_covered',
+        smartboard_pdf_uploaded: form.smart_board_uploaded,
         
         assignments_last_week: Number(form.assignments_last_week),
         assignments_given: Number(form.assignments_given),
         assignments_graded: Number(form.assignments_graded),
         
         topic_covered: form.remarks || 'Main Lecture',
+        topics_covered: form.remarks || 'Main Lecture', // Consistency across possible versions
         remarks: form.remarks || null,
         is_substitution: form.is_substitution,
+        
+        // New: Set timetable_faculty to current user full name if available
+        timetable_faculty: profile?.full_name || 'Faculty',
+        
         submitted_at: new Date().toISOString()
       }
 
