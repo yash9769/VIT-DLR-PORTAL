@@ -100,14 +100,38 @@ export default function SubmitLecture() {
     const fetchStudents = async () => {
       setStudentsLoading(true)
       try {
+        // Check if the current subject is theory or if no batch is specified
+        const isTheory = selectedEntry?.subjects?.lecture_type === 'theory' || 
+                        subjects.find(s => s.id === form.subject_id)?.lecture_type === 'theory'
+
         let q = supabase
           .from('students')
           .select('id, roll_number, full_name, batch_number')
           .eq('division_id', form.division_id)
           .order('roll_number')
-        if (form.batch_number) q = q.eq('batch_number', form.batch_number)
+
+        // Only filter by batch if it's NOT a theory lecture
+        if (form.batch_number && !isTheory) {
+          q = q.eq('batch_number', form.batch_number)
+        }
+
         const { data } = await q
-        const list = data || []
+        let list = data || []
+
+        // Fallback: If no students in batch but division has students, show everyone so faculty isn't blocked
+        if (list.length === 0 && form.batch_number) {
+          const { data: allInDiv } = await supabase
+            .from('students')
+            .select('id, roll_number, full_name, batch_number')
+            .eq('division_id', form.division_id)
+            .order('roll_number')
+          
+          if (allInDiv && allInDiv.length > 0) {
+            list = allInDiv
+            toast.info(`Showing all students of division as Batch ${form.batch_number} currently has no assigned students.`)
+          }
+        }
+
         setStudents(list)
         // Default everyone to present
         const init = {}
