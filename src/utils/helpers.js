@@ -113,9 +113,14 @@ export const sendNotification = async (supabase, userId, title, message, type = 
 }
 
 export const getInitials = (name) => {
-  if (!name) return '?'
-  const parts = name.trim().split(/\s+/)
-  if (parts.length === 0) return '?'
-  if (parts.length === 1) return parts[0].substring(0, 2).toUpperCase()
-  return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase()
+  if (!name) return '—'
+  const TITLES = ['prof', 'professor', 'dr', 'dr.', 'mr', 'mrs', 'ms', 'er', 'er.']
+  const parts = name.trim().split(/\s+/).filter(p => !TITLES.includes(p.toLowerCase()))
+  if (parts.length === 0) return '—'
+  if (parts.length === 1) {
+    const s = parts[0]
+    return s.length >= 2 ? s.substring(0, 2).toUpperCase() : s.toUpperCase()
+  }
+  // Return initials of all parts (e.g. "Dattatray Gauri" -> "DG")
+  return parts.map(p => p[0]).join('').toUpperCase()
 }

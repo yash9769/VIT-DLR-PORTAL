@@ -1,6 +1,6 @@
 import * as XLSX from 'xlsx'
 import { format } from 'date-fns'
-import { formatTime, attendancePercent } from '../utils/helpers'
+import { formatTime, attendancePercent, getInitials } from '../utils/helpers'
 
 // Rooms with Lecture Capture System - get yellow highlight
 const LCS_ROOMS = ['E101', 'E201', 'E204', 'M202']
@@ -225,8 +225,7 @@ export const exportDLRToExcel = (records, dateStr, department = 'Information Tec
       // Row bg: substitution = red tint, LCS = yellow, else white
       const rowBg = isSub ? S.RED_BG : isLCS ? S.YELLOW : S.WHITE
 
-      // Faculty initials - try database 'initials' field first, fallback to name-based only if missing
-      const initials = r.faculty?.initials || r.faculty_initials || (r.faculty_name || r.users?.full_name || r.faculty?.full_name || '').split(' ').filter(Boolean).map(w=>w[0]).join('') || '—'
+      const initials = r.faculty?.initials || r.faculty_initials || getInitials(r.faculty_name || r.users?.full_name || r.faculty?.full_name || '')
 
       // Subject code
       const subCode = r.subjects?.subject_code || r.subjects?.short_name || r.subjects?.subject_name || '—'
@@ -358,14 +357,14 @@ export const exportDLRToExcel = (records, dateStr, department = 'Information Tec
     ...lcRecs.map((r, i) => {
       const room = r.rooms?.room_number || r.custom_room || '—'
       const facName = r.faculty_name || r.users?.full_name || r.faculty?.full_name || '—'
-      const initials = facName.split(' ').filter(Boolean).map(w=>w[0]).join('')
+      const initials = r.faculty?.initials || getInitials(facName)
       return [
         { v:room, t:'s', s:{ font:{name:'Arial',sz:10,bold:true}, alignment:{horizontal:'center',vertical:'center'}, fill:{fgColor:{rgb:S.YELLOW}}, border:border() }},
         dc(i+1),
         dc(formatTime(r.actual_start)),
         dc(formatTime(r.actual_end)),
         dc(r.divisions?.division_name || r.custom_division || '—'),
-        dc(r.divisions?.year || '—'),
+        dc(r.divisions?.year || Math.ceil((r.divisions?.semester || 0)/2) || '—'),
         dc(r.subjects?.short_name || r.subjects?.subject_code || '—'),
         dc(r.faculty?.initials || initials),
         dc('Yes'),
@@ -397,7 +396,7 @@ export const exportDLRToExcel = (records, dateStr, department = 'Information Tec
     ...uniqFac.map((name, i) => {
       const bg = i%2===0 ? S.WHITE : S.GREY
       return [
-        dc(i+1, bg), dc(name, bg, S.BLACK, false, 'left'), dc(name.split(' ').filter(Boolean).map(w=>w[0]).join(''), bg),
+        dc(i+1, bg), dc(name, bg, S.BLACK, false, 'left'), dc(getInitials(name), bg),
       ]
     })
   ]
@@ -420,7 +419,12 @@ export const exportAttendanceAnalysis = (records, department = 'Information Tech
   const divMap = {}
   records.forEach(r => {
     const k = `${r.divisions?.semester||'?'}|||${r.divisions?.division_name||'?'}`
-    if (!divMap[k]) divMap[k] = { year:r.divisions?.year||'—', sem:r.divisions?.semester||'—', div:r.divisions?.division_name||'—', recs:[] }
+    if (!divMap[k]) divMap[k] = { 
+      year: r.divisions?.year || Math.ceil((r.divisions?.semester || 0)/2) || '—', 
+      sem: r.divisions?.semester || '—', 
+      div: r.divisions?.division_name || '—', 
+      recs: [] 
+    }
     divMap[k].recs.push(r)
   })
   const NC_A = 6
