@@ -51,17 +51,15 @@ export default function ApprovalsPage() {
 
   const updateStatus = async (ids, status, reason = null) => {
     try {
-      const updates = ids.map(id => ({
-        id,
-        approval_status: status,
-        rejection_reason: reason || (status === 'rejected' ? rejectReason : null),
-        admin_comment: adminComment || null,
-        approved_at: status === 'approved' ? new Date().toISOString() : null
-      }))
-
       const { error } = await supabase
         .from('lecture_records')
-        .upsert(updates)
+        .update({
+          approval_status: status,
+          rejection_reason: reason || (status === 'rejected' ? rejectReason : null),
+          admin_comment: adminComment || null,
+          approved_at: status === 'approved' ? new Date().toISOString() : null
+        })
+        .in('id', ids)
       
       if (error) throw error
 
