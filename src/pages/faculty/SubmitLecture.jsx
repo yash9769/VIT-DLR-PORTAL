@@ -259,30 +259,26 @@ export default function SubmitLecture() {
         actual_from: form.actual_from || null,
         actual_to: form.actual_to || null,
         actual_faculty_id: form.actual_faculty_id || profile.id,
+        actual_faculty_name: form.actual_faculty_name || profile.full_name,
         
-        attendance: Number(form.attendance),
-        total_batch_strength: Number(form.total_batch_strength),
+        present_count: Number(form.attendance) || 0,
+        total_students: Number(form.total_batch_strength) || 60,
+        absent_count: (Number(form.total_batch_strength) || 60) - (Number(form.attendance) || 0),
         
-        // Fix for History page: Map to correct columns
-        present_count: Number(form.attendance),
-        total_students: Number(form.total_batch_strength),
-        
-        lecture_capture_done: form.lecture_capture_done,
-        smart_board_uploaded: form.smart_board_uploaded,
-        
-        // LCS Status map (enum: covered, not_covered, partially_covered)
         lcs_status: form.lecture_capture_done ? 'covered' : 'not_covered',
-        smartboard_pdf_uploaded: form.smart_board_uploaded,
+        smartboard_pdf_uploaded: Boolean(form.smart_board_uploaded),
         
-        assignments_last_week: Number(form.assignments_last_week),
-        assignments_given: Number(form.assignments_given),
-        assignments_graded: Number(form.assignments_graded),
+        assignments_last_week: Number(form.assignments_last_week) || 0,
+        assignments_given: Number(form.assignments_given) || 0,
+        assignments_graded: Number(form.assignments_graded) || 0,
         
         topic_covered: form.remarks || 'Main Lecture',
         remarks: form.remarks || null,
-        is_substitution: form.is_substitution,
+        is_substitution: Boolean(form.is_substitution),
         
-        submitted_at: new Date().toISOString()
+        submitted_at: new Date().toISOString(),
+        status: 'active',
+        approval_status: 'pending'
       }
 
       const { data: record, error } = await supabase.from('lecture_records').insert([data]).select().single()
