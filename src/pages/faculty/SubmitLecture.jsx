@@ -279,12 +279,8 @@ export default function SubmitLecture() {
         assignments_graded: Number(form.assignments_graded),
         
         topic_covered: form.remarks || 'Main Lecture',
-        topics_covered: form.remarks || 'Main Lecture', // Consistency across possible versions
         remarks: form.remarks || null,
         is_substitution: form.is_substitution,
-        
-        // New: Set timetable_faculty to current user full name if available
-        timetable_faculty: profile?.full_name || 'Faculty',
         
         submitted_at: new Date().toISOString()
       }
