@@ -246,42 +246,36 @@ export default function SubmitLecture() {
   const handleSubmit = async () => {
     try {
       setSubmitting(true)
-      const data = {
+      // Create database payload - EXCLUDING actual_faculty_name (not in schema)
+      const dbData = {
         faculty_id: profile.id,
         lecture_date: form.lecture_date,
         timetable_id: form.timetable_id || null,
         division_id: form.division_id || null,
         subject_id: form.subject_id || null,
         room_id: form.room_id || null,
-        
         timetable_from: form.timetable_from || null,
         timetable_to: form.timetable_to || null,
         actual_from: form.actual_from || null,
         actual_to: form.actual_to || null,
         actual_faculty_id: form.actual_faculty_id || profile.id,
-        actual_faculty_name: form.actual_faculty_name || profile.full_name,
-        
         present_count: Number(form.attendance) || 0,
         total_students: Number(form.total_batch_strength) || 60,
         absent_count: (Number(form.total_batch_strength) || 60) - (Number(form.attendance) || 0),
-        
         lcs_status: form.lecture_capture_done ? 'covered' : 'not_covered',
         smartboard_pdf_uploaded: Boolean(form.smart_board_uploaded),
-        
         assignments_last_week: Number(form.assignments_last_week) || 0,
         assignments_given: Number(form.assignments_given) || 0,
         assignments_graded: Number(form.assignments_graded) || 0,
-        
         topic_covered: form.remarks || 'Main Lecture',
         remarks: form.remarks || null,
         is_substitution: Boolean(form.is_substitution),
-        
-        submitted_at: new Date().toISOString(),
         status: 'active',
-        approval_status: 'pending'
+        approval_status: 'pending',
+        submitted_at: new Date().toISOString()
       }
 
-      const { data: record, error } = await supabase.from('lecture_records').insert([data]).select().single()
+      const { data: record, error } = await supabase.from('lecture_records').insert([dbData]).select().single()
       if (error) throw error
 
       // NEW: Save student-wise attendance if available
@@ -292,7 +286,10 @@ export default function SubmitLecture() {
           is_present: attendance[s.id] !== false
         }))
         const { error: attError } = await supabase.from('attendance').insert(attendanceData)
-        if (attError) console.error('Error saving individual attendance:', attError)
+        // If 409 happens, record already has attendance, so we can ignore it
+        if (attError && attError.code !== '23505') {
+          console.error('Error saving individual attendance:', attError)
+        }
       }
 
       setNewRecordId(record.id)
