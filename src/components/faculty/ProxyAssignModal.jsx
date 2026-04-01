@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { X, Search, CheckCircle, ChevronRight, ChevronLeft, User, Clock, AlertTriangle } from 'lucide-react'
+import { X, Search, CheckCircle, ChevronRight, ChevronLeft, User, Clock, AlertTriangle, Filter } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { toast, Spinner, Modal } from '../ui'
 import { today, sendNotification, formatDate, cls, getInitials } from '../../utils/helpers'
@@ -19,7 +19,9 @@ export default function ProxyAssignModal({ open, onClose, profile, todaySchedule
   const [assigningFor, setAssigningFor] = useState(null)
 
   const [facultyList, setFacultyList] = useState([])
+  const [departments, setDepartments] = useState([])
   const [search, setSearch] = useState('')
+  const [deptFilter, setDeptFilter] = useState('')
   const [reason, setReason] = useState('Faculty Absent')
   const [submitting, setSubmitting] = useState(false)
   const sheetRef = useRef(null)
@@ -31,23 +33,29 @@ export default function ProxyAssignModal({ open, onClose, profile, todaySchedule
       setLectureProxies({})
       setAssigningFor(null)
       setSearch('')
+      setDeptFilter('')
       setReason('Faculty Absent')
       fetchFaculty()
     }
   }, [open, todaySchedule])
 
   const fetchFaculty = async () => {
-    if (DEMO_MODE) { setFacultyList(DEMO_FACULTY_LIST.filter(f => f.id !== profile.id)); return }
+    if (DEMO_MODE) {
+      setFacultyList(DEMO_FACULTY_LIST.filter(f => f.id !== profile.id))
+      setDepartments([...new Set(DEMO_FACULTY_LIST.map(f => f.department).filter(Boolean))])
+      return
+    }
     try {
       const { data, error } = await supabase
         .from('users')
-        .select('id, full_name, department, role, initials')
+        .select('id, full_name, department, role, initials, employee_id')
         .in('role', ['faculty', 'admin', 'hod'])
         .eq('is_active', true)
         .neq('id', profile.id)
         .order('full_name')
       if (error) throw error
       setFacultyList(data || [])
+      setDepartments([...new Set((data || []).map(f => f.department).filter(Boolean))].sort())
     } catch (err) { console.error('Error fetching faculty:', err) }
   }
 
@@ -58,11 +66,14 @@ export default function ProxyAssignModal({ open, onClose, profile, todaySchedule
     selectedLectures.length === todaySchedule.length ? [] : todaySchedule.map(e => e.id)
   )
 
-  const filteredFaculty = facultyList.filter(f =>
-    f.full_name?.toLowerCase().includes(search.toLowerCase()) ||
-    f.department?.toLowerCase().includes(search.toLowerCase()) ||
-    (f.initials || '').toLowerCase().includes(search.toLowerCase())
-  )
+  const filteredFaculty = facultyList.filter(f => {
+    const matchDept = !deptFilter || f.department === deptFilter
+    const matchSearch = !search ||
+      f.full_name?.toLowerCase().includes(search.toLowerCase()) ||
+      f.department?.toLowerCase().includes(search.toLowerCase()) ||
+      (f.initials || '').toLowerCase().includes(search.toLowerCase())
+    return matchDept && matchSearch
+  })
 
   const selectedLectureObjects = todaySchedule.filter(e => selectedLectures.includes(e.id))
 
@@ -129,10 +140,24 @@ export default function ProxyAssignModal({ open, onClose, profile, todaySchedule
           <p className="text-[11px]" style={{ color: 'var(--text-secondary)' }}>{lectureName}</p>
         </div>
       </div>
-      <div className="relative">
-        <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--text-secondary)' }} />
-        <input className="input-field pl-9 py-2.5 w-full" placeholder="Search faculty…"
-          value={search} onChange={e => setSearch(e.target.value)} autoFocus />
+      <div className="flex gap-2">
+        <div className="relative flex-1">
+          <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4" style={{ color: 'var(--text-secondary)' }} />
+          <input className="input-field pl-9 py-2.5 w-full" placeholder="Search faculty…"
+            value={search} onChange={e => setSearch(e.target.value)} autoFocus />
+        </div>
+        <div className="relative">
+          <Filter className="absolute left-2.5 top-1/2 -translate-y-1/2 w-3.5 h-3.5 pointer-events-none" style={{ color: 'var(--text-secondary)' }} />
+          <select
+            value={deptFilter}
+            onChange={e => setDeptFilter(e.target.value)}
+            className="input-field pl-8 pr-2 py-2.5 text-xs appearance-none min-w-[110px]"
+            style={{ color: 'var(--text-secondary)' }}
+          >
+            <option value="">All Depts</option>
+            {departments.map(d => <option key={d} value={d}>{d}</option>)}
+          </select>
+        </div>
       </div>
       <div className="space-y-2 max-h-72 overflow-y-auto">
         {filteredFaculty.length === 0 ? (
@@ -264,7 +289,7 @@ export default function ProxyAssignModal({ open, onClose, profile, todaySchedule
                   setLectureProxies(prev => ({ ...prev, [assigningFor.id]: fac }))
                   setAssigningFor(null)
                 }}
-                onCancel={() => { setAssigningFor(null); setSearch('') }}
+                onCancel={() => { setAssigningFor(null); setSearch(''); setDeptFilter('') }}
               />
             ) : (
               // List of selected lectures with individual proxy assignment

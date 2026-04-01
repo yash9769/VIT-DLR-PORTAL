@@ -2,6 +2,7 @@ import { useState } from 'react'
 import { Eye, EyeOff, ShieldCheck, Zap, FileSpreadsheet, History } from 'lucide-react'
 import { useAuth } from '../context/AuthContext'
 import { Spinner, toast, DemoModeBanner } from '../components/ui'
+import { supabase } from '../lib/supabase'
 import vitLogo from '../assets/vit-logo.png'
 
 export default function LoginPage() {

@@ -23,6 +23,11 @@ export default function FacultyLayout() {
   const [showNotifications, setShowNotifications] = useState(false)
   const { notifications, unreadCount, markAllAsRead } = useNotifications()
 
+  const handleMarkAllAsRead = async () => {
+    await markAllAsRead()
+    setShowNotifications(false)
+  }
+
   const isActive = (item) => {
     if (item.exact) return location.pathname === item.path
     return location.pathname.startsWith(item.path)
@@ -80,7 +85,7 @@ export default function FacultyLayout() {
               <p className="font-display font-semibold text-sm">Notifications</p>
               {unreadCount > 0 && (
                 <button 
-                  onClick={markAllAsRead}
+                  onClick={handleMarkAllAsRead}
                   className="text-[9px] text-brand-400 font-bold uppercase tracking-wider hover:underline"
                 >
                   Mark all as read
@@ -94,14 +99,14 @@ export default function FacultyLayout() {
               Close
             </button>
           </div>
-          {notifications.length === 0 ? (
+          {notifications.filter(n => !n.is_read).length === 0 ? (
             <div className="p-8 text-center opacity-40">
               <Bell className="w-8 h-8 mx-auto mb-2" />
-              <p className="text-xs">No notifications</p>
+              <p className="text-xs">No new notifications</p>
             </div>
           ) : (
-            notifications.map(n => (
-              <div key={n.id} className={cls('p-4 border-b flex gap-3 hover:bg-white/[0.02] transition-colors', n.is_read ? 'opacity-50' : '')} style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
+            notifications.filter(n => !n.is_read).map(n => (
+              <div key={n.id} className="p-4 border-b flex gap-3 hover:bg-white/[0.02] transition-colors" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
                 <div className={cls('w-2 h-2 rounded-full mt-1.5 flex-shrink-0', 
                   n.type === 'success' ? 'bg-green-400' : 
                   n.type === 'warning' ? 'bg-yellow-400' : 
