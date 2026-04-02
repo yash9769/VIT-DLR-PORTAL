@@ -108,7 +108,7 @@ const TimetableCard = ({
           className="w-9 h-9 rounded-xl flex items-center justify-center transition-all bg-brand-50 hover:bg-brand-100 border border-brand-200 active:scale-90"
           title="Assign Proxy"
         >
-          <Users className="w-4.5 h-4.5 text-brand-600" />
+          <Users className="w-5 h-5 text-brand-600" />
         </button>
       )}
       
@@ -223,7 +223,7 @@ export default function FacultyDashboard() {
           *,
           absent_faculty:absent_faculty_id(id, full_name, role, department, initials),
           proxy_faculty:proxy_faculty_id(id, full_name, role, department, initials),
-          timetable:timetable!substitutions_timetable_id_fkey(
+          timetable(
             *,
             subjects(*),
             divisions(*),
@@ -432,7 +432,10 @@ export default function FacultyDashboard() {
             const merged = [
               ...todaySchedule.map(t => ({ ...t, isProxy: false })),
               ...proxyLectures.map(p => {
-                if (!p.timetable) return null;
+                if (!p.timetable) {
+                  console.warn('Proxy record missing timetable data:', p);
+                  return null;
+                }
                 return {
                   ...p.timetable,
                   isProxy: true,
