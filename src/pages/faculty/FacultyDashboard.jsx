@@ -26,7 +26,16 @@ const StatCard = ({ label, value, icon: Icon, color, sub }) => (
   </div>
 )
 
-const TimetableCard = ({ entry, submitted, onSubmit, isProxy = false, coveringFor = null }) => (
+const TimetableCard = ({ 
+  entry, 
+  submitted, 
+  onSubmit, 
+  isProxy = false, 
+  coveringFor = null,
+  onProxy,
+  isSubstitutedOut,
+  proxyFacultyName
+}) => (
   <div
     className={cls(
       "glass-card p-4 flex items-center gap-4 transition-all active:scale-98 overflow-hidden relative",
@@ -81,24 +90,47 @@ const TimetableCard = ({ entry, submitted, onSubmit, isProxy = false, coveringFo
           </p>
         </div>
       )}
+      {isSubstitutedOut && (
+        <div className="flex items-center gap-1.5 mt-2 p-1.5 rounded-lg bg-emerald-500/5 border border-emerald-500/10 w-fit">
+          <Shield className="w-3 h-3 text-emerald-600" />
+          <p className="text-[10px] font-bold uppercase tracking-tight text-emerald-700">
+            Proxied to {proxyFacultyName || 'someone'}
+          </p>
+        </div>
+      )}
     </div>
 
-    {/* Submit button */}
-    <div className="flex-shrink-0">
+    {/* Action buttons */}
+    <div className="flex flex-shrink-0 items-center gap-2">
+      {!isProxy && onProxy && !submitted && !isSubstitutedOut && (
+        <button 
+          onClick={() => onProxy(entry)} 
+          className="w-9 h-9 rounded-xl flex items-center justify-center transition-all bg-brand-50 hover:bg-brand-100 border border-brand-200 active:scale-90"
+          title="Assign Proxy"
+        >
+          <Users className="w-4.5 h-4.5 text-brand-600" />
+        </button>
+      )}
+      
       {submitted ? (
         <div className="w-8 h-8 rounded-full flex items-center justify-center bg-green-500/10">
           <CheckCircle className="w-4 h-4 text-green-500" />
         </div>
-      ) : (
+      ) : !isSubstitutedOut ? (
         <button 
           onClick={() => onSubmit(entry)} 
           className={cls(
             "w-9 h-9 rounded-xl flex items-center justify-center transition-all active:scale-90 shadow-md",
             isProxy ? "bg-gradient-to-br from-amber-500 to-orange-600 shadow-amber-500/20" : "bg-gradient-to-br from-brand-500 to-indigo-600 shadow-brand-500/20"
           )}
+          title="Submit DLR"
         >
           <Plus className="w-5 h-5 text-white" />
         </button>
+      ) : (
+        <div className="w-8 h-8 rounded-full flex items-center justify-center bg-emerald-500/10">
+          <Shield className="w-4 h-4 text-emerald-500" />
+        </div>
       )}
     </div>
   </div>
@@ -121,6 +153,7 @@ export default function FacultyDashboard() {
     avgAttendance: 0,
     totalRecords: 0
   })
+  const [selectedLecture, setSelectedLecture] = useState(null)
 
   useEffect(() => {
     if (profile?.id) {
@@ -188,9 +221,9 @@ export default function FacultyDashboard() {
         .from('substitutions')
         .select(`
           *,
-          absent_faculty:absent_faculty_id(id, full_name, role, department),
-          proxy_faculty:proxy_faculty_id(id, full_name, role, department),
-          timetable:timetable_id!substitutions_timetable_id_fkey(
+          absent_faculty:absent_faculty_id(id, full_name, role, department, initials),
+          proxy_faculty:proxy_faculty_id(id, full_name, role, department, initials),
+          timetable:timetable!substitutions_timetable_id_fkey(
             *,
             subjects(*),
             divisions(*),
@@ -422,13 +455,21 @@ export default function FacultyDashboard() {
               <div className="space-y-3.5">
                 {merged.map((entry, idx) => {
                   const isSubmitted = submittedIds.has(entry.id);
+                  const isSubstitutedOut = substitutions.find(s => s.timetable_id === entry.id && s.absent_faculty_id === profile.id);
+                  
                   return (
                     <TimetableCard 
                       key={entry.isProxy ? `proxy-${entry.id}-${entry.substitutionId}` : `own-${entry.id}`}
                       entry={entry}
                       isProxy={entry.isProxy}
                       coveringFor={entry.absentFacultyName}
+                      isSubstitutedOut={!!isSubstitutedOut}
+                      proxyFacultyName={isSubstitutedOut?.proxy_faculty?.full_name}
                       submitted={isSubmitted}
+                      onProxy={(tt) => {
+                        setSelectedLecture(tt);
+                        setShowProxyModal(true);
+                      }}
                       onSubmit={(e) => navigate('/faculty/submit', { 
                         state: { 
                           entry: e,
@@ -481,9 +522,12 @@ export default function FacultyDashboard() {
       {/* Proxy Assign Modal */}
       <ProxyAssignModal
         open={showProxyModal}
-        onClose={() => setShowProxyModal(false)}
+        onClose={() => {
+          setShowProxyModal(false);
+          setSelectedLecture(null);
+        }}
         profile={profile}
-        todaySchedule={pendingLectures}
+        todaySchedule={selectedLecture ? [selectedLecture] : pendingLectures}
         onSuccess={fetchDashboardData}
       />
     </div>
