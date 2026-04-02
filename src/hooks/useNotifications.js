@@ -61,12 +61,10 @@ export function useNotifications() {
 
   const markAsRead = async (id) => {
     if (demoMode) {
-      setNotifications(prev => {
-        const next = prev.map(n => n.id === id ? { ...n, is_read: true } : n)
-        setUnreadCount(next.filter(n => !n.is_read).length)
-        return next
-      })
-      return
+      const next = notifications.map(n => n.id === id ? { ...n, is_read: true } : n);
+      setNotifications(next);
+      setUnreadCount(next.filter(n => !n.is_read).length);
+      return;
     }
 
     try {

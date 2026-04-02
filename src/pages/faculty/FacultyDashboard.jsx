@@ -54,7 +54,12 @@ const TimetableCard = ({ entry, submitted, onSubmit, isProxy = false, coveringFo
     <div className="flex-1 min-w-0">
       <div className="flex items-center gap-2 mb-0.5">
         <p className="font-display font-semibold text-sm truncate" style={{ color: 'var(--text-primary)' }}>
-          {entry.subjects?.subject_name}
+          {entry.subjects?.subject_name || entry.custom_subject || 'Unknown Subject'}
+          {entry.subjects?.lecture_type && (
+            <span className="ml-1 opacity-50 text-[10px] font-medium uppercase tracking-tighter">
+              ({entry.subjects.lecture_type === 'theory' ? 'Lec' : entry.subjects.lecture_type === 'practical' ? 'Lab' : 'Tut'})
+            </span>
+          )}
         </p>
       </div>
       <div className="flex items-center gap-2 mt-1 flex-wrap">
@@ -372,78 +377,57 @@ export default function FacultyDashboard() {
         <StatCard label="Total Records" value={stats.totalRecords} icon={CheckCircle} color="#8b5cf6" />
       </div>
 
-      {/* Proxy Lectures Assigned to You */}
-      {proxyLectures.length > 0 && (
-        <div className="animate-slide-up">
-          <div
-            className="flex items-center justify-between px-4 py-2.5 rounded-xl mb-3 shadow-sm border"
-            style={{ background: 'rgba(74,108,247,0.06)', borderColor: 'rgba(74,108,247,0.2)' }}
-          >
-            <div className="flex items-center gap-2">
-              <Shield className="w-4 h-4" style={{ color: 'var(--brand)' }} />
-              <h2 className="font-display font-bold text-sm" style={{ color: 'var(--brand)' }}>
-                Proxy Assignments
-              </h2>
-            </div>
-            <span className="bg-brand-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full ring-2 ring-brand-500/20">
-              {proxyLectures.length} Action Required
-            </span>
-          </div>
-
-          <div className="space-y-3 mb-8">
-            {proxyLectures.map(sub => {
-              const entry = sub.timetable
-              if (!entry) return null
-              const isSubmitted = submittedIds.has(entry.id)
-              return (
-                <TimetableCard
-                  key={sub.id}
-                  entry={entry}
-                  submitted={isSubmitted}
-                  isProxy={true}
-                  coveringFor={sub.absent_faculty?.full_name}
-                  onSubmit={(e) => navigate('/faculty/submit', {
-                    state: {
-                      entry: e,
-                      isSubstitution: true,
-                      originalFacultyId: sub.absent_faculty_id,
-                      absentFacultyName: sub.absent_faculty?.full_name,
-                      substitutionRefId: sub.id,
-                    }
-                  })}
-                />
-              )
-            })}
-          </div>
-        </div>
-      )}
-
-      {/* Today's timetable — only show if not absent */}
+      {/* Integrated Schedule (Own + Proxy) */}
       {!iAmAbsent && (
         <div className="animate-slide-up">
-          <div className="flex items-center justify-between mb-3 border-b border-black/5 pb-2">
-            <h2 className="font-display font-semibold text-base" style={{ color: 'var(--text-primary)' }}>
-              My Schedule
+          <div className="flex items-center justify-between mb-4 border-b border-black/5 pb-3">
+            <h2 className="font-display font-bold text-lg" style={{ color: 'var(--text-primary)' }}>
+              Today's Schedule
             </h2>
-            <span className="text-xs font-bold px-2 py-1 bg-white/5 rounded-lg border border-black/5" style={{ color: 'var(--text-secondary)' }}>{dayName}</span>
+            <div className="flex items-center gap-2">
+              <span className="text-[10px] font-bold px-2 py-1 bg-brand-500/10 text-brand-600 rounded-lg border border-brand-500/20 uppercase tracking-widest">{dayName}</span>
+              {(todaySchedule.length > 0 || proxyLectures.length > 0) && (
+                <span className="text-[10px] font-bold px-2 py-1 bg-slate-100 text-slate-500 rounded-lg border border-slate-200 uppercase tracking-widest">
+                  {todaySchedule.length + proxyLectures.length} Lectures
+                </span>
+              )}
+            </div>
           </div>
 
-          {todaySchedule.length === 0 ? (
-            <div className="glass-card p-10 text-center border-dashed border-2 opacity-80">
-              <p className="text-3xl mb-3">🌤️</p>
-              <p className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>No classes today!</p>
-              <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>You're all clear for now</p>
+          {[...todaySchedule.map(t => ({ ...t, isProxy: false })), ...proxyLectures.map(p => ({ ...p.timetable, isProxy: true, substitutionId: p.id, absentFacultyName: p.absent_faculty?.full_name, absentFacultyId: p.absent_faculty_id }))]
+            .sort((a, b) => (a.time_slots?.start_time || '').localeCompare(b.time_slots?.start_time || ''))
+            .length === 0 ? (
+            <div className="glass-card p-12 text-center border-dashed border-2 bg-slate-50/50">
+              <div className="w-16 h-16 rounded-full bg-white mx-auto flex items-center justify-center shadow-sm mb-4 border border-slate-100">
+                <Clock className="w-8 h-8 text-slate-200" />
+              </div>
+              <p className="font-bold text-slate-800">No classes scheduled today</p>
+              <p className="text-xs text-slate-400 mt-1">You're all clear! Enjoy your free time.</p>
             </div>
           ) : (
-            <div className="space-y-3">
-              {todaySchedule.map(entry => (
-                <TimetableCard
-                  key={entry.id}
-                  entry={entry}
-                  submitted={submittedIds.has(entry.id)}
-                  onSubmit={(e) => navigate('/faculty/submit', { state: { entry: e } })}
-                />
-              ))}
+            <div className="space-y-3.5">
+              {[...todaySchedule.map(t => ({ ...t, isProxy: false })), ...proxyLectures.map(p => ({ ...p.timetable, isProxy: true, substitutionId: p.id, absentFacultyName: p.absent_faculty?.full_name, absentFacultyId: p.absent_faculty_id }))]
+                .sort((a, b) => (a.time_slots?.start_time || '').localeCompare(b.time_slots?.start_time || ''))
+                .map(entry => (
+                  <TimetableCard
+                    key={entry.isProxy ? `proxy-${entry.id}-${entry.substitutionId}` : `own-${entry.id}`}
+                    entry={entry}
+                    submitted={submittedIds.has(entry.id)}
+                    isProxy={entry.isProxy}
+                    coveringFor={entry.absentFacultyName}
+                    onSubmit={(e) => navigate('/faculty/submit', { 
+                      state: { 
+                        entry: e,
+                        isSubstitution: entry.isProxy,
+                        ...(entry.isProxy ? {
+                          originalFacultyId: entry.absentFacultyId,
+                          absentFacultyName: entry.absentFacultyName,
+                          substitutionRefId: entry.substitutionId,
+                        } : {})
+                      } 
+                    })}
+                  />
+                ))}
             </div>
           )}
         </div>

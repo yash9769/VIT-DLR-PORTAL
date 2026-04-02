@@ -2,7 +2,7 @@ import { useState, useEffect } from 'react'
 import { useNavigate, useLocation } from 'react-router-dom'
 import { Clock, BookOpen, Users, FileText, Upload, ChevronDown, Check, AlertCircle, Edit2 } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
-import { today, getDayName, formatTime } from '../../utils/helpers'
+import { today, getDayName, formatTime, cls } from '../../utils/helpers'
 import { toast } from '../../components/ui'
 import { supabase } from '../../lib/supabase'
 
@@ -253,13 +253,12 @@ export default function SubmitLecture() {
 
   const handleNext = () => {
     if (step === 1) {
-      // If either a specific timetable entry is selected OR manual fields are filled, it's valid
       const hasTimetable = !!form.timetable_id;
       const hasManual = !!form.division_id && !!form.subject_id;
       
       if (!hasTimetable && !hasManual) {
-        toast.error('Please select a lecture or fill division and subject')
-        return
+        toast.error('Please select a lecture from the list or fill division and subject manually');
+        return;
       }
     }
     if (step === 2) {
@@ -458,37 +457,53 @@ export default function SubmitLecture() {
           {todaySchedule.length > 0 && (
             <div className="space-y-2">
               <p className="form-label">Today's Schedule</p>
-              {todaySchedule.map(entry => (
-                <button key={entry.id} onClick={() => handleSelectEntry(entry)} 
-                  className={`w-full flex items-center gap-4 p-4 rounded-2xl transition-all text-left relative overflow-hidden ${form.timetable_id === entry.id ? 'ring-2 ring-brand-500' : ''}`}
-                  style={{ background: form.timetable_id === entry.id ? 'rgba(74,108,247,0.12)' : 'rgba(255,255,255,0.04)', border: `1px solid ${form.timetable_id === entry.id ? 'rgba(74,108,247,0.4)' : 'rgba(255,255,255,0.08)'}` }}>
-                  
-                  {entry.is_proxy && (
-                    <div className="absolute top-0 right-0 px-2 py-0.5 rounded-bl-lg bg-gradient-to-l from-amber-500 to-orange-500 text-[8px] font-bold text-white uppercase tracking-widest shadow-sm">
-                      Proxy Assignment
-                    </div>
-                  )}
+              {todaySchedule.map(entry => {
+                const isSelected = form.timetable_id === entry.id;
+                const subjectName = entry.subjects?.subject_name || entry.custom_subject || 'Unknown Subject';
+                const type = entry.subjects?.lecture_type || '';
+                const typeLabel = type ? (type === 'theory' ? 'Lec' : type === 'practical' ? 'Lab' : 'Tut') : '';
+                
+                return (
+                  <button 
+                    key={entry.is_proxy ? `proxy-${entry.substitution_id}` : `own-${entry.id}`} 
+                    onClick={() => handleSelectEntry(entry)} 
+                    className={cls(
+                      "w-full flex items-center gap-4 p-4 rounded-2xl transition-all text-left relative overflow-hidden",
+                      isSelected ? 'ring-2 ring-brand-500 bg-brand-500/10' : 'bg-white/5 border border-white/10'
+                    )}
+                  >
+                    {entry.is_proxy && (
+                      <div className="absolute top-0 right-0 px-2 py-0.5 rounded-bl-lg bg-gradient-to-l from-amber-500 to-orange-500 text-[8px] font-bold text-white uppercase tracking-widest shadow-sm">
+                        Proxy Assignment
+                      </div>
+                    )}
 
-                  <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: form.timetable_id === entry.id ? 'rgba(74,108,247,0.2)' : 'rgba(255,255,255,0.06)' }}>
-                    <BookOpen className="w-5 h-5" style={{ color: form.timetable_id === entry.id ? '#4A6CF7' : 'var(--text-secondary)' }} />
-                  </div>
-                  <div className="flex-1 min-w-0">
-                    <p className="font-display font-semibold text-sm truncate">{entry.custom_subject || entry.subjects?.subject_name}</p>
-                    <p className="text-xs mt-0.5 font-medium" style={{ color: 'var(--text-secondary)' }}>
-                      {entry.custom_division || entry.divisions?.division_name}
-                      {entry.batch_number ? ` · Batch ${entry.batch_number}` : ''}
-                      {' · '}{entry.custom_time_slot || entry.time_slots?.slot_label}
-                      <span className="mx-1 opacity-20">|</span>
-                      {entry.is_proxy ? (
-                        <span className="text-amber-500 font-bold uppercase text-[9px]">Proxy for {entry.absent_faculty?.full_name?.split(' ')[0]}</span>
-                      ) : (
-                        <span>{entry.custom_room || entry.rooms?.room_number || '—'}</span>
-                      )}
-                    </p>
-                  </div>
-                  {form.timetable_id === entry.id && <Check className="w-5 h-5 text-brand-400 flex-shrink-0" />}
-                </button>
-              ))}
+                    <div className={cls(
+                      "w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0",
+                      isSelected ? 'bg-brand-500/20' : 'bg-white/10'
+                    )}>
+                      <BookOpen className="w-5 h-5" style={{ color: isSelected ? '#4A6CF7' : 'var(--text-secondary)' }} />
+                    </div>
+                    <div className="flex-1 min-w-0">
+                      <p className="font-display font-semibold text-sm truncate" style={{ color: 'var(--text-primary)' }}>
+                        {subjectName} {typeLabel && <span className="opacity-50 text-[10px] ml-1">({typeLabel})</span>}
+                      </p>
+                      <p className="text-xs mt-0.5 font-medium" style={{ color: 'var(--text-secondary)' }}>
+                        {entry.divisions?.division_name || entry.custom_division}
+                        {entry.batch_number ? ` · Batch ${entry.batch_number}` : ''}
+                        {' · '}{entry.time_slots?.slot_label || entry.custom_time_slot}
+                        <span className="mx-1 opacity-20">|</span>
+                        {entry.is_proxy ? (
+                          <span className="text-amber-500 font-bold uppercase text-[9px]">Proxy for {entry.absent_faculty?.full_name}</span>
+                        ) : (
+                          <span>{entry.rooms?.room_number || entry.custom_room || '—'}</span>
+                        )}
+                      </p>
+                    </div>
+                    {isSelected && <Check className="w-5 h-5 text-brand-400 flex-shrink-0" />}
+                  </button>
+                );
+              })}
             </div>
           )}
 

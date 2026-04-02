@@ -285,7 +285,8 @@ export default function AdminProxyModal({ open, onClose, onSuccess }) {
         ))}
       </div>
 
-      <div className="min-h-[400px] max-h-[65vh] overflow-y-auto px-1 pr-2 custom-scrollbar">
+      <div className="space-y-6">
+
         {/* ── STEP 0: Absent Faculty Selection ── */}
         {step === 0 && (
           <div className="space-y-4 animate-fade-in">
@@ -309,62 +310,53 @@ export default function AdminProxyModal({ open, onClose, onSuccess }) {
               </div>
             </div>
 
-            <div className="relative h-[340px] rounded-2xl overflow-hidden border border-slate-200 bg-slate-50/20">
-              <div className="absolute inset-x-0 top-0 h-1 bg-slate-100/50 z-10" />
-              <div className="h-full overflow-y-auto p-2 space-y-1 custom-scrollbar">
-                {facultyList.length === 0 ? (
-                  <div className="h-full flex flex-col items-center justify-center text-slate-400 p-8 text-center">
-                    <Users className="w-12 h-12 mb-4 opacity-20" />
-                    <p className="text-sm font-bold uppercase tracking-widest opacity-50 mb-4">No Faculty Loaded</p>
+            <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 p-1">
+              {facultyList.length === 0 ? (
+                <div className="col-span-full h-40 flex flex-col items-center justify-center text-slate-400">
+                  <Users className="w-12 h-12 mb-4 opacity-20" />
+                  <p className="text-sm font-bold opacity-50">No Faculty Loaded</p>
+                  <button onClick={fetchFaculty} className="mt-2 text-xs text-brand hover:underline font-bold underline font-bold">Retry Loading</button>
+                </div>
+              ) : filteredAbsentFaculty.length > 0 ? (
+                filteredAbsentFaculty.map(fac => {
+                  const isSelected = absentFaculty?.id === fac.id
+                  return (
                     <button 
-                      onClick={fetchFaculty}
-                      className="px-4 py-2 bg-slate-100 hover:bg-slate-200 text-slate-600 rounded-lg text-xs font-bold transition-colors"
+                      key={fac.id} 
+                      onClick={() => handleSelectAbsentFaculty(fac)}
+                      className={cls(
+                        "text-left p-4 rounded-2xl transition-all flex items-center gap-4 border-2 group shadow-sm",
+                        isSelected 
+                          ? "bg-brand-50/30 border-brand-500 ring-2 ring-brand-500/10" 
+                          : "bg-white border-slate-100 hover:border-brand-200 hover:shadow-md"
+                      )}
                     >
-                      Retry Loading
+                      <div className={cls(
+                        "w-10 h-10 rounded-xl flex items-center justify-center text-xs font-bold text-white flex-shrink-0 shadow-sm",
+                        isSelected ? "bg-brand-500" : "bg-slate-400 group-hover:bg-brand-400"
+                      )}>
+                        {fac.initials || getInitials(fac.full_name || '')}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className={cls("font-bold text-sm truncate", isSelected ? "text-brand-600" : "text-slate-800")}>
+                          {fac.full_name || 'Faculty Member'}
+                        </p>
+                        <div className="flex items-center gap-1.5 mt-0.5">
+                          <span className="text-[10px] font-bold text-slate-400 uppercase tracking-wider truncate">
+                            {fac.department || 'General'}
+                          </span>
+                        </div>
+                      </div>
+                      {isSelected && <CheckCircle className="w-5 h-5 text-brand-500 flex-shrink-0" />}
                     </button>
-                  </div>
-                ) : filteredAbsentFaculty.length > 0 ? (
-                  filteredAbsentFaculty.map(fac => {
-                    const isSelected = absentFaculty?.id === fac.id
-                    return (
-                      <button 
-                        key={fac.id} 
-                        onClick={() => handleSelectAbsentFaculty(fac)}
-                        className="w-full text-left p-3 rounded-xl transition-all flex items-center gap-4 hover:bg-white hover:shadow-md border-2"
-                        style={{
-                          background: isSelected ? 'white' : 'transparent',
-                          borderColor: isSelected ? 'var(--brand)' : 'transparent',
-                          boxShadow: isSelected ? '0 8px 16px -4px rgba(74,108,247,0.12)' : 'none'
-                        }}
-                      >
-                        <div className="w-10 h-10 rounded-xl flex items-center justify-center text-xs font-bold text-white flex-shrink-0 shadow-sm transition-transform group-hover:scale-105"
-                          style={{ background: isSelected ? 'var(--brand)' : 'linear-gradient(135deg, #94a3b8, #64748b)' }}>
-                          {fac.initials || getInitials(fac.full_name || '')}
-                        </div>
-                        <div className="flex-1 min-w-0">
-                          <p className="font-bold text-slate-800 text-sm truncate" style={{ color: isSelected ? 'var(--brand)' : 'inherit' }}>
-                            {fac.full_name || 'Loading Name...'}
-                          </p>
-                          <div className="flex items-center gap-2 mt-0.5">
-                            <span className="text-[9px] font-bold text-white px-1.5 py-0.5 rounded bg-slate-400 uppercase tracking-wider">{fac.department || 'DEPT'}</span>
-                            <span className="text-[10px] text-slate-400 font-medium">Role: {fac.role?.toUpperCase()}</span>
-                          </div>
-                        </div>
-                        {isSelected && (
-                          <div className="w-6 h-6 rounded-full bg-brand-500/10 flex items-center justify-center">
-                            <CheckCircle className="w-4 h-4 text-brand-500" />
-                          </div>
-                        )}
-                      </button>
-                    )
-                  })
-                ) : (
-                  <div className="h-full flex flex-col items-center justify-center text-slate-300 py-12">
-                    <User size={40} className="mb-2 opacity-20" />
-                    <p className="text-sm font-bold uppercase tracking-widest opacity-40">No faculty found</p>
-                  </div>
-                )}
-              </div>
+                  )
+                })
+              ) : (
+                <div className="col-span-full h-40 flex flex-col items-center justify-center text-slate-400">
+                  <Search className="w-10 h-10 mb-2 opacity-10" />
+                  <p className="text-sm font-bold">No matches found</p>
+                </div>
+              )}
             </div>
           </div>
         )}
@@ -396,7 +388,7 @@ export default function AdminProxyModal({ open, onClose, onSuccess }) {
                 <p className="text-sm text-slate-400 font-bold">No lectures scheduled today for this faculty.</p>
               </div>
             ) : (
-              <div className="space-y-2.5 max-h-[320px] overflow-y-auto pr-2 custom-scrollbar">
+              <div className="space-y-2.5 pr-2">
                 {absentSchedule.map(entry => {
                   const isChecked = selectedLectures.includes(entry.id)
                   return (
@@ -442,7 +434,7 @@ export default function AdminProxyModal({ open, onClose, onSuccess }) {
               <p className="text-xs text-slate-500">Pick a teacher for each selected lecture slot.</p>
             </div>
 
-            <div className="space-y-3 max-h-[360px] overflow-y-auto pr-1 pb-20 custom-scrollbar">
+            <div className="space-y-3 pr-1 pb-4">
               {selectedLectureObjects.map(entry => {
                 const proxy = lectureProxies[entry.id]
                 const isPicking = assigningFor?.id === entry.id
@@ -606,7 +598,7 @@ export default function AdminProxyModal({ open, onClose, onSuccess }) {
 
             <div className="space-y-2">
               <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 px-1 mb-1">Coverage Details ({selectedLectureObjects.length})</p>
-              <div className="space-y-2 max-h-[220px] overflow-y-auto pr-1">
+              <div className="space-y-2 pr-1">
                 {selectedLectureObjects.map(entry => {
                   const proxy = lectureProxies[entry.id]
                   return (
