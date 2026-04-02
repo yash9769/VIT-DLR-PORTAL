@@ -188,9 +188,9 @@ export default function FacultyDashboard() {
         .from('substitutions')
         .select(`
           *,
-          absent_faculty:absent_faculty_id(id, full_name),
-          proxy_faculty:proxy_faculty_id(id, full_name),
-          timetable:timetable_id(
+          absent_faculty:absent_faculty_id(id, full_name, role, department),
+          proxy_faculty:proxy_faculty_id(id, full_name, role, department),
+          timetable:timetable_id!substitutions_timetable_id_fkey(
             *,
             subjects(*),
             divisions(*),
@@ -394,42 +394,58 @@ export default function FacultyDashboard() {
             </div>
           </div>
 
-          {[...todaySchedule.map(t => ({ ...t, isProxy: false })), ...proxyLectures.map(p => ({ ...p.timetable, isProxy: true, substitutionId: p.id, absentFacultyName: p.absent_faculty?.full_name, absentFacultyId: p.absent_faculty_id }))]
-            .sort((a, b) => (a.time_slots?.start_time || '').localeCompare(b.time_slots?.start_time || ''))
-            .length === 0 ? (
-            <div className="glass-card p-12 text-center border-dashed border-2 bg-slate-50/50">
-              <div className="w-16 h-16 rounded-full bg-white mx-auto flex items-center justify-center shadow-sm mb-4 border border-slate-100">
-                <Clock className="w-8 h-8 text-slate-200" />
+          {/* Integrated merged schedule */}
+          {(() => {
+            const merged = [
+              ...todaySchedule.map(t => ({ ...t, isProxy: false })),
+              ...proxyLectures.map(p => {
+                if (!p.timetable) return null;
+                return {
+                  ...p.timetable,
+                  isProxy: true,
+                  substitutionId: p.id,
+                  absentFacultyName: p.absent_faculty?.full_name,
+                  absentFacultyId: p.absent_faculty_id
+                }
+              }).filter(Boolean)
+            ].sort((a, b) => (a.time_slots?.start_time || '').localeCompare(b.time_slots?.start_time || ''));
+
+            return merged.length === 0 ? (
+              <div className="glass-card p-12 text-center border-dashed border-2 bg-slate-50/50">
+                <div className="w-16 h-16 rounded-full bg-white mx-auto flex items-center justify-center shadow-sm mb-4 border border-slate-100">
+                  <Clock className="w-8 h-8 text-slate-200" />
+                </div>
+                <p className="font-bold text-slate-800">No classes scheduled today</p>
+                <p className="text-xs text-slate-400 mt-1">You're all clear! Enjoy your free time.</p>
               </div>
-              <p className="font-bold text-slate-800">No classes scheduled today</p>
-              <p className="text-xs text-slate-400 mt-1">You're all clear! Enjoy your free time.</p>
-            </div>
-          ) : (
-            <div className="space-y-3.5">
-              {[...todaySchedule.map(t => ({ ...t, isProxy: false })), ...proxyLectures.map(p => ({ ...p.timetable, isProxy: true, substitutionId: p.id, absentFacultyName: p.absent_faculty?.full_name, absentFacultyId: p.absent_faculty_id }))]
-                .sort((a, b) => (a.time_slots?.start_time || '').localeCompare(b.time_slots?.start_time || ''))
-                .map(entry => (
-                  <TimetableCard
-                    key={entry.isProxy ? `proxy-${entry.id}-${entry.substitutionId}` : `own-${entry.id}`}
-                    entry={entry}
-                    submitted={submittedIds.has(entry.id)}
-                    isProxy={entry.isProxy}
-                    coveringFor={entry.absentFacultyName}
-                    onSubmit={(e) => navigate('/faculty/submit', { 
-                      state: { 
-                        entry: e,
-                        isSubstitution: entry.isProxy,
-                        ...(entry.isProxy ? {
-                          originalFacultyId: entry.absentFacultyId,
-                          absentFacultyName: entry.absentFacultyName,
-                          substitutionRefId: entry.substitutionId,
-                        } : {})
-                      } 
-                    })}
-                  />
-                ))}
-            </div>
-          )}
+            ) : (
+              <div className="space-y-3.5">
+                {merged.map((entry, idx) => {
+                  const isSubmitted = submittedIds.has(entry.id);
+                  return (
+                    <TimetableCard 
+                      key={entry.isProxy ? `proxy-${entry.id}-${entry.substitutionId}` : `own-${entry.id}`}
+                      entry={entry}
+                      isProxy={entry.isProxy}
+                      coveringFor={entry.absentFacultyName}
+                      submitted={isSubmitted}
+                      onSubmit={(e) => navigate('/faculty/submit', { 
+                        state: { 
+                          entry: e,
+                          isSubstitution: entry.isProxy,
+                          ...(entry.isProxy ? {
+                            originalFacultyId: entry.absentFacultyId,
+                            absentFacultyName: entry.absentFacultyName,
+                            substitutionRefId: entry.substitutionId,
+                          } : {})
+                        } 
+                      })}
+                    />
+                  )
+                })}
+              </div>
+            );
+          })()}
         </div>
       )}
 
