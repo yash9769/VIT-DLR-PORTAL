@@ -8,7 +8,14 @@ import { DEMO_SUBSTITUTIONS, DEMO_FACULTY_LIST, DEMO_TIMETABLE } from '../../lib
 const DEMO_MODE = !import.meta.env.VITE_SUPABASE_URL
 const STEPS = ['Select Lectures', 'Assign Proxies', 'Confirm']
 
-export default function ProxyAssignModal({ open, onClose, profile, todaySchedule, onSuccess }) {
+export default function ProxyAssignModal({ 
+  isOpen, 
+  onClose, 
+  profile, 
+  todaySchedule, 
+  onSuccess,
+  initialSelectedLectures = []
+}) {
   const [step, setStep] = useState(0)
   const [selectedLectures, setSelectedLectures] = useState([])
 
@@ -27,9 +34,14 @@ export default function ProxyAssignModal({ open, onClose, profile, todaySchedule
   const sheetRef = useRef(null)
 
   useEffect(() => {
-    if (open) {
-      setStep(0)
-      setSelectedLectures(todaySchedule.map(e => e.id))
+    if (isOpen) {
+      if (initialSelectedLectures && initialSelectedLectures.length > 0) {
+        setSelectedLectures(initialSelectedLectures.map(l => l.id));
+        setStep(1); // Go straight to Assign Proxies step
+      } else {
+        setSelectedLectures(todaySchedule.map(e => e.id));
+        setStep(0);
+      }
       setLectureProxies({})
       setAssigningFor(null)
       setSearch('')
@@ -37,7 +49,7 @@ export default function ProxyAssignModal({ open, onClose, profile, todaySchedule
       setReason('Faculty Absent')
       fetchFaculty()
     }
-  }, [open, todaySchedule])
+  }, [isOpen, todaySchedule, initialSelectedLectures])
 
   const fetchFaculty = async () => {
     if (DEMO_MODE) {

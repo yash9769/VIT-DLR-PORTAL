@@ -190,7 +190,7 @@ export default function SubmitLecture() {
         supabase.from('lecture_records').select('timetable_id').eq('faculty_id', profile.id).eq('lecture_date', t),
         supabase.from('timetable').select('subject_id, subjects(*)').eq('faculty_id', profile.id),
         supabase.from('users').select('id, full_name, initials').eq('is_active', true).order('full_name'),
-        supabase.from('substitutions').select('*, absent_faculty:absent_faculty_id(id, full_name, initials), timetable(*, subjects(*), divisions(*), rooms(*), time_slots(*))').eq('proxy_faculty_id', profile.id).eq('substitution_date', t).eq('status', 'active')
+        supabase.from('substitutions').select('*, absent_faculty:absent_faculty_id(id, full_name, initials), timetable:timetable!timetable_id(*, subjects(*), divisions(*), rooms(*), time_slots(*))').eq('proxy_faculty_id', profile.id).eq('substitution_date', t).eq('status', 'active')
       ])
 
       const submittedIds = lrRes.data?.map(r => r.timetable_id) || []

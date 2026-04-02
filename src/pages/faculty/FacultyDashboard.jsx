@@ -223,7 +223,7 @@ export default function FacultyDashboard() {
           *,
           absent_faculty:absent_faculty_id(id, full_name, role, department, initials),
           proxy_faculty:proxy_faculty_id(id, full_name, role, department, initials),
-          timetable(
+          timetable:timetable!timetable_id(
             *,
             subjects(*),
             divisions(*),
@@ -524,14 +524,19 @@ export default function FacultyDashboard() {
 
       {/* Proxy Assign Modal */}
       <ProxyAssignModal
-        open={showProxyModal}
+        isOpen={showProxyModal}
         onClose={() => {
           setShowProxyModal(false);
           setSelectedLecture(null);
         }}
         profile={profile}
-        todaySchedule={selectedLecture ? [selectedLecture] : pendingLectures}
-        onSuccess={fetchDashboardData}
+        todaySchedule={pendingLectures}
+        initialSelectedLectures={selectedLecture ? [selectedLecture] : []}
+        onSuccess={() => {
+          fetchDashboardData();
+          setShowProxyModal(false);
+          setSelectedLecture(null);
+        }}
       />
     </div>
   )
