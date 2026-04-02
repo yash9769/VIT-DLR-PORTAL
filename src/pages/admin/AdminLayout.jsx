@@ -24,7 +24,7 @@ export default function AdminLayout() {
   const [collapsed, setCollapsed] = useState(false)
   const [mobileOpen, setMobileOpen] = useState(false)
   const [showNotifications, setShowNotifications] = useState(false)
-  const { notifications, unreadCount, markAllAsRead } = useNotifications()
+  const { notifications, unreadCount, markAllAsRead, markAsRead } = useNotifications()
 
   const handleMarkAllAsRead = async () => {
     await markAllAsRead()
@@ -138,7 +138,7 @@ export default function AdminLayout() {
 
         {/* Notification panel */}
         {showNotifications && (
-          <div className="fixed top-16 right-6 z-[120] w-80 glass-card animate-slide-up shadow-2xl" style={{ maxHeight: '60vh', overflowY: 'auto' }}>
+          <div className="fixed top-16 right-6 z-[120] w-80 bg-white rounded-2xl shadow-2xl border border-slate-100 flex flex-col animate-slide-up">
             <div className="p-4 border-b flex items-center justify-between" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
               <div>
                 <p className="font-display font-semibold text-sm">Notifications</p>
@@ -164,22 +164,35 @@ export default function AdminLayout() {
                 <p className="text-xs">No new notifications</p>
               </div>
             ) : (
-              notifications.filter(n => !n.is_read).map(n => (
-                <div key={n.id} className="p-4 border-b flex gap-3 hover:bg-white/[0.02] transition-colors" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
-                  <div className={cls('w-2 h-2 rounded-full mt-1.5 flex-shrink-0', 
-                    n.type === 'success' ? 'bg-green-400' : 
-                    n.type === 'warning' ? 'bg-yellow-400' : 
-                    n.type === 'error' ? 'bg-red-400' : 'bg-blue-400'
-                  )} />
-                  <div className="flex-1 min-w-0">
-                    <p className="font-semibold text-sm leading-tight">{n.title}</p>
-                    <p className="text-xs mt-1 leading-normal" style={{ color: 'var(--text-secondary)' }}>{n.message}</p>
-                    <p className="text-[9px] mt-1.5 opacity-40 uppercase tracking-tighter">
-                      {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
-                    </p>
+              <div className="max-h-[360px] overflow-y-auto">
+                {notifications.filter(n => !n.is_read).map(n => (
+                  <div key={n.id} className="p-4 border-b flex gap-3 hover:bg-slate-50 transition-colors group relative" style={{ borderColor: 'rgba(0,0,0,0.05)' }}>
+                    <div className={cls('w-2 h-2 rounded-full mt-1.5 flex-shrink-0', 
+                      n.type === 'success' ? 'bg-green-500' : 
+                      n.type === 'warning' ? 'bg-amber-500' : 
+                      n.type === 'error' ? 'bg-red-500' : 'bg-indigo-500'
+                    )} />
+                    <div className="flex-1 min-w-0">
+                      <div className="flex items-start justify-between gap-2">
+                        <p className="font-semibold text-xs leading-tight text-slate-800">{n.title}</p>
+                        <button 
+                          onClick={async (e) => {
+                            e.stopPropagation();
+                            await markAsRead(n.id);
+                          }}
+                          className="w-5 h-5 rounded-full flex items-center justify-center bg-slate-100 hover:bg-indigo-100 text-slate-400 hover:text-indigo-600 transition-all opacity-0 group-hover:opacity-100"
+                        >
+                          <X className="w-3 h-3" />
+                        </button>
+                      </div>
+                      <p className="text-[11px] mt-1 leading-normal text-slate-500">{n.message}</p>
+                      <p className="text-[9px] mt-2 opacity-60 uppercase tracking-tighter text-slate-400">
+                        {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
+                      </p>
+                    </div>
                   </div>
-                </div>
-              ))
+                ))}
+              </div>
             )}
           </div>
         )}

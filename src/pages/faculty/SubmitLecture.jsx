@@ -86,8 +86,11 @@ export default function SubmitLecture() {
     assignments_given: savedState?.assignments_given || 0,
     assignments_graded: savedState?.assignments_graded || 0,
 
-    remarks: savedState?.remarks || '',
-    is_substitution: savedState?.is_substitution || false,
+    remarks: savedState?.remarks || (location.state?.isSubstitution ? `Adj. to ${profile?.full_name} from ${location.state?.absentFacultyName || 'Unknown Faculty'}` : ''),
+    is_substitution: savedState?.is_substitution || location.state?.isSubstitution || false,
+    original_faculty_id: location.state?.originalFacultyId || null,
+    absent_faculty_name: location.state?.absentFacultyName || null,
+    substitution_ref_id: location.state?.substitutionRefId || null,
     batch_number: prefill?.batch_number || null,
     attendanceDetails: savedState?.attendanceDetails || location.state?.attendanceDetails || {},
     unit_number: savedState?.unit_number || '',
@@ -100,6 +103,11 @@ export default function SubmitLecture() {
     const fetchStudents = async () => {
       setStudentsLoading(true)
       try {
+        // If this is a substitution, we might need a specific remark if not already set
+        if (form.is_substitution && !form.remarks) {
+          const absName = form.absent_faculty_name || 'Absent Faculty'
+          set('remarks', `Adj. to ${profile?.full_name} from ${absName}`)
+        }
         // Check if the current subject is theory or if no batch is specified
         const isTheory = selectedEntry?.subjects?.lecture_type === 'theory' || 
                         subjects.find(s => s.id === form.subject_id)?.lecture_type === 'theory'
@@ -174,25 +182,47 @@ export default function SubmitLecture() {
       const dayName = getDayName()
       const t = today()
 
-      const [ttRes, divRes, subRes, rmRes, lrRes, taughtRes, facRes] = await Promise.all([
+      const [ttRes, divRes, subRes, rmRes, lrRes, taughtRes, facRes, subProxyRes] = await Promise.all([
         supabase.from('timetable').select('*, subjects(*), divisions(*), rooms(*), time_slots(*), custom_room, custom_subject, custom_division, custom_time_slot').eq('faculty_id', profile.id).eq('day_of_week', dayName).eq('is_active', true),
         supabase.from('divisions').select('*').order('division_name'),
         supabase.from('subjects').select('*').order('subject_name'),
         supabase.from('rooms').select('*').order('room_number'),
         supabase.from('lecture_records').select('timetable_id').eq('faculty_id', profile.id).eq('lecture_date', t),
         supabase.from('timetable').select('subject_id, subjects(*)').eq('faculty_id', profile.id),
-        supabase.from('users').select('id, full_name').eq('is_active', true).order('full_name')
+        supabase.from('users').select('id, full_name, initials').eq('is_active', true).order('full_name'),
+        supabase.from('substitutions').select('*, absent_faculty:users!substitutions_absent_faculty_id_fkey(*), timetable:timetable!substitutions_timetable_id_fkey(*, subjects(*), divisions(*), rooms(*), time_slots(*))').eq('proxy_faculty_id', profile.id).eq('substitution_date', t).eq('status', 'active')
       ])
 
       const submittedIds = lrRes.data?.map(r => r.timetable_id) || []
-      const remaining = (ttRes.data || []).filter(tt => !submittedIds.includes(tt.id))
+      
+      // Regular timetable entries
+      let remaining = (ttRes.data || []).filter(tt => !submittedIds.includes(tt.id))
 
-      // Filter subjects: only what this faculty teaches
+      // Proxy assignments
+      const proxyLectures = (subProxyRes.data || [])
+        .filter(sub => !submittedIds.includes(sub.timetable_id))
+        .map(sub => ({
+          ...sub.timetable,
+          is_proxy: true,
+          absent_faculty: sub.absent_faculty,
+          substitution_id: sub.id
+        }))
+
+      // Combine both
+      const combinedSchedule = [...remaining, ...proxyLectures]
+      
+      // Filter subjects: only what this faculty teaches + proxy subjects
+      const proxySubjectIds = proxyLectures.map(pl => pl.subjects?.id).filter(Boolean)
       const uniqueSubjects = Array.from(
-        new Map(taughtRes.data?.filter(s => s.subjects).map(s => [s.subjects.id, s.subjects])).values()
+        new Map(
+          [
+            ...taughtRes.data?.filter(s => s.subjects).map(s => [s.subjects.id, s.subjects]) || [],
+            ...proxyLectures.filter(pl => pl.subjects).map(pl => [pl.subjects.id, pl.subjects])
+          ]
+        ).values()
       )
       
-      setTodaySchedule(remaining)
+      setTodaySchedule(combinedSchedule)
       setDivisions(divRes.data || [])
       setSubjects(uniqueSubjects.length > 0 ? uniqueSubjects : (subRes.data || []))
       setRooms(rmRes.data || [])
@@ -223,7 +253,11 @@ export default function SubmitLecture() {
 
   const handleNext = () => {
     if (step === 1) {
-      if (!form.timetable_id && (!form.division_id || !form.subject_id)) {
+      // If either a specific timetable entry is selected OR manual fields are filled, it's valid
+      const hasTimetable = !!form.timetable_id;
+      const hasManual = !!form.division_id && !!form.subject_id;
+      
+      if (!hasTimetable && !hasManual) {
         toast.error('Please select a lecture or fill division and subject')
         return
       }
@@ -248,24 +282,38 @@ export default function SubmitLecture() {
   }
 
   const handleSelectEntry = (entry) => {
+    const isProxy = entry.is_proxy === true
+    const absentName = entry.absent_faculty?.full_name || ''
+    const absentInitials = entry.absent_faculty?.initials || ''
+    
     setForm(f => ({
       ...f,
       timetable_id: entry.id,
       division_id: entry.division_id || '',
       subject_id: entry.subject_id || '',
       room_id: entry.room_id || '',
-      timetable_from: entry.time_slots?.start_time || '',
-      timetable_to: entry.time_slots?.end_time || '',
-      timetable_faculty: profile?.full_name || '',
-      timetable_division: entry.divisions?.division_name || '',
-      timetable_subject: entry.subjects?.subject_name || '',
-      total_batch_strength: entry.divisions?.strength || 60,
-      actual_from: entry.time_slots?.start_time || currentTime,
-      actual_to: entry.time_slots?.end_time || currentTime,
+      timetable_from: entry.time_slots?.start_time || entry.start_time || '',
+      timetable_to: entry.time_slots?.end_time || entry.end_time || '',
+      timetable_faculty: isProxy ? absentName : (profile?.full_name || ''),
+      timetable_division: entry.divisions?.division_name || entry.custom_division || '',
+      timetable_subject: entry.subjects?.subject_name || entry.custom_subject || '',
+      total_batch_strength: entry.divisions?.strength || entry.total_batch_strength || 60,
+      actual_from: entry.time_slots?.start_time || entry.start_time || currentTime,
+      actual_to: entry.time_slots?.end_time || entry.end_time || currentTime,
       actual_faculty_id: profile?.id || '',
       actual_faculty_name: profile?.full_name || '',
       batch_number: entry.batch_number || null,
+      is_substitution: isProxy,
+      remarks: isProxy 
+        ? `Adjusted lecture from ${absentName}${absentInitials ? ` (${absentInitials})` : ''} to ${profile?.full_name}${profile?.initials ? ` (${profile.initials})` : ''}.` 
+        : f.remarks,
+      substitution_ref_id: entry.substitution_id || null,
+      original_faculty_id: isProxy ? (entry.absent_faculty?.id || entry.faculty_id) : (entry.faculty_id || null)
     }))
+    
+    // Clear manual fields when selecting a timetable entry
+    set('custom_division', '')
+    set('custom_subject', '')
   }
 
   const handleSubmit = async () => {
@@ -411,18 +459,31 @@ export default function SubmitLecture() {
             <div className="space-y-2">
               <p className="form-label">Today's Schedule</p>
               {todaySchedule.map(entry => (
-                <button key={entry.id} onClick={() => handleSelectEntry(entry)} className={`w-full flex items-center gap-4 p-4 rounded-2xl transition-all text-left ${form.timetable_id === entry.id ? 'ring-2 ring-brand-500' : ''}`}
+                <button key={entry.id} onClick={() => handleSelectEntry(entry)} 
+                  className={`w-full flex items-center gap-4 p-4 rounded-2xl transition-all text-left relative overflow-hidden ${form.timetable_id === entry.id ? 'ring-2 ring-brand-500' : ''}`}
                   style={{ background: form.timetable_id === entry.id ? 'rgba(74,108,247,0.12)' : 'rgba(255,255,255,0.04)', border: `1px solid ${form.timetable_id === entry.id ? 'rgba(74,108,247,0.4)' : 'rgba(255,255,255,0.08)'}` }}>
+                  
+                  {entry.is_proxy && (
+                    <div className="absolute top-0 right-0 px-2 py-0.5 rounded-bl-lg bg-gradient-to-l from-amber-500 to-orange-500 text-[8px] font-bold text-white uppercase tracking-widest shadow-sm">
+                      Proxy Assignment
+                    </div>
+                  )}
+
                   <div className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0" style={{ background: form.timetable_id === entry.id ? 'rgba(74,108,247,0.2)' : 'rgba(255,255,255,0.06)' }}>
                     <BookOpen className="w-5 h-5" style={{ color: form.timetable_id === entry.id ? '#4A6CF7' : 'var(--text-secondary)' }} />
                   </div>
                   <div className="flex-1 min-w-0">
                     <p className="font-display font-semibold text-sm truncate">{entry.custom_subject || entry.subjects?.subject_name}</p>
-                    <p className="text-xs mt-0.5" style={{ color: 'var(--text-secondary)' }}>
+                    <p className="text-xs mt-0.5 font-medium" style={{ color: 'var(--text-secondary)' }}>
                       {entry.custom_division || entry.divisions?.division_name}
                       {entry.batch_number ? ` · Batch ${entry.batch_number}` : ''}
                       {' · '}{entry.custom_time_slot || entry.time_slots?.slot_label}
-                      {' · '}{entry.custom_room || entry.rooms?.room_number || '—'}
+                      <span className="mx-1 opacity-20">|</span>
+                      {entry.is_proxy ? (
+                        <span className="text-amber-500 font-bold uppercase text-[9px]">Proxy for {entry.absent_faculty?.full_name?.split(' ')[0]}</span>
+                      ) : (
+                        <span>{entry.custom_room || entry.rooms?.room_number || '—'}</span>
+                      )}
                     </p>
                   </div>
                   {form.timetable_id === entry.id && <Check className="w-5 h-5 text-brand-400 flex-shrink-0" />}

@@ -28,15 +28,23 @@ const StatCard = ({ label, value, icon: Icon, color, sub }) => (
 
 const TimetableCard = ({ entry, submitted, onSubmit, isProxy = false, coveringFor = null }) => (
   <div
-    className="glass-card p-4 flex items-center gap-4 transition-all active:scale-98"
-    style={isProxy ? { borderLeft: '3px solid rgba(74,108,247,0.6)' } : {}}
+    className={cls(
+      "glass-card p-4 flex items-center gap-4 transition-all active:scale-98 overflow-hidden relative",
+      isProxy ? "border-l-4 border-amber-500 bg-amber-50/10 shadow-amber-500/5" : ""
+    )}
   >
+    {isProxy && (
+      <div className="absolute top-0 right-0 px-2 py-0.5 rounded-bl-lg bg-gradient-to-l from-amber-500 to-orange-500 text-[8px] font-bold text-white uppercase tracking-widest shadow-sm">
+        Substitution
+      </div>
+    )}
+
     {/* Time badge */}
     <div className="w-14 flex-shrink-0 text-center">
-      <p className="font-display font-bold text-sm leading-tight" style={{ color: isProxy ? '#7090ff' : 'var(--brand)' }}>
+      <p className="font-display font-bold text-sm leading-tight" style={{ color: isProxy ? '#d97706' : 'var(--brand)' }}>
         {entry.time_slots?.start_time?.substring(0, 5)}
       </p>
-      <div className="w-0.5 h-3 mx-auto my-1 rounded-full opacity-40" style={{ background: isProxy ? '#7090ff' : 'var(--brand)' }} />
+      <div className="w-0.5 h-3 mx-auto my-1 rounded-full opacity-40" style={{ background: isProxy ? '#d97706' : 'var(--brand)' }} />
       <p className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
         {entry.time_slots?.end_time?.substring(0, 5)}
       </p>
@@ -45,39 +53,46 @@ const TimetableCard = ({ entry, submitted, onSubmit, isProxy = false, coveringFo
     {/* Info */}
     <div className="flex-1 min-w-0">
       <div className="flex items-center gap-2 mb-0.5">
-        {isProxy && (
-          <span className="text-[10px] px-1.5 py-0.5 rounded font-bold uppercase tracking-wider" style={{ background: 'rgba(74,108,247,0.2)', color: '#7090ff' }}>
-            PROXY
-          </span>
-        )}
         <p className="font-display font-semibold text-sm truncate" style={{ color: 'var(--text-primary)' }}>
           {entry.subjects?.subject_name}
         </p>
       </div>
       <div className="flex items-center gap-2 mt-1 flex-wrap">
-        <span className="text-[10px] px-2 py-0.5 rounded-md font-bold uppercase tracking-wider" style={{ background: isProxy ? 'rgba(74,108,247,0.2)' : 'var(--brand)', color: isProxy ? '#7090ff' : 'white', opacity: isProxy ? 1 : 0.85 }}>
+        <span className={cls(
+          "text-[10px] px-2 py-0.5 rounded-md font-bold uppercase tracking-wider",
+          isProxy ? "bg-amber-100 text-amber-700 border border-amber-200" : "bg-brand-500 text-white"
+        )}>
           {entry.divisions?.division_name}
         </span>
-        <span className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+        <span className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>
           {entry.rooms?.room_number}
         </span>
       </div>
       {coveringFor && (
-        <p className="text-[10px] mt-1" style={{ color: 'var(--text-secondary)' }}>
-          Covering for: <span className="font-semibold">{coveringFor}</span>
-        </p>
+        <div className="flex items-center gap-1.5 mt-2 p-1.5 rounded-lg bg-amber-500/5 border border-amber-500/10 w-fit">
+          <Users className="w-3 h-3 text-amber-600" />
+          <p className="text-[10px] font-bold uppercase tracking-tight text-amber-700">
+            Covering for {coveringFor}
+          </p>
+        </div>
       )}
     </div>
 
     {/* Submit button */}
     <div className="flex-shrink-0">
       {submitted ? (
-        <div className="w-8 h-8 rounded-full flex items-center justify-center" style={{ background: 'rgba(63,185,80,0.15)' }}>
-          <CheckCircle className="w-4 h-4 text-green-400" />
+        <div className="w-8 h-8 rounded-full flex items-center justify-center bg-green-500/10">
+          <CheckCircle className="w-4 h-4 text-green-500" />
         </div>
       ) : (
-        <button onClick={() => onSubmit(entry)} className="w-8 h-8 rounded-xl flex items-center justify-center transition-all active:scale-90" style={{ background: isProxy ? 'linear-gradient(135deg,#4A6CF7,#3355e8)' : 'linear-gradient(135deg,#4A6CF7,#3355e8)' }}>
-          <Plus className="w-4 h-4 text-white" />
+        <button 
+          onClick={() => onSubmit(entry)} 
+          className={cls(
+            "w-9 h-9 rounded-xl flex items-center justify-center transition-all active:scale-90 shadow-md",
+            isProxy ? "bg-gradient-to-br from-amber-500 to-orange-600 shadow-amber-500/20" : "bg-gradient-to-br from-brand-500 to-indigo-600 shadow-brand-500/20"
+          )}
+        >
+          <Plus className="w-5 h-5 text-white" />
         </button>
       )}
     </div>
@@ -357,51 +372,25 @@ export default function FacultyDashboard() {
         <StatCard label="Total Records" value={stats.totalRecords} icon={CheckCircle} color="#8b5cf6" />
       </div>
 
-      {/* Today's timetable — only show if not absent */}
-      {!iAmAbsent && (
-        <div>
-          <div className="flex items-center justify-between mb-3">
-            <h2 className="font-display font-semibold text-base" style={{ color: 'var(--text-primary)' }}>
-              Today's Schedule
-            </h2>
-            <span className="text-xs font-semibold" style={{ color: 'var(--brand)' }}>{dayName}</span>
-          </div>
-
-          {todaySchedule.length === 0 ? (
-            <div className="glass-card p-8 text-center">
-              <p className="text-2xl mb-2">🎉</p>
-              <p className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>No classes today!</p>
-              <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>Enjoy your free day</p>
-            </div>
-          ) : (
-            <div className="space-y-3">
-              {todaySchedule.map(entry => (
-                <TimetableCard
-                  key={entry.id}
-                  entry={entry}
-                  submitted={submittedIds.has(entry.id)}
-                  onSubmit={(e) => navigate('/faculty/submit', { state: { entry: e } })}
-                />
-              ))}
-            </div>
-          )}
-        </div>
-      )}
-
       {/* Proxy Lectures Assigned to You */}
       {proxyLectures.length > 0 && (
-        <div>
+        <div className="animate-slide-up">
           <div
-            className="flex items-center gap-2 px-4 py-2.5 rounded-xl mb-3"
-            style={{ background: 'rgba(74,108,247,0.1)', border: '1px solid rgba(74,108,247,0.25)' }}
+            className="flex items-center justify-between px-4 py-2.5 rounded-xl mb-3 shadow-sm border"
+            style={{ background: 'rgba(74,108,247,0.06)', borderColor: 'rgba(74,108,247,0.2)' }}
           >
-            <Shield className="w-4 h-4" style={{ color: 'var(--brand)' }} />
-            <h2 className="font-display font-semibold text-sm" style={{ color: 'var(--brand)' }}>
-              Proxy Lectures Assigned to You
-            </h2>
+            <div className="flex items-center gap-2">
+              <Shield className="w-4 h-4" style={{ color: 'var(--brand)' }} />
+              <h2 className="font-display font-bold text-sm" style={{ color: 'var(--brand)' }}>
+                Proxy Assignments
+              </h2>
+            </div>
+            <span className="bg-brand-500 text-white text-[10px] font-bold px-2 py-0.5 rounded-full ring-2 ring-brand-500/20">
+              {proxyLectures.length} Action Required
+            </span>
           </div>
 
-          <div className="space-y-3">
+          <div className="space-y-3 mb-8">
             {proxyLectures.map(sub => {
               const entry = sub.timetable
               if (!entry) return null
@@ -418,6 +407,7 @@ export default function FacultyDashboard() {
                       entry: e,
                       isSubstitution: true,
                       originalFacultyId: sub.absent_faculty_id,
+                      absentFacultyName: sub.absent_faculty?.full_name,
                       substitutionRefId: sub.id,
                     }
                   })}
@@ -425,6 +415,37 @@ export default function FacultyDashboard() {
               )
             })}
           </div>
+        </div>
+      )}
+
+      {/* Today's timetable — only show if not absent */}
+      {!iAmAbsent && (
+        <div className="animate-slide-up">
+          <div className="flex items-center justify-between mb-3 border-b border-black/5 pb-2">
+            <h2 className="font-display font-semibold text-base" style={{ color: 'var(--text-primary)' }}>
+              My Schedule
+            </h2>
+            <span className="text-xs font-bold px-2 py-1 bg-white/5 rounded-lg border border-black/5" style={{ color: 'var(--text-secondary)' }}>{dayName}</span>
+          </div>
+
+          {todaySchedule.length === 0 ? (
+            <div className="glass-card p-10 text-center border-dashed border-2 opacity-80">
+              <p className="text-3xl mb-3">🌤️</p>
+              <p className="font-semibold text-sm" style={{ color: 'var(--text-primary)' }}>No classes today!</p>
+              <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>You're all clear for now</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {todaySchedule.map(entry => (
+                <TimetableCard
+                  key={entry.id}
+                  entry={entry}
+                  submitted={submittedIds.has(entry.id)}
+                  onSubmit={(e) => navigate('/faculty/submit', { state: { entry: e } })}
+                />
+              ))}
+            </div>
+          )}
         </div>
       )}
 

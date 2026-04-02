@@ -95,7 +95,7 @@ export const ToastProvider = () => {
 }
 
 // ─── Modal ───────────────────────────────────────────────────────────────────
-export const Modal = ({ open, onClose, title, children, size = 'md' }) => {
+export const Modal = ({ open, onClose, title, children, footer, size = 'md' }) => {
   useEffect(() => {
     const handler = (e) => { if (e.key === 'Escape') onClose?.() }
     if (open) window.addEventListener('keydown', handler)
@@ -108,14 +108,19 @@ export const Modal = ({ open, onClose, title, children, size = 'md' }) => {
 
   return (
     <div className="fixed inset-0 z-[150] flex items-center justify-center p-4 bg-slate-900/60 backdrop-blur-[2px]" onClick={(e) => e.target === e.currentTarget && onClose?.()}>
-      <div className={cls('glass-card w-full animate-slide-up overflow-hidden bg-white shadow-2xl', sizes[size])}>
-        <div className="flex items-center justify-between p-5 border-b border-slate-100">
+      <div className={cls('glass-card w-full animate-slide-up overflow-hidden bg-white shadow-2xl flex flex-col', sizes[size])}>
+        <div className="flex items-center justify-between p-5 border-b border-slate-100 flex-shrink-0">
           <h2 className="font-display font-semibold text-base" style={{ color: 'var(--text-primary)' }}>{title}</h2>
-          <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors hover:bg-white/10">
+          <button onClick={onClose} className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors hover:bg-slate-50">
             <X className="w-4 h-4" style={{ color: 'var(--text-secondary)' }} />
           </button>
         </div>
-        <div className="p-5 max-h-[80vh] overflow-y-auto">{children}</div>
+        <div className="p-5 overflow-y-auto flex-1 custom-scrollbar">{children}</div>
+        {footer && (
+          <div className="p-5 border-t border-slate-100 flex-shrink-0 bg-slate-50/50">
+            {footer}
+          </div>
+        )}
       </div>
     </div>
   )

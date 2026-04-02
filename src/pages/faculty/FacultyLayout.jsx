@@ -21,7 +21,7 @@ export default function FacultyLayout() {
   const navigate = useNavigate()
   const location = useLocation()
   const [showNotifications, setShowNotifications] = useState(false)
-  const { notifications, unreadCount, markAllAsRead } = useNotifications()
+  const { notifications, unreadCount, markAllAsRead, markAsRead } = useNotifications()
 
   const handleMarkAllAsRead = async () => {
     await markAllAsRead()
@@ -79,14 +79,14 @@ export default function FacultyLayout() {
 
       {/* Notification panel */}
       {showNotifications && (
-        <div className="fixed top-16 right-4 z-[110] w-80 glass-card animate-slide-up shadow-2xl" style={{ maxHeight: '60vh', overflowY: 'auto' }}>
-          <div className="p-4 border-b flex items-center justify-between" style={{ borderColor: 'rgba(255,255,255,0.08)' }}>
+        <div className="fixed top-16 right-4 z-[110] w-80 bg-white rounded-2xl shadow-2xl border border-slate-100 flex flex-col animate-slide-up">
+          <div className="p-4 border-b flex items-center justify-between" style={{ borderColor: 'rgba(0,0,0,0.08)' }}>
             <div>
               <p className="font-display font-semibold text-sm">Notifications</p>
               {unreadCount > 0 && (
                 <button 
                   onClick={handleMarkAllAsRead}
-                  className="text-[9px] text-brand-400 font-bold uppercase tracking-wider hover:underline"
+                  className="text-[9px] text-indigo-600 font-bold uppercase tracking-wider hover:underline"
                 >
                   Mark all as read
                 </button>
@@ -94,33 +94,46 @@ export default function FacultyLayout() {
             </div>
             <button 
               onClick={() => setShowNotifications(false)}
-              className="text-[10px] font-bold uppercase tracking-wider opacity-50 hover:opacity-100"
+              className="text-[10px] font-bold uppercase tracking-wider opacity-40 hover:opacity-100"
             >
               Close
             </button>
           </div>
           {notifications.filter(n => !n.is_read).length === 0 ? (
             <div className="p-8 text-center opacity-40">
-              <Bell className="w-8 h-8 mx-auto mb-2" />
-              <p className="text-xs">No new notifications</p>
+              <Bell className="w-8 h-8 mx-auto mb-2 text-slate-300" />
+              <p className="text-xs text-slate-500 font-medium tracking-tight">No new notifications</p>
             </div>
           ) : (
-            notifications.filter(n => !n.is_read).map(n => (
-              <div key={n.id} className="p-4 border-b flex gap-3 hover:bg-white/[0.02] transition-colors" style={{ borderColor: 'rgba(255,255,255,0.05)' }}>
-                <div className={cls('w-2 h-2 rounded-full mt-1.5 flex-shrink-0', 
-                  n.type === 'success' ? 'bg-green-400' : 
-                  n.type === 'warning' ? 'bg-yellow-400' : 
-                  n.type === 'error' ? 'bg-red-400' : 'bg-blue-400'
-                )} />
-                <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-sm leading-tight">{n.title}</p>
-                  <p className="text-xs mt-1 leading-normal" style={{ color: 'var(--text-secondary)' }}>{n.message}</p>
-                  <p className="text-[9px] mt-1.5 opacity-40 uppercase tracking-tighter">
-                    {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
-                  </p>
+            <div className="max-h-[360px] overflow-y-auto">
+              {notifications.filter(n => !n.is_read).map(n => (
+                <div key={n.id} className="p-4 border-b flex gap-3 hover:bg-slate-50 transition-colors group relative" style={{ borderColor: 'rgba(0,0,0,0.05)' }}>
+                  <div className={cls('w-2 h-2 rounded-full mt-1.5 flex-shrink-0', 
+                    n.type === 'success' ? 'bg-green-500' : 
+                    n.type === 'warning' ? 'bg-amber-500' : 
+                    n.type === 'error' ? 'bg-red-500' : 'bg-indigo-500'
+                  )} />
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-start justify-between gap-2">
+                      <p className="font-semibold text-xs leading-tight text-slate-800">{n.title}</p>
+                      <button 
+                        onClick={async (e) => {
+                          e.stopPropagation();
+                          await markAsRead(n.id);
+                        }}
+                        className="w-5 h-5 rounded-full flex items-center justify-center bg-slate-100/50 hover:bg-indigo-50 text-slate-300 hover:text-indigo-600 transition-all opacity-0 group-hover:opacity-100 focus:opacity-100"
+                      >
+                        <X className="w-3 h-3" />
+                      </button>
+                    </div>
+                    <p className="text-[10px] mt-1 leading-normal text-slate-500">{n.message}</p>
+                    <p className="text-[9px] mt-2 opacity-50 uppercase tracking-tighter font-bold text-slate-400">
+                      {formatDistanceToNow(new Date(n.created_at), { addSuffix: true })}
+                    </p>
+                  </div>
                 </div>
-              </div>
-            ))
+              ))}
+            </div>
           )}
         </div>
       )}

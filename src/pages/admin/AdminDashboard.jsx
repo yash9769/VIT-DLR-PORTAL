@@ -403,7 +403,7 @@ export default function AdminDashboard() {
             </p>
           </div>
 
-          <ProxyManagementCard />
+          <ProxyManagementCard onRefresh={fetchDashboardData} />
         </div>
       </div>
 

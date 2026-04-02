@@ -173,8 +173,7 @@ export default function AdminSubmitDLR() {
       unit_number: form.unit_number ? Number(form.unit_number) : null,
       lcs_status: form.lcs_status,
       smartboard_pdf_uploaded: form.smartboard_pdf_uploaded,
-      remarks: form.remarks,
-      
+      remarks: form.remarks || (selectedFaculty !== selectedSlot?.faculty_id ? `This lecture was adjusted to ${faculties.find(f => f.id === selectedFaculty)?.full_name}` : ''),
       total_students: students.length > 0 ? students.length : (Number(form.total_students) || 60),
       present_count: (students.length > 0) ? presentCountResult : (Number(form.present_count) || 0),
       
@@ -182,6 +181,7 @@ export default function AdminSubmitDLR() {
       attendance: (students.length > 0) ? presentCountResult : (Number(form.present_count) || 0),
       total_batch_strength: students.length > 0 ? students.length : (Number(form.total_students) || 60),
 
+      is_substitution: Boolean(selectedFaculty !== selectedSlot?.faculty_id),
       approval_status: 'pending',
       submitted_at: new Date().toISOString(),
     }

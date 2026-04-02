@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react'
-import { X, Search, CheckCircle, ChevronRight, ChevronLeft, User, Clock, AlertTriangle, Filter } from 'lucide-react'
+import { X, Search, CheckCircle, ChevronRight, ChevronLeft, User, Clock, AlertTriangle, Filter, ChevronDown } from 'lucide-react'
 import { supabase } from '../../lib/supabase'
 import { toast, Spinner, Modal } from '../ui'
 import { today, sendNotification, formatDate, cls, getInitials } from '../../utils/helpers'
@@ -48,7 +48,7 @@ export default function ProxyAssignModal({ open, onClose, profile, todaySchedule
     try {
       const { data, error } = await supabase
         .from('users')
-        .select('id, full_name, department, role, initials, employee_id')
+        .select('id, full_name, department, role, initials')
         .in('role', ['faculty', 'admin', 'hod'])
         .eq('is_active', true)
         .neq('id', profile.id)
@@ -280,75 +280,133 @@ export default function ProxyAssignModal({ open, onClose, profile, todaySchedule
 
           {/* ── STEP 1: ASSIGN PROXY PER LECTURE ─── */}
           {step === 1 && (
-            assigningFor ? (
-              // Faculty picker for the currently selected lecture
-              <FacultyPicker
-                lectureId={assigningFor.id}
-                lectureName={`${assigningFor.subjects?.subject_name} · ${assigningFor.time_slots?.start_time?.substring(0,5)}`}
-                onPick={fac => {
-                  setLectureProxies(prev => ({ ...prev, [assigningFor.id]: fac }))
-                  setAssigningFor(null)
-                }}
-                onCancel={() => { setAssigningFor(null); setSearch(''); setDeptFilter('') }}
-              />
-            ) : (
-              // List of selected lectures with individual proxy assignment
-              <div className="space-y-3">
-                <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
-                  Tap each lecture to assign a proxy faculty member.
-                </p>
-                {selectedLectureObjects.map(entry => {
-                  const proxy = lectureProxies[entry.id]
-                  return (
-                    <button key={entry.id} onClick={() => setAssigningFor(entry)}
+            <div className="space-y-4">
+              <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>
+                Select a proxy faculty member for each of your selected lectures.
+              </p>
+              
+              {selectedLectureObjects.map(entry => {
+                const proxy = lectureProxies[entry.id]
+                const isPicking = assigningFor?.id === entry.id
+                
+                return (
+                  <div key={entry.id} className="space-y-2">
+                    <div 
                       className="w-full text-left p-4 rounded-2xl border transition-all"
                       style={{
-                        background: proxy ? 'rgba(63,185,80,0.08)' : 'rgba(255,255,255,0.04)',
-                        borderColor: proxy ? 'rgba(63,185,80,0.4)' : 'rgba(245,158,11,0.35)',
-                      }}>
+                        background: proxy ? 'rgba(63,185,80,0.06)' : 'rgba(255,255,255,0.02)',
+                        borderColor: isPicking ? 'var(--brand)' : proxy ? 'rgba(63,185,80,0.3)' : 'rgba(255,255,255,0.1)',
+                      }}
+                    >
                       <div className="flex items-center gap-3">
-                        {/* Lecture info */}
                         <div className="flex-1 min-w-0">
                           <p className="font-semibold text-sm truncate" style={{ color: 'var(--text-primary)' }}>{entry.subjects?.subject_name}</p>
-                          <div className="flex items-center gap-2 mt-1 text-[10px] flex-wrap" style={{ color: 'var(--text-secondary)' }}>
-                            <span className="px-2 py-0.5 rounded font-bold" style={{ background: 'rgba(74,108,247,0.15)', color: '#7090ff' }}>{entry.divisions?.division_name}</span>
+                          <div className="flex items-center gap-2 mt-1 text-[10px]" style={{ color: 'var(--text-secondary)' }}>
+                            <span className="px-2 py-0.5 rounded font-bold" style={{ background: 'rgba(74,108,247,0.1)', color: '#7090ff' }}>{entry.divisions?.division_name}</span>
                             <span>{entry.time_slots?.start_time?.substring(0,5)} – {entry.time_slots?.end_time?.substring(0,5)}</span>
-                            <span>{entry.rooms?.room_number}</span>
                           </div>
                         </div>
-                        {/* Proxy badge or tap hint */}
-                        <div className="flex-shrink-0">
-                          {proxy ? (
-                            <div className="flex items-center gap-2">
-                              <div className="text-right">
-                                <p className="text-[10px] font-bold text-green-400">Assigned</p>
-                                <p className="text-xs font-semibold truncate max-w-[80px]" style={{ color: 'var(--text-primary)' }}>{proxy.full_name.split(' ')[0]}</p>
-                              </div>
-                                <div className="w-9 h-9 rounded-xl flex items-center justify-center text-xs font-bold text-white shadow-sm"
-                                  style={{ background: 'linear-gradient(135deg,#4A6CF7,#3355e8)' }}>
+
+                        <div className="flex-shrink-0 relative">
+                          <button 
+                            onClick={() => setAssigningFor(isPicking ? null : entry)}
+                            className="flex items-center gap-2 px-3 py-2 rounded-xl text-xs font-bold transition-all border select-none"
+                            style={{ 
+                              background: proxy ? 'rgba(63,185,80,0.1)' : 'rgba(255,255,255,0.05)',
+                              borderColor: proxy ? 'rgba(63,185,80,0.4)' : 'rgba(255,255,255,0.15)',
+                              color: proxy ? '#3fb950' : 'var(--text-primary)'
+                            }}
+                          >
+                            {proxy ? (
+                              <>
+                                <div className="w-5 h-5 rounded-lg flex items-center justify-center text-[10px] font-bold text-white" style={{ background: 'linear-gradient(135deg,#4A6CF7,#3355e8)' }}>
                                   {proxy.initials || getInitials(proxy.full_name)}
                                 </div>
-                            </div>
-                          ) : (
-                            <div className="flex items-center gap-1 text-xs font-semibold" style={{ color: '#f59e0b' }}>
-                              <User className="w-3.5 h-3.5" /> Assign
-                              <ChevronRight className="w-3.5 h-3.5" />
-                            </div>
-                          )}
+                                <span className="max-w-[70px] truncate">{proxy.full_name.split(' ')[0]}</span>
+                              </>
+                            ) : (
+                              <>
+                                <User className="w-3.5 h-3.5 opacity-60" />
+                                <span>Select Faculty</span>
+                              </>
+                            )}
+                            <ChevronDown className={cls("w-3.5 h-3.5 transition-transform opacity-40", isPicking && "rotate-180")} />
+                          </button>
                         </div>
                       </div>
-                    </button>
-                  )
-                })}
 
-                {!allAssigned && (
-                  <div className="flex items-start gap-2 p-3 rounded-xl text-xs" style={{ background: 'rgba(245,158,11,0.08)', color: '#d97706' }}>
-                    <AlertTriangle className="w-3.5 h-3.5 mt-0.5 flex-shrink-0" />
-                    <span>{selectedLectureObjects.length - Object.keys(lectureProxies).filter(k => selectedLectures.includes(k)).length} lecture(s) still need a proxy assigned.</span>
+                      {/* Inline Searchable Dropdown */}
+                      {isPicking && (
+                        <div className="mt-4 pt-4 border-t border-white/5 space-y-3 animate-slide-down">
+                          <div className="flex gap-2">
+                            <div className="relative flex-1">
+                              <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-3.5 h-3.5" style={{ color: 'var(--text-secondary)' }} />
+                              <input 
+                                className="input-field pl-9 py-2 w-full text-xs" 
+                                placeholder="Search faculty..."
+                                value={search}
+                                onChange={e => setSearch(e.target.value)}
+                                autoFocus
+                                onClick={e => e.stopPropagation()}
+                              />
+                            </div>
+                            <div className="relative">
+                              <select
+                                value={deptFilter}
+                                onChange={e => setDeptFilter(e.target.value)}
+                                className="input-field pl-2 pr-6 py-2 text-[10px] appearance-none min-w-[90px]"
+                                style={{ color: 'var(--text-secondary)' }}
+                                onClick={e => e.stopPropagation()}
+                              >
+                                <option value="">All Depts</option>
+                                {departments.map(d => <option key={d} value={d}>{d}</option>)}
+                              </select>
+                              <ChevronDown className="absolute right-2 top-1/2 -translate-y-1/2 w-3 h-3 pointer-events-none opacity-40" />
+                            </div>
+                          </div>
+
+                          <div className="grid grid-cols-1 gap-1.5 max-h-[200px] overflow-y-auto pr-1">
+                            {filteredFaculty.length === 0 ? (
+                              <p className="text-center text-xs py-4 opacity-50">No results</p>
+                            ) : filteredFaculty.map(fac => (
+                              <button 
+                                key={fac.id}
+                                onClick={() => {
+                                  setLectureProxies(prev => ({ ...prev, [entry.id]: fac }))
+                                  setAssigningFor(null)
+                                  setSearch('')
+                                }}
+                                className="w-full text-left p-2.5 rounded-xl flex items-center gap-3 transition-colors hover:bg-white/5"
+                                style={{
+                                  background: proxy?.id === fac.id ? 'rgba(74,108,247,0.1)' : 'transparent',
+                                  border: `1px solid ${proxy?.id === fac.id ? 'rgba(74,108,247,0.3)' : 'transparent'}`
+                                }}
+                              >
+                                <div className="w-7 h-7 rounded-lg flex items-center justify-center text-[10px] font-bold text-white flex-shrink-0" style={{ background: 'rgba(100,100,120,0.4)' }}>
+                                  {fac.initials || getInitials(fac.full_name)}
+                                </div>
+                                <div className="flex-1 min-w-0">
+                                  <p className="font-semibold text-xs truncate" style={{ color: 'var(--text-primary)' }}>{fac.full_name}</p>
+                                  <p className="text-[10px] opacity-60 truncate">{fac.department}</p>
+                                </div>
+                                {proxy?.id === fac.id && <CheckCircle className="w-4 h-4 text-green-400" />}
+                              </button>
+                            ))}
+                          </div>
+                        </div>
+                      )}
+                    </div>
                   </div>
-                )}
-              </div>
-            )
+                )
+              })}
+
+              {!allAssigned && !assigningFor && (
+                <div className="flex items-start gap-2 p-3 rounded-xl text-[10px]" style={{ background: 'rgba(245,158,11,0.08)', color: '#d97706' }}>
+                  <AlertTriangle className="w-3.5 h-3.5 flex-shrink-0" />
+                  <span>Please select a proxy teacher for all {selectedLectureObjects.length} lecture(s) before continuing.</span>
+                </div>
+              )}
+            </div>
           )}
 
           {/* ── STEP 2: CONFIRM ──────────────────── */}

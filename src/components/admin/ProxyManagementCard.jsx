@@ -8,7 +8,7 @@ import { today, formatTime } from '../../utils/helpers'
 
 const DEMO_MODE = !import.meta.env.VITE_SUPABASE_URL
 
-export default function ProxyManagementCard() {
+export default function ProxyManagementCard({ onRefresh }) {
   const [substitutions, setSubstitutions] = useState([])
   const [loading, setLoading] = useState(true)
   const [showAssignModal, setShowAssignModal] = useState(false)
@@ -74,6 +74,7 @@ export default function ProxyManagementCard() {
       if (error) throw error
       toast.success('Substitution cancelled')
       fetchSubstitutions()
+      onRefresh?.()
     } catch (err) {
       console.error('Error cancelling substitution:', err)
       toast.error('Failed to cancel substitution')
@@ -166,6 +167,7 @@ export default function ProxyManagementCard() {
         onSuccess={() => {
           setShowAssignModal(false)
           fetchSubstitutions()
+          onRefresh?.()
         }}
       />
     </>
