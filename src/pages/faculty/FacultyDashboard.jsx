@@ -216,27 +216,53 @@ export default function FacultyDashboard() {
       if (lrError) throw lrError
       setLectureRecords(records || [])
 
-      // 3. Fetch today's substitutions for this faculty
-      const { data: subs, error: subErr } = await supabase
+      // 3. Fetch today's substitutions involving this faculty (no FK joins — use separate fetches)
+      const { data: subsRaw, error: subErr } = await supabase
         .from('substitutions')
-        .select(`
-          *,
-          absent_faculty:absent_faculty_id(id, full_name, role, department, initials),
-          proxy_faculty:proxy_faculty_id(id, full_name, role, department, initials),
-          timetable:timetable!timetable_id(
-            *,
-            subjects(*),
-            divisions(*),
-            rooms(*),
-            time_slots(*)
-          )
-        `)
+        .select('*')
         .eq('substitution_date', todayStr)
         .eq('status', 'active')
         .or(`absent_faculty_id.eq.${profile.id},proxy_faculty_id.eq.${profile.id}`)
 
       if (subErr) throw subErr
-      setSubstitutions(subs || [])
+      const rawSubs = subsRaw || []
+
+      // 3b. Collect all unique IDs needed
+      const subTimetableIds = [...new Set(rawSubs.map(s => s.timetable_id).filter(Boolean))]
+      const subFacultyIds = [...new Set([
+        ...rawSubs.map(s => s.absent_faculty_id),
+        ...rawSubs.map(s => s.proxy_faculty_id)
+      ].filter(Boolean))]
+
+      // 3c. Fetch timetable entries for those IDs
+      let subTimetableMap = {}
+      if (subTimetableIds.length > 0) {
+        const { data: ttData } = await supabase
+          .from('timetable')
+          .select('*, subjects(*), divisions(*), rooms(*), time_slots(*)')
+          .in('id', subTimetableIds)
+        ;(ttData || []).forEach(tt => { subTimetableMap[tt.id] = tt })
+      }
+
+      // 3d. Fetch user records for absent & proxy faculty
+      let subUsersMap = {}
+      if (subFacultyIds.length > 0) {
+        const { data: usersData } = await supabase
+          .from('users')
+          .select('id, full_name, initials, department, role')
+          .in('id', subFacultyIds)
+        ;(usersData || []).forEach(u => { subUsersMap[u.id] = u })
+      }
+
+      // 3e. Stitch everything together
+      const subs = rawSubs.map(s => ({
+        ...s,
+        timetable: subTimetableMap[s.timetable_id] || null,
+        absent_faculty:  subUsersMap[s.absent_faculty_id]  || null,
+        proxy_faculty:   subUsersMap[s.proxy_faculty_id]   || null,
+      }))
+
+      setSubstitutions(subs)
 
       // 4. Calculate Stats
       const todaySubmittedIds = new Set(

@@ -86,7 +86,9 @@ export default function SubmitLecture() {
     assignments_given: savedState?.assignments_given || 0,
     assignments_graded: savedState?.assignments_graded || 0,
 
-    remarks: savedState?.remarks || (location.state?.isSubstitution ? `Adj. to ${profile?.full_name} from ${location.state?.absentFacultyName || 'Unknown Faculty'}` : ''),
+    remarks: savedState?.remarks || (location.state?.isSubstitution 
+      ? `Lecture adjusted to: ${profile?.initials || profile?.full_name || 'Proxy Faculty'}` 
+      : ''),
     is_substitution: savedState?.is_substitution || location.state?.isSubstitution || false,
     original_faculty_id: location.state?.originalFacultyId || null,
     absent_faculty_name: location.state?.absentFacultyName || null,
@@ -190,7 +192,8 @@ export default function SubmitLecture() {
         supabase.from('lecture_records').select('timetable_id').eq('faculty_id', profile.id).eq('lecture_date', t),
         supabase.from('timetable').select('subject_id, subjects(*)').eq('faculty_id', profile.id),
         supabase.from('users').select('id, full_name, initials').eq('is_active', true).order('full_name'),
-        supabase.from('substitutions').select('*, absent_faculty:absent_faculty_id(id, full_name, initials), timetable:timetable!timetable_id(*, subjects(*), divisions(*), rooms(*), time_slots(*))').eq('proxy_faculty_id', profile.id).eq('substitution_date', t).eq('status', 'active')
+        // Fetch proxy substitutions with NO FK joins (avoids ambiguous multi-FK resolution)
+        supabase.from('substitutions').select('*').eq('proxy_faculty_id', profile.id).eq('substitution_date', t).eq('status', 'active')
       ])
 
       const submittedIds = lrRes.data?.map(r => r.timetable_id) || []
@@ -198,15 +201,43 @@ export default function SubmitLecture() {
       // Regular timetable entries
       let remaining = (ttRes.data || []).filter(tt => !submittedIds.includes(tt.id))
 
-      // Proxy assignments
-      const proxyLectures = (subProxyRes.data || [])
-        .filter(sub => sub.timetable && !submittedIds.includes(sub.timetable_id))
-        .map(sub => ({
-          ...sub.timetable,
-          is_proxy: true,
-          absent_faculty: sub.absent_faculty,
-          substitution_id: sub.id
-        }))
+      // Proxy assignments — two-step fetch to avoid FK join ambiguity
+      const proxySubsRaw = subProxyRes.data || []
+      const proxyTimetableIds = [...new Set(proxySubsRaw.map(s => s.timetable_id).filter(Boolean))]
+      const proxyAbsentFacultyIds = [...new Set(proxySubsRaw.map(s => s.absent_faculty_id).filter(Boolean))]
+
+      let proxyTimetableMap = {}
+      let proxyAbsentUsersMap = {}
+
+      if (proxyTimetableIds.length > 0) {
+        const { data: proxyTT } = await supabase
+          .from('timetable')
+          .select('*, subjects(*), divisions(*), rooms(*), time_slots(*)')
+          .in('id', proxyTimetableIds)
+        ;(proxyTT || []).forEach(tt => { proxyTimetableMap[tt.id] = tt })
+      }
+
+      if (proxyAbsentFacultyIds.length > 0) {
+        const { data: absentUsers } = await supabase
+          .from('users')
+          .select('id, full_name, initials')
+          .in('id', proxyAbsentFacultyIds)
+        ;(absentUsers || []).forEach(u => { proxyAbsentUsersMap[u.id] = u })
+      }
+
+      const proxyLectures = proxySubsRaw
+        .filter(sub => !submittedIds.includes(sub.timetable_id))
+        .map(sub => {
+          const tt = proxyTimetableMap[sub.timetable_id]
+          if (!tt) return null
+          return {
+            ...tt,
+            is_proxy: true,
+            absent_faculty: proxyAbsentUsersMap[sub.absent_faculty_id] || null,
+            substitution_id: sub.id
+          }
+        })
+        .filter(Boolean)
 
       // Combine both
       const combinedSchedule = [...remaining, ...proxyLectures]
@@ -231,13 +262,21 @@ export default function SubmitLecture() {
       try {
         const { data: absentSubs } = await supabase
           .from('substitutions')
-          .select('timetable_id, substitution_date')
+          .select('timetable_id')
           .eq('absent_faculty_id', profile.id)
           .eq('substitution_date', t)
+          .eq('status', 'active')
         
-        if (absentSubs && absentSubs.filter(s => s.substitution_date === t).length > 0) {
-          setSubstitutionBlocked(true)
-          setBlockedReason('A substitution has been assigned for your slot(s) today. DLR submission is not allowed for those slots. Please contact admin if this is incorrect.')
+        // Only block if all of the faculty's own lectures are covered (they are truly absent)
+        // Don't block the entire form — just track which timetable IDs are substituted out
+        if (absentSubs && absentSubs.length > 0) {
+          const coveredIds = absentSubs.map(s => s.timetable_id)
+          const ownLectureIds = (ttRes.data || []).map(t => t.id)
+          const allCovered = ownLectureIds.length > 0 && ownLectureIds.every(id => coveredIds.includes(id))
+          if (allCovered) {
+            setSubstitutionBlocked(true)
+            setBlockedReason('All your lectures today are being covered by proxy faculty. You can still submit DLR for proxy lectures assigned to you.')
+          }
         }
       } catch(_) {}
     } catch (error) {
@@ -304,7 +343,7 @@ export default function SubmitLecture() {
       batch_number: entry.batch_number || null,
       is_substitution: isProxy,
       remarks: isProxy 
-        ? `Adjusted lecture from ${absentName}${absentInitials ? ` (${absentInitials})` : ''} to ${profile?.full_name}${profile?.initials ? ` (${profile.initials})` : ''}.` 
+        ? `Lecture adjusted to: ${profile?.initials || profile?.full_name || 'Proxy Faculty'}` 
         : f.remarks,
       substitution_ref_id: entry.substitution_id || null,
       original_faculty_id: isProxy ? (entry.absent_faculty?.id || entry.faculty_id) : (entry.faculty_id || null)
@@ -318,6 +357,16 @@ export default function SubmitLecture() {
   const handleSubmit = async () => {
     try {
       setSubmitting(true)
+      let finalRemarks = form.remarks || ''
+      if (form.is_substitution) {
+        const proxyInitials = profile?.initials || profile?.full_name || 'Proxy Faculty'
+        const substitutionText = `Lecture adjusted to: ${proxyInitials}`
+        // Prepend if not already present
+        if (!finalRemarks.includes('Lecture adjusted to:')) {
+          finalRemarks = substitutionText + (finalRemarks ? `\n${finalRemarks}` : '')
+        }
+      }
+
       // Create database payload - EXCLUDING actual_faculty_name (not in schema)
       const dbData = {
         faculty_id: profile.id,
@@ -339,8 +388,8 @@ export default function SubmitLecture() {
         assignments_last_week: Number(form.assignments_last_week) || 0,
         assignments_given: Number(form.assignments_given) || 0,
         assignments_graded: Number(form.assignments_graded) || 0,
-        topic_covered: form.subtopics || form.remarks || 'Main Lecture',
-        remarks: form.remarks || null,
+        topic_covered: form.subtopics || finalRemarks || 'Main Lecture',
+        remarks: finalRemarks || null,
         unit_number: form.unit_number ? Number(form.unit_number) : null,
         subtopics: form.subtopics || null,
         is_substitution: Boolean(form.is_substitution),

@@ -24,16 +24,14 @@ export default function AdminProxyModal({ open, onClose, onSuccess }) {
   const [loadingSchedule, setLoadingSchedule] = useState(false)
   const [selectedLectures, setSelectedLectures] = useState([])
 
-  // Step 2 — per-lecture proxy map: { [timetable_id]: faculty_object }
+  // Step 2 — per-lecture proxy map: { [timetable_id]: faculty_id }
   const [lectureProxies, setLectureProxies] = useState({})
-  const [assigningFor, setAssigningFor] = useState(null) // which lecture currently picking for
-  const [proxySearch, setProxySearch] = useState('')
-  const [deptFilter, setDeptFilter] = useState('') // department filter for proxy picker
 
   // Step 3
   const [reason, setReason] = useState('Faculty Absent')
   const [submitting, setSubmitting] = useState(false)
 
+  // Reset state and fetch faculty every time modal opens
   useEffect(() => {
     if (open) {
       setStep(0)
@@ -42,10 +40,8 @@ export default function AdminProxyModal({ open, onClose, onSuccess }) {
       setAbsentSchedule([])
       setSelectedLectures([])
       setLectureProxies({})
-      setAssigningFor(null)
-      setProxySearch('')
-      setDeptFilter('')
       setReason('Faculty Absent')
+      setSubmitting(false)
       fetchFaculty()
     }
   }, [open])
@@ -124,22 +120,6 @@ export default function AdminProxyModal({ open, onClose, onSuccess }) {
   const selectedLectureObjects = absentSchedule.filter(t => selectedLectures.includes(t.id))
   const allAssigned = selectedLectureObjects.length > 0 && selectedLectureObjects.every(e => lectureProxies[e.id])
 
-  // Proxy search & filter — exclude absent faculty from options
-  const filteredProxyFaculty = facultyList.filter(f => {
-    if (f.id === absentFaculty?.id) return false
-    const matchDept = !deptFilter || f.department === deptFilter
-    const name = (f.full_name || '').toLowerCase()
-    const dept = (f.department || '').toLowerCase()
-    const init = (f.initials || '').toLowerCase()
-    const search = (proxySearch || '').toLowerCase()
-
-    const matchSearch = !search ||
-      name.includes(search) ||
-      dept.includes(search) ||
-      init.includes(search)
-    return matchDept && matchSearch
-  })
-
   const filteredAbsentFaculty = facultyList.filter(f => {
     const name = (f.full_name || '').toLowerCase()
     const dept = (f.department || '').toLowerCase()
@@ -163,13 +143,13 @@ export default function AdminProxyModal({ open, onClose, onSuccess }) {
       
       // Construct and validate records
       const records = selectedLectureObjects.map(entry => {
-        const proxy = lectureProxies[entry.id]
-        if (!proxy) throw new Error(`Missing proxy for lecture: ${entry.subjects?.subject_name}`)
+        const proxyId = lectureProxies[entry.id]
+        if (!proxyId) throw new Error(`Missing proxy for lecture: ${entry.subjects?.subject_name}`)
         
         return {
           substitution_date: todayStr,
           absent_faculty_id: absentFaculty.id,
-          proxy_faculty_id: proxy.id,
+          proxy_faculty_id: proxyId,
           timetable_id: entry.id,
           reason: reason || 'Faculty Absent',
           status: 'active',
@@ -185,8 +165,23 @@ export default function AdminProxyModal({ open, onClose, onSuccess }) {
         return
       }
 
-      const { error } = await supabase.from('substitutions').insert(records)
-      if (error) throw error
+      // Upsert to handle cases where a substitution for the same slot already exists
+      const { error } = await supabase
+        .from('substitutions')
+        .upsert(records, {
+          onConflict: 'substitution_date,absent_faculty_id,timetable_id',
+          ignoreDuplicates: false
+        })
+
+      if (error) {
+        console.error('Supabase substitution error:', error)
+        const msg = error.code === '42501'
+          ? 'Permission denied. Only admins can assign proxy for other faculty.'
+          : error.message || 'Unknown error. Please try again.'
+        toast.error(`Failed to assign proxy: ${msg}`)
+        setSubmitting(false)
+        return
+      }
 
       // Notify absent faculty
       try {
@@ -194,11 +189,13 @@ export default function AdminProxyModal({ open, onClose, onSuccess }) {
           `${records.length} of your lecture(s) on ${formatDate(todayStr)} have been covered by proxy faculty.`, 'info')
 
         // Notify each proxy faculty
-        const proxyNotifs = Object.entries(lectureProxies).map(([tid, fac]) => {
+        const proxyNotifs = Object.entries(lectureProxies).map(([tid, proxyId]) => {
+          const proxyFac = facultyList.find(f => f.id === proxyId)
           const entry = absentSchedule.find(e => e.id === tid)
-          return sendNotification(supabase, fac.id, 'New Proxy Assignment', 
+          if (!proxyFac) return null;
+          return sendNotification(supabase, proxyFac.id, 'New Proxy Assignment', 
             `You have been assigned to cover ${entry?.subjects?.subject_name} for ${absentFaculty.full_name} on ${formatDate(todayStr)}.`, 'info')
-        })
+        }).filter(Boolean)
         await Promise.all(proxyNotifs)
       } catch (notifErr) {
         console.error('Notification error (ignoring):', notifErr)
@@ -222,7 +219,7 @@ export default function AdminProxyModal({ open, onClose, onSuccess }) {
   const canProceed = [
     !!absentFaculty,
     selectedLectures.length > 0,
-    allAssigned && !assigningFor,
+    allAssigned,
     true,
   ][step]
 
@@ -238,11 +235,6 @@ export default function AdminProxyModal({ open, onClose, onSuccess }) {
             <button onClick={onClose} className="px-6 py-3 rounded-xl text-sm font-bold border border-slate-200 text-slate-500 hover:bg-slate-50 transition-colors">
               Cancel
             </button>
-          ) : (step === 2 && assigningFor) ? (
-            <button onClick={() => { setAssigningFor(null); setProxySearch('') }}
-              className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors">
-              <ChevronLeft className="w-4 h-4" /> Back to List
-            </button>
           ) : (
             <button onClick={() => setStep(s => s - 1)}
               className="flex items-center gap-2 px-6 py-3 rounded-xl text-sm font-bold bg-slate-100 text-slate-600 hover:bg-slate-200 transition-colors">
@@ -253,7 +245,6 @@ export default function AdminProxyModal({ open, onClose, onSuccess }) {
           <button
             onClick={() => {
               if (step < 3) {
-                if (assigningFor) return; 
                 setStep(s => s + 1);
               } else {
                 handleSubmit();
@@ -436,18 +427,14 @@ export default function AdminProxyModal({ open, onClose, onSuccess }) {
 
             <div className="space-y-3 pr-1 pb-4">
               {selectedLectureObjects.map(entry => {
-                const proxy = lectureProxies[entry.id]
-                const isPicking = assigningFor?.id === entry.id
+                const proxyId = lectureProxies[entry.id]
+                const proxy = facultyList.find(f => f.id === proxyId);
                 
                 return (
                   <div key={entry.id} className="relative">
-                    {/* Lecture Info Card */}
-                    <div className="p-4 rounded-2xl border-2 transition-all group bg-white"
-                      style={{
-                        borderColor: isPicking ? 'var(--brand)' : proxy ? '#4ade80' : '#f1f5f9',
-                        boxShadow: isPicking ? '0 10px 25px -5px rgba(74,108,247,0.1)' : 'none'
-                      }}>
-                      <div className="flex items-center justify-between gap-4">
+                    <div className="p-4 rounded-2xl border-2 transition-all bg-white"
+                      style={{ borderColor: proxy ? '#4ade80' : '#f1f5f9' }}>
+                      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-4">
                         <div className="flex-1 min-w-0">
                           <h4 className="font-bold text-slate-800 text-sm truncate uppercase tracking-tight">{entry.subjects?.subject_name}</h4>
                           <p className="text-[10px] text-slate-500 mt-0.5 font-bold uppercase tracking-wider">
@@ -458,111 +445,26 @@ export default function AdminProxyModal({ open, onClose, onSuccess }) {
                           </p>
                         </div>
 
-                        {/* Dropdown Trigger */}
-                        <div className="relative group">
-                          <button 
-                            onClick={(e) => {
-                              e.stopPropagation();
-                              setAssigningFor(isPicking ? null : entry);
-                              if (!isPicking) {
-                                setProxySearch('');
+                        <div className="w-full sm:w-64">
+                          <select 
+                            className="input-field w-full text-sm font-semibold bg-slate-50 border-slate-200"
+                            value={proxyId || ''}
+                            onChange={(e) => {
+                              const facId = e.target.value;
+                              if (facId) {
+                                setLectureProxies(prev => ({ ...prev, [entry.id]: facId }));
+                              } else {
+                                setLectureProxies(prev => { const n = {...prev}; delete n[entry.id]; return n; });
                               }
                             }}
-                            className="flex items-center gap-2.5 pl-4 pr-3 py-2.5 rounded-xl text-xs font-bold border-2 transition-all bg-slate-50 hover:bg-white hover:border-brand-500/50 active:scale-95"
-                            style={{ 
-                              borderColor: proxy ? '#4ade80' : isPicking ? 'var(--brand)' : '#e2e8f0',
-                            }}
                           >
-                            {proxy ? (
-                              <div className="flex items-center gap-2 min-w-[120px]">
-                                <div className="w-6 h-6 rounded-lg bg-green-500 flex items-center justify-center text-[9px] text-white font-bold">
-                                  {proxy.initials || getInitials(proxy.full_name || 'F')}
-                                </div>
-                                <span className="truncate max-w-[90px]">{proxy.full_name?.split(' ')[0] || 'Proxy'}</span>
-                                <ChevronDown className={cls("w-4 h-4 ml-auto text-slate-400 transition-transform", isPicking && "rotate-180")} />
-                              </div>
-                            ) : (
-                              <div className="flex items-center gap-2 min-w-[120px]">
-                                <span className="text-slate-400 font-medium">Select Faculty</span>
-                                <ChevronDown className={cls("w-4 h-4 ml-auto text-slate-400 transition-transform", isPicking && "rotate-180")} />
-                              </div>
-                            )}
-                          </button>
-
-                          {/* FLOATING DROPDOWN LIST */}
-                          {isPicking && (
-                            <div className="fixed inset-x-0 bottom-0 top-0 sm:absolute sm:inset-auto sm:right-0 sm:top-full sm:mt-2 w-full sm:w-[320px] bg-white rounded-t-3xl sm:rounded-2xl shadow-2xl border border-slate-200 z-[100] animate-slide-up flex flex-col max-h-[70vh] sm:max-h-[300px]">
-                              {/* Header for mobile */}
-                              <div className="sm:hidden flex items-center justify-between p-4 border-b border-slate-100">
-                                <span className="font-bold text-sm">Assign Proxy for {entry.subjects?.subject_name}</span>
-                                <button onClick={() => setAssigningFor(null)} className="p-2"><X className="w-5 h-5" /></button>
-                              </div>
-
-                              {/* Search Area */}
-                              <div className="p-3 bg-slate-50/50 border-b border-slate-100 flex gap-2">
-                                <div className="relative flex-1">
-                                  <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-slate-400" />
-                                  <input 
-                                    className="w-full pl-9 pr-3 py-2.5 rounded-xl border border-slate-200 text-xs font-medium focus:ring-2 focus:ring-brand-500/20 focus:border-brand-500 focus:outline-none transition-all placeholder:text-slate-400" 
-                                    placeholder="Search by name or initials..."
-                                    value={proxySearch}
-                                    onChange={e => setProxySearch(e.target.value)}
-                                    autoFocus
-                                    onClick={e => e.stopPropagation()}
-                                  />
-                                </div>
-                                <select 
-                                  className="pl-2 pr-6 py-2.5 rounded-xl border border-slate-200 text-[10px] font-bold uppercase appearance-none focus:outline-none bg-white min-w-[80px]"
-                                  value={deptFilter}
-                                  onChange={e => setDeptFilter(e.target.value)}
-                                  onClick={e => e.stopPropagation()}
-                                >
-                                  <option value="">All</option>
-                                  {departments.map(d => <option key={d} value={d}>{d}</option>)}
-                                </select>
-                              </div>
-
-                              {/* Results List */}
-                              <div className="flex-1 overflow-y-auto p-1.5 custom-scrollbar min-h-[200px]">
-                                {filteredProxyFaculty.length > 0 ? (
-                                  filteredProxyFaculty.slice(0, 50).map(fac => (
-                                    <button 
-                                      key={fac.id}
-                                      onClick={(e) => {
-                                        e.stopPropagation();
-                                        setLectureProxies(prev => ({ ...prev, [entry.id]: fac }))
-                                        setAssigningFor(null)
-                                        setProxySearch('')
-                                      }}
-                                      className={cls(
-                                        "w-full text-left p-3 rounded-xl flex items-center gap-3 transition-all group/item mb-1",
-                                        proxy?.id === fac.id ? "bg-brand-500 text-white" : "hover:bg-slate-50"
-                                      )}
-                                    >
-                                      <div className={cls(
-                                        "w-8 h-8 rounded-lg flex items-center justify-center text-[10px] font-bold text-white flex-shrink-0 shadow-sm",
-                                        proxy?.id === fac.id ? "bg-white/20" : "bg-slate-400 group-hover/item:bg-brand-400"
-                                      )}>
-                                        {fac.initials || getInitials(fac.full_name || '')}
-                                      </div>
-                                      <div className="flex-1 min-w-0">
-                                        <p className="font-bold text-xs truncate">{fac.full_name || 'Loading...'}</p>
-                                        <p className={cls("text-[9px] font-bold uppercase tracking-widest truncate opacity-60", proxy?.id === fac.id ? "text-white" : "text-slate-400")}>
-                                          {fac.department || 'IT'} · {fac.role?.toUpperCase()}
-                                        </p>
-                                      </div>
-                                      {proxy?.id === fac.id && <CheckCircle className="w-4 h-4 text-white" />}
-                                    </button>
-                                  ))
-                                ) : (
-                                  <div className="flex flex-col items-center justify-center py-10 opacity-30">
-                                    <User className="w-8 h-8 mb-2" />
-                                    <p className="text-[10px] font-bold uppercase">No faculty found</p>
-                                  </div>
-                                )}
-                              </div>
-                            </div>
-                          )}
+                            <option value="">Select Faculty...</option>
+                            {facultyList.filter(f => f.id !== absentFaculty?.id).map(f => (
+                              <option key={f.id} value={f.id}>
+                                {f.full_name} ({f.department || 'General'})
+                              </option>
+                            ))}
+                          </select>
                         </div>
                       </div>
                     </div>
@@ -571,7 +473,7 @@ export default function AdminProxyModal({ open, onClose, onSuccess }) {
               })}
             </div>
 
-            {!allAssigned && !assigningFor && (
+            {!allAssigned && (
               <div className="flex items-center gap-3 p-4 rounded-2xl bg-amber-50 border border-amber-200 text-amber-700 animate-fade-in">
                 <AlertTriangle className="w-5 h-5 flex-shrink-0" />
                 <p className="text-[10px] font-bold uppercase tracking-tight">Please select proxy faculty for all marked lectures to continue.</p>
@@ -600,7 +502,8 @@ export default function AdminProxyModal({ open, onClose, onSuccess }) {
               <p className="text-[10px] font-bold uppercase tracking-widest text-slate-400 px-1 mb-1">Coverage Details ({selectedLectureObjects.length})</p>
               <div className="space-y-2 pr-1">
                 {selectedLectureObjects.map(entry => {
-                  const proxy = lectureProxies[entry.id]
+                  const proxyId = lectureProxies[entry.id]
+                  const proxy = facultyList.find(f => f.id === proxyId)
                   return (
                     <div key={entry.id} className="p-3.5 rounded-2xl flex items-center gap-3 border border-slate-100 bg-white shadow-sm">
                       <div className="flex-1 min-w-0">

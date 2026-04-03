@@ -286,7 +286,7 @@ export default function AdminDashboard() {
         <StatCard label="Avg. Attendance"  value={stats.avgAtt + '%'}  icon={TrendingUp}  color="#8b5cf6" trend={3} />
       </div>
 
-      {/* Main grid — 2/3 + 1/3 */}
+      {/* Main grid — Row 1: Approvals and Faculty Status */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* Left: Pending Approvals */}
         <div className="lg:col-span-2 space-y-4">
@@ -336,16 +336,16 @@ export default function AdminDashboard() {
           )}
         </div>
 
-        {/* Right sidebar */}
+        {/* Right sidebar: Faculty Status */}
         <div className="space-y-4">
-           <div className="glass-card p-5">
+           <div className="glass-card p-5 h-full flex flex-col">
              <h2 className="font-display font-semibold text-sm mb-3" style={{ color: 'var(--text-primary)' }}>Faculty Status</h2>
-             <div className="space-y-3 max-h-[200px] overflow-y-auto">
+             <div className="space-y-3 overflow-y-auto flex-1 max-h-[400px] pr-2">
                {facultyStatus.length === 0 ? (
                  <p className="text-xs opacity-50 text-center py-4">No data</p>
                ) : facultyStatus.map(f => (
                  <div key={f.id} className="flex items-center gap-3">
-                   <div className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold text-white flex-shrink-0"
+                   <div className="w-8 h-8 rounded-lg flex items-center justify-center text-xs font-bold text-white flex-shrink-0 shadow-sm"
                      style={{ background: f.submittedToday ? 'var(--brand)' : 'rgba(255,255,255,0.12)' }}>
                      {f.initials || getInitials(f.full_name)}
                    </div>
@@ -353,57 +353,70 @@ export default function AdminDashboard() {
                      <p className="text-xs font-semibold truncate" style={{ color: 'var(--text-primary)' }}>{f.full_name}</p>
                      <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>{f.recordCount} records</p>
                    </div>
-                   <div className={`w-2 h-2 rounded-full flex-shrink-0 ${f.submittedToday ? 'bg-green-500' : 'bg-slate-500 opacity-40'}`} />
+                   <div className={`w-2 h-2 rounded-full flex-shrink-0 ${f.submittedToday ? 'bg-green-500 shadow-[0_0_8px_rgba(34,197,94,0.5)]' : 'bg-slate-500 opacity-40'}`} />
                  </div>
                ))}
              </div>
            </div>
-          <div className="glass-card p-5">
-            <h2 className="font-display font-semibold text-sm mb-3" style={{ color: 'var(--text-primary)' }}>Day Management</h2>
-            <div className={`p-4 rounded-xl mb-4 border transition-colors ${isLocked ? 'bg-red-500/10 border-red-500/30' : 'bg-emerald-500/10 border-emerald-500/30'}`}>
-              <div className="flex items-start gap-3">
-                <div className={`w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0 ${isLocked ? 'bg-red-500/20' : 'bg-emerald-500/20'}`}>
-                  {isLocked ? <Lock className="w-5 h-5 text-red-500" /> : <TrendingUp className="w-5 h-5 text-emerald-500" />}
+        </div>
+      </div>
+
+      {/* Main grid — Row 2: Day & Proxy Management */}
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 mt-6">
+        {/* Left: Day Management */}
+        <div className="glass-card p-6 flex flex-col justify-between">
+          <div>
+            <h2 className="font-display font-semibold text-sm mb-4" style={{ color: 'var(--text-primary)' }}>Day Management</h2>
+            <div className={`p-4 rounded-xl mb-5 border transition-all duration-300 ${isLocked ? 'bg-red-500/10 border-red-500/30' : 'bg-emerald-500/10 border-emerald-500/30'}`}>
+              <div className="flex items-center gap-4">
+                <div className={`w-12 h-12 rounded-2xl flex items-center justify-center flex-shrink-0 ${isLocked ? 'bg-red-500/20' : 'bg-emerald-500/20'}`}>
+                  {isLocked ? <Lock className="w-6 h-6 text-red-500" /> : <TrendingUp className="w-6 h-6 text-emerald-500" />}
                 </div>
                 <div>
-                  <p className="font-display font-bold text-sm" style={{ color: isLocked ? '#f85149' : '#3fb950' }}>
+                  <p className="font-display font-bold text-base" style={{ color: isLocked ? '#f85149' : '#3fb950' }}>
                     {isLocked ? 'Records Locked' : 'Records Open'}
                   </p>
-                  <p className="text-[10px] mt-0.5" style={{ color: 'var(--text-secondary)' }}>
+                  <p className="text-xs mt-1" style={{ color: 'var(--text-secondary)' }}>
                     {isLocked ? 'Faculty cannot edit records for this date.' : 'Faculty can edit and fix attendance.'}
                   </p>
                 </div>
               </div>
             </div>
 
-            <div className="space-y-3">
+            <div className="space-y-4">
               <div>
-                <label className="text-[10px] font-bold uppercase tracking-wider block mb-1.5 opacity-60">Manage Date</label>
+                <label className="text-[11px] font-bold uppercase tracking-wider block mb-2 opacity-70">Manage Date</label>
                 <input 
                   type="date" 
-                  className="w-full bg-white/5 border border-white/10 rounded-xl px-4 py-3 text-sm focus:border-brand-glow outline-none transition-colors"
+                  className="w-full bg-slate-50/5 border border-slate-500/20 rounded-xl px-4 py-3 text-sm focus:border-brand-glow outline-none transition-all shadow-sm"
                   value={selectedLockDate}
                   onChange={(e) => setSelectedLockDate(e.target.value)}
                 />
               </div>
-              <button 
-                onClick={toggleLock} 
-                className={`w-full py-4 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all active:scale-95 shadow-lg ${
-                  isLocked 
-                    ? 'bg-gradient-to-r from-emerald-500 to-emerald-600' 
-                    : 'bg-gradient-to-r from-red-500 to-red-600'
-                } text-white`}
-              >
-                {isLocked ? <CheckCircle className="w-4 h-4" /> : <Lock className="w-4 h-4" />}
-                {isLocked ? 'Unlock Date for Faculty' : 'Lock Records Permanently'}
-              </button>
             </div>
-            <p className="text-[11px] mt-4 opacity-70 leading-relaxed italic" style={{ color: 'var(--text-secondary)' }}>
-              Locking a date finalizes all records and attendance. Only unlock if a faculty correction is truly necessary.
+          </div>
+          
+          <div className="mt-6">
+            <button 
+              onClick={toggleLock} 
+              className={`w-full py-3.5 rounded-xl text-sm font-bold flex items-center justify-center gap-2 transition-all active:scale-95 shadow-md hover:shadow-lg ${
+                isLocked 
+                  ? 'bg-gradient-to-r from-emerald-500 to-emerald-600' 
+                  : 'bg-gradient-to-r from-red-500 to-red-600'
+              } text-white`}
+            >
+              {isLocked ? <CheckCircle className="w-5 h-5" /> : <Lock className="w-5 h-5" />}
+              {isLocked ? 'Unlock Date for Faculty' : 'Lock Records Permanently'}
+            </button>
+            <p className="text-xs mt-3 opacity-70 leading-relaxed italic text-center" style={{ color: 'var(--text-secondary)' }}>
+              Locking a date finalizes all records and attendance. Only unlock if a correction is necessary.
             </p>
           </div>
+        </div>
 
-          <ProxyManagementCard onRefresh={fetchDashboardData} />
+        {/* Right: Proxy Management */}
+        <div className="h-full flex flex-col">
+          <ProxyManagementCard onRefresh={fetchDashboardData} className="flex-1" />
         </div>
       </div>
 

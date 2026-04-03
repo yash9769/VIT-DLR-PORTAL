@@ -8,7 +8,7 @@ import { today, formatTime } from '../../utils/helpers'
 
 const DEMO_MODE = !import.meta.env.VITE_SUPABASE_URL
 
-export default function ProxyManagementCard({ onRefresh }) {
+export default function ProxyManagementCard({ onRefresh, className = '' }) {
   const [substitutions, setSubstitutions] = useState([])
   const [loading, setLoading] = useState(true)
   const [showAssignModal, setShowAssignModal] = useState(false)
@@ -85,7 +85,7 @@ export default function ProxyManagementCard({ onRefresh }) {
 
   return (
     <>
-      <div className="glass-card p-5">
+      <div className={`glass-card p-5 flex flex-col ${className}`}>
         <div className="flex items-center justify-between mb-4">
           <div className="flex items-center gap-2">
             <div className="w-8 h-8 rounded-lg flex items-center justify-center" style={{ background: 'rgba(74,108,247,0.15)' }}>
@@ -121,7 +121,7 @@ export default function ProxyManagementCard({ onRefresh }) {
             <p className="text-xs" style={{ color: 'var(--text-secondary)' }}>No active substitutions today</p>
           </div>
         ) : (
-          <div className="space-y-2">
+          <div className="space-y-2 flex-1 overflow-y-auto pr-1">
             <p className="text-[10px] font-bold uppercase tracking-wider mb-2" style={{ color: 'var(--text-secondary)' }}>
               Today's Substitutions ({substitutions.length})
             </p>
