@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react'
+import { useState, useEffect, memo } from 'react'
 import { format } from 'date-fns'
 import { useNavigate } from 'react-router-dom'
 import { FileText, Clock, CheckCircle, TrendingUp, AlertTriangle, Lock, Download, ChevronRight, LifeBuoy } from 'lucide-react'
@@ -10,7 +10,7 @@ import { generateDLRPDF } from '../../services/reportService'
 import { exportDLRToExcel } from '../../services/excelService'
 import ProxyManagementCard from '../../components/admin/ProxyManagementCard'
 
-const StatCard = ({ label, value, icon: Icon, color, trend, onClick }) => (
+const StatCard = memo(({ label, value, icon: Icon, color, trend, onClick }) => (
   <button onClick={onClick} className="glass-card p-5 text-left w-full hover:scale-[1.01] transition-transform">
     <div className="flex items-start justify-between mb-3">
       <div className="w-10 h-10 rounded-xl flex items-center justify-center border transition-colors shadow-sm" style={{ background: 'var(--bg-secondary)', borderColor: 'var(--border-glass)' }}>
@@ -25,7 +25,7 @@ const StatCard = ({ label, value, icon: Icon, color, trend, onClick }) => (
     <p className="font-display font-bold text-2xl mb-0.5" style={{ color: 'var(--text-primary)' }}>{value}</p>
     <p className="text-xs font-medium" style={{ color: 'var(--text-secondary)' }}>{label}</p>
   </button>
-)
+))
 
 export default function AdminDashboard() {
   const navigate = useNavigate()
