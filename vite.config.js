@@ -5,5 +5,9 @@ export default defineConfig({
   plugins: [react()],
   resolve: {
     alias: { '@': '/src' }
+  },
+  test: {
+    globals: true,
+    environment: 'jsdom',
   }
 })
