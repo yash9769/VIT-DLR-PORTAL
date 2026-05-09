@@ -21,6 +21,8 @@ const FacultyPage = lazy(() => import('./pages/admin/FacultyPage'))
 const ReportsPage = lazy(() => import('./pages/admin/ReportsPage'))
 const SystemIssuesPage = lazy(() => import('./pages/admin/SystemIssues'))
 const StudentsPage = lazy(() => import('./pages/admin/StudentsPage'))
+const SecurityAudit = lazy(() => import('./pages/admin/SecurityAudit'))
+const RlsShowcase = lazy(() => import('./pages/admin/RlsShowcase'))
 
 const AdminDayView = lazy(() => import('./pages/admin/AdminDayView'))
 
@@ -50,6 +52,8 @@ export default function App() {
                 <Route path="reports" element={<ReportsPage />} />
                 <Route path="issues" element={<SystemIssuesPage />} />
                 <Route path="students" element={<StudentsPage />} />
+                <Route path="security" element={<SecurityAudit />} />
+                <Route path="rls-showcase" element={<RlsShowcase />} />
                 <Route path="profile" element={<ProfilePage />} />
               </Route>
               <Route path="/" element={<Navigate to="/login" replace />} />
