@@ -10,6 +10,7 @@ export function AuthProvider({ children }) {
   const [user, setUser] = useState(null)
   const [profile, setProfile] = useState(null)
   const [loading, setLoading] = useState(true)
+  const [securityLogs, setSecurityLogs] = useState([]) // For DEMO_MODE SIEM
 
   useEffect(() => {
     if (DEMO_MODE) {
@@ -86,8 +87,32 @@ export function AuthProvider({ children }) {
     await supabase.auth.signOut()
   }
 
+  const logSecurityEvent = async (eventType, details) => {
+    const logEntry = {
+      id: Math.random().toString(36).substr(2, 9),
+      event_type: eventType,
+      user_email: details.email || 'unknown',
+      ip_address: '127.0.0.1', // Mocked IP for demo
+      details: details,
+      created_at: new Date().toISOString()
+    }
+    
+    if (DEMO_MODE) {
+      setSecurityLogs(prev => [logEntry, ...prev])
+      console.warn(`[SECURITY EVENT]: ${eventType}`, details)
+    } else {
+      await supabase.from('security_logs').insert([logEntry])
+    }
+  }
+
   return (
-    <AuthContext.Provider value={{ user, profile, loading, signIn, signOut, isAdmin: profile?.role === 'admin' || profile?.role === 'hod', demoMode: DEMO_MODE }}>
+    <AuthContext.Provider value={{ 
+      user, profile, loading, signIn, signOut, 
+      isAdmin: profile?.role === 'admin' || profile?.role === 'hod', 
+      demoMode: DEMO_MODE,
+      logSecurityEvent,
+      securityLogs // Exposing for the Audit Dashboard demo
+    }}>
       {children}
     </AuthContext.Provider>
   )
