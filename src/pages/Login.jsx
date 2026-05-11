@@ -6,14 +6,30 @@ import { supabase } from '../lib/supabase'
 import vitLogo from '../assets/vit-logo.png'
 
 export default function LoginPage() {
-  const { signIn, demoMode } = useAuth()
+  const { signIn, demoMode, logSecurityEvent } = useAuth()
   const [form, setForm] = useState({ email: '', password: '' })
   const [showPassword, setShowPassword] = useState(false)
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState(null)
+  
+  // Rate Limiting State
+  const [loginAttempts, setLoginAttempts] = useState(0)
+  const [lockoutUntil, setLockoutUntil] = useState(null)
+
 
   const handleSubmit = async (e) => {
     e.preventDefault()
+
+    // Check rate limit lockout
+    if (lockoutUntil && new Date() < lockoutUntil) {
+      const remaining = Math.ceil((lockoutUntil - new Date()) / 1000)
+      setError(`Account temporarily locked due to too many failed attempts. Try again in ${remaining}s.`)
+      return
+    } else if (lockoutUntil && new Date() >= lockoutUntil) {
+      setLockoutUntil(null)
+      setLoginAttempts(0)
+    }
+
     setLoading(true)
     setError(null)
 
@@ -22,8 +38,24 @@ export default function LoginPage() {
     if (result?.error) {
       setLoading(false)
       setError(result.error.message)
+      
+      const newAttempts = loginAttempts + 1
+      setLoginAttempts(newAttempts)
+
+      // Log the failed attempt
+      logSecurityEvent('FAILED_LOGIN', { email: form.email, reason: result.error.message })
+
+      if (newAttempts >= 5) {
+        const lockoutTime = new Date(new Date().getTime() + 60000) // 60 seconds lockout
+        setLockoutUntil(lockoutTime)
+        setError(`Maximum login attempts exceeded. Account locked for 60 seconds.`)
+        logSecurityEvent('RATE_LIMIT_EXCEEDED', { email: form.email, attempts: newAttempts })
+      }
       return
     }
+
+    // Success! Reset attempts.
+    setLoginAttempts(0)
 
     // Success! We keep loading true because AuthGuard/App will 
     // soon redirect us once the profile state is updated.
