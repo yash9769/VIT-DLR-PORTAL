@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { Outlet, useNavigate, useLocation } from 'react-router-dom'
-import { LayoutDashboard, Calendar, FileText, Settings, ChevronLeft, ChevronRight, LogOut, Bell, Menu, Users, LifeBuoy, GraduationCap } from 'lucide-react'
+import { LayoutDashboard, Calendar, FileText, Settings, ChevronLeft, ChevronRight, LogOut, Bell, Menu, Users, LifeBuoy, GraduationCap, ShieldAlert, Terminal, X } from 'lucide-react'
 import { useAuth } from '../../context/AuthContext'
 import { cls, getInitials } from '../../utils/helpers'
 import { DemoModeBanner } from '../../components/ui'
@@ -12,6 +12,7 @@ const NAV_GROUPS = [
   { label: 'Overview', items: [{ path: '/admin', label: 'Dashboard', icon: LayoutDashboard, exact: true }] },
   { label: 'Academic', items: [{ path: '/admin/timetable', label: 'Timetable', icon: Calendar }, { path: '/admin/day-view', label: 'Day View (Submit DLR)', icon: Calendar }, { path: '/admin/records', label: 'Lecture Records', icon: FileText }] },
   { label: 'Management', items: [{ path: '/admin/faculty', label: 'Faculty', icon: Users }, { path: '/admin/students', label: 'Students', icon: GraduationCap }] },
+  { label: 'Security Showcase', items: [{ path: '/admin/security', label: 'Audit Dashboard', icon: ShieldAlert }, { path: '/admin/rls-showcase', label: 'RLS Sandbox', icon: Terminal }] },
   { label: 'Reports', items: [{ path: '/admin/reports', label: 'Reports', icon: Settings }] },
   { label: 'Support', items: [{ path: '/admin/issues', label: 'Support Center', icon: LifeBuoy }] },
   { label: 'Account', items: [{ path: '/admin/profile', label: 'My Profile', icon: Users }] },
